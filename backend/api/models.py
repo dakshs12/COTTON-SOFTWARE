@@ -1,3 +1,136 @@
+import datetime
 from django.db import models
 
-# Create your models here.
+class PartyMaster(models.Model):
+    PARTY_TYPES = [
+        ('Mill', 'Mill'),
+        ('Trader', 'Trader'),
+        ('Ginner', 'Ginner'),
+        ('Buyer', 'Buyer'),
+        ('Seller', 'Seller'),
+        ('Other', 'Other'),
+    ]
+
+    party_code = models.CharField(max_length=50, unique=True)
+    company_name = models.CharField(max_length=255)
+    station = models.CharField(max_length=100)
+    address = models.TextField()
+    state = models.CharField(max_length=100)
+    party_type = models.CharField(max_length=20, choices=PARTY_TYPES)
+    
+    contact_person = models.CharField(max_length=100)
+    mobile = models.CharField(max_length=15)
+    whatsapp_no = models.CharField(max_length=15, blank=True, null=True)
+    email1 = models.EmailField(blank=True, null=True)
+    email2 = models.EmailField(blank=True, null=True)
+    
+    pan_no = models.CharField(max_length=20, blank=True, null=True)
+    gst_no = models.CharField(max_length=20, blank=True, null=True)
+    ho_unit = models.CharField(max_length=50, blank=True, null=True)
+    
+    bank_name = models.CharField(max_length=100, blank=True, null=True)
+    branch = models.CharField(max_length=100, blank=True, null=True)
+    bank_ac_no = models.CharField(max_length=50, blank=True, null=True)
+    ifsc_code = models.CharField(max_length=20, blank=True, null=True)
+
+    def __str__(self):
+        return self.company_name
+
+class FirmMaster(models.Model):
+    firm_name = models.CharField(max_length=255)
+    title = models.CharField(max_length=50, blank=True, null=True)
+    firm_no = models.CharField(max_length=50, blank=True, null=True)
+    
+    address = models.TextField()
+    city = models.CharField(max_length=100)
+    pincode = models.CharField(max_length=10, blank=True, null=True)
+    state = models.CharField(max_length=100)
+    
+    tele_o = models.CharField(max_length=20, blank=True, null=True)
+    mobile = models.CharField(max_length=15)
+    email = models.EmailField(blank=True, null=True)
+    website = models.CharField(max_length=100, blank=True, null=True)
+    contact_person = models.CharField(max_length=100, blank=True, null=True)
+    
+    cin_no = models.CharField(max_length=30, blank=True, null=True)
+    pan_no = models.CharField(max_length=20, blank=True, null=True)
+    gst_no = models.CharField(max_length=20, blank=True, null=True)
+    tan_no = models.CharField(max_length=20, blank=True, null=True)
+    
+    bank_name = models.CharField(max_length=100, blank=True, null=True)
+    branch = models.CharField(max_length=100, blank=True, null=True)
+    bank_ac_no = models.CharField(max_length=50, blank=True, null=True)
+    ifsc_code = models.CharField(max_length=20, blank=True, null=True)
+
+    def __str__(self):
+        return self.firm_name
+
+class BargainEntry(models.Model):
+    STATUS_CHOICES = [('Pending', 'Pending'), ('Completed', 'Completed'), ('Cancelled', 'Cancelled')]
+    
+    deal_no = models.AutoField(primary_key=True)
+    bargain_date = models.DateField()
+    
+    # Relationships
+    seller = models.ForeignKey(PartyMaster, on_delete=models.CASCADE, related_name='sales')
+    buyer = models.ForeignKey(PartyMaster, on_delete=models.CASCADE, related_name='purchases')
+    
+    # Deal Details
+    station = models.CharField(max_length=100)
+    bales = models.IntegerField()
+    rate = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    # Terms
+    payment_condition = models.IntegerField(help_text="Number of Days")
+    payment_by = models.CharField(max_length=50) # Seller/Buyer
+    cash_disc = models.CharField(max_length=50, blank=True, null=True)
+    
+    delivery_terms = models.CharField(max_length=255) # e.g. Ex-Mill, F.O.R
+    delivery_from = models.CharField(max_length=100, blank=True, null=True)
+    weight_terms = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Quality & Brokerage
+    deal_type = models.CharField(max_length=50) # Regular/Auto
+    cotton_certificate = models.CharField(max_length=100, blank=True, null=True)
+    quality_condition = models.TextField(blank=True, null=True)
+    
+    # Metadata
+    advised_by = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    remarks = models.TextField(blank=True, null=True)
+
+    # Smart Numbering Logic (e.g., 24-25/101)
+    @property
+    def smart_deal_id(self):
+        date = self.bargain_date
+        # If month is April (4) or later, FY is Current-Next. Else Prev-Current.
+        if date.month >= 4:
+            fy = f"{date.year % 100}-{(date.year + 1) % 100}"
+        else:
+            fy = f"{(date.year - 1) % 100}-{date.year % 100}"
+        return f"{fy}/{self.deal_no}"
+
+    def __str__(self):
+        return self.smart_deal_id
+
+# (We will add Passing and Delivery models back later when we reach those modules to keep things clean)
+class PassingEntry(models.Model):
+    bargain = models.ForeignKey(BargainEntry, on_delete=models.CASCADE)
+    passing_no = models.CharField(max_length=50)
+    approval_date = models.DateField()
+    due_date = models.DateField(blank=True, null=True)
+    lot_no = models.CharField(max_length=50)
+    approved_by = models.CharField(max_length=100)
+    remarks = models.TextField(blank=True, null=True)
+
+class DeliveryDetails(models.Model):
+    passing = models.ForeignKey(PassingEntry, on_delete=models.CASCADE)
+    bill_no = models.CharField(max_length=50)
+    bill_date = models.DateField()
+    truck_no = models.CharField(max_length=20)
+    transport_name = models.CharField(max_length=100)
+    quantity_bales = models.IntegerField()
+    net_weight = models.DecimalField(max_digits=10, decimal_places=2)
+    cotton_value = models.DecimalField(max_digits=12, decimal_places=2)
+    gst_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_bill_amount = models.DecimalField(max_digits=12, decimal_places=2)
