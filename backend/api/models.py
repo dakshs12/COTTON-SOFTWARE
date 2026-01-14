@@ -66,44 +66,58 @@ class FirmMaster(models.Model):
         return self.firm_name
 
 class BargainEntry(models.Model):
-    STATUS_CHOICES = [('Pending', 'Pending'), ('Completed', 'Completed'), ('Cancelled', 'Cancelled')]
+    # Field Options based on your screenshots
+    STATUS_CHOICES = [
+        ('Pending Passing', 'Pending Passing'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+        ('Cancelled', 'Cancelled')
+    ]
     
     deal_no = models.AutoField(primary_key=True)
     bargain_date = models.DateField()
     
-    # Relationships
     seller = models.ForeignKey(PartyMaster, on_delete=models.CASCADE, related_name='sales')
     buyer = models.ForeignKey(PartyMaster, on_delete=models.CASCADE, related_name='purchases')
     
-    # Deal Details
     station = models.CharField(max_length=100)
+    state = models.CharField(max_length=100, blank=True, null=True) # Added State
+    
     bales = models.IntegerField()
     rate = models.DecimalField(max_digits=10, decimal_places=2)
+    unit = models.CharField(max_length=50, default="Candy") # Added Unit
     
-    # Terms
-    payment_condition = models.IntegerField(help_text="Number of Days")
-    payment_by = models.CharField(max_length=50) # Seller/Buyer
-    cash_disc = models.CharField(max_length=50, blank=True, null=True)
+    payment_condition = models.IntegerField(help_text="Days")
+    # Updated Payment By to match your screenshot (Dispatch Date, etc.)
+    payment_by = models.CharField(max_length=100) 
     
-    delivery_terms = models.CharField(max_length=255) # e.g. Ex-Mill, F.O.R
-    delivery_from = models.CharField(max_length=100, blank=True, null=True)
-    weight_terms = models.CharField(max_length=100, blank=True, null=True)
-    
-    # Quality & Brokerage
-    deal_type = models.CharField(max_length=50) # Regular/Auto
+    # Auto-Dropdowns
+    cash_disc = models.CharField(max_length=100, blank=True, null=True)
     cotton_certificate = models.CharField(max_length=100, blank=True, null=True)
-    quality_condition = models.TextField(blank=True, null=True)
     
-    # Metadata
+    # Dropdowns from screenshot
+    delivery_terms = models.CharField(max_length=255)
+    delivery_type = models.CharField(max_length=100) # Spot, MD-FOR...
+    deal_type = models.CharField(max_length=100) # Pakka Sauda, Sub to Passing...
+    
+    delivery_from = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Weight Terms (Radio Button)
+    weight_terms = models.CharField(max_length=50, default="Mill Weight")
+    
+    # Bottom Section (Quality & Manual Fields)
+    qc_seller = models.CharField(max_length=100, blank=True, null=True)
+    qc_buyer = models.CharField(max_length=100, blank=True, null=True)
+    bargain_type = models.CharField(max_length=100, blank=True, null=True) # Bottom dropdown
+    bargain_no_manual = models.CharField(max_length=50, blank=True, null=True) # Manual book no
+    
     advised_by = models.CharField(max_length=100, blank=True, null=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending Passing')
     remarks = models.TextField(blank=True, null=True)
 
-    # Smart Numbering Logic (e.g., 24-25/101)
     @property
     def smart_deal_id(self):
         date = self.bargain_date
-        # If month is April (4) or later, FY is Current-Next. Else Prev-Current.
         if date.month >= 4:
             fy = f"{date.year % 100}-{(date.year + 1) % 100}"
         else:
@@ -113,7 +127,6 @@ class BargainEntry(models.Model):
     def __str__(self):
         return self.smart_deal_id
 
-# (We will add Passing and Delivery models back later when we reach those modules to keep things clean)
 class PassingEntry(models.Model):
     bargain = models.ForeignKey(BargainEntry, on_delete=models.CASCADE)
     passing_no = models.CharField(max_length=50)
@@ -124,13 +137,20 @@ class PassingEntry(models.Model):
     remarks = models.TextField(blank=True, null=True)
 
 class DeliveryDetails(models.Model):
-    passing = models.ForeignKey(PassingEntry, on_delete=models.CASCADE)
+    bargain = models.ForeignKey(BargainEntry, on_delete=models.CASCADE)
+    passing = models.ForeignKey(PassingEntry, on_delete=models.SET_NULL, null=True, blank=True)
     bill_no = models.CharField(max_length=50)
     bill_date = models.DateField()
     truck_no = models.CharField(max_length=20)
     transport_name = models.CharField(max_length=100)
     quantity_bales = models.IntegerField()
+    rate = models.DecimalField(max_digits=10, decimal_places=2)
     net_weight = models.DecimalField(max_digits=10, decimal_places=2)
     cotton_value = models.DecimalField(max_digits=12, decimal_places=2)
+    gst_percent = models.DecimalField(max_digits=5, decimal_places=2, default=5.00)
     gst_amount = models.DecimalField(max_digits=10, decimal_places=2)
     total_bill_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    remarks = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Bill #{self.bill_no}"
