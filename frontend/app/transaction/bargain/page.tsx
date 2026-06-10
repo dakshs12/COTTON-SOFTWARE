@@ -116,15 +116,43 @@ export default function BargainEntryPage() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+
+    // 1. Validation: Ensure Seller and Buyer are selected
+    if (!formData.seller || !formData.buyer) {
+      alert("Please select both a Seller and a Buyer.");
+      return;
+    }
+
+    // 2. Data Cleaning: Convert strings to numbers
+    const payload = {
+      ...formData,
+      bales: formData.bales ? parseInt(formData.bales) : 0,
+      rate: formData.rate ? parseFloat(formData.rate) : 0,
+      payment_condition: formData.payment_condition ? parseInt(formData.payment_condition) : 0,
+    };
+
     try {
-      await axios.post('http://127.0.0.1:8000/api/bargains/', formData);
+      await axios.post('http://127.0.0.1:8000/api/bargains/', payload);
       alert('Deal Saved Successfully!');
       setIsFormOpen(false);
       fetchData();
-      setFormData({ ...formData, bales: '', rate: '', remarks: '', bargain_no_manual: '' }); 
-    } catch (error) {
+      // Reset form
+      setFormData({ 
+        ...formData, 
+        bales: '', 
+        rate: '', 
+        remarks: '', 
+        bargain_no_manual: '',
+        payment_condition: '' 
+      }); 
+    } catch (error: any) {
       console.error("Error saving deal:", error);
-      alert('Error saving deal.');
+      // Show the specific error message from the backend if available
+      if (error.response && error.response.data) {
+        alert(`Error: ${JSON.stringify(error.response.data)}`);
+      } else {
+        alert('Error saving deal. Please check all fields.');
+      }
     }
   };
 
@@ -133,8 +161,8 @@ export default function BargainEntryPage() {
     const filtered = options.filter(opt => opt.toLowerCase().includes((formData as any)[name]?.toLowerCase() || ''));
     
     return (
-      <div className="relative group">
-        <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">{label}</label>
+      <div className="relative">
+        <label className="neu-label">{label}</label>
         <div className="relative">
            <input 
              name={name}
@@ -142,21 +170,29 @@ export default function BargainEntryPage() {
              onChange={handleChange}
              onFocus={() => setActiveDropdown(name)}
              onBlur={() => setTimeout(() => setActiveDropdown(null), 200)}
-             className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm text-slate-700 bg-white cursor-pointer"
+             className="neu-input cursor-pointer pr-10"
              placeholder={placeholder}
              autoComplete="off"
            />
-           <ChevronDown size={16} className={`absolute right-3 top-3.5 text-gray-400 pointer-events-none transition-transform duration-200 ${activeDropdown === name ? 'rotate-180' : ''}`}/>
+           <ChevronDown
+             size={16}
+             className={`absolute right-3 top-3 pointer-events-none transition-transform duration-200 ${activeDropdown === name ? 'rotate-180' : ''}`}
+             style={{ color: "var(--cb-text-label)" }}
+           />
            
            {activeDropdown === name && (
-             <ul className="absolute z-50 w-full bg-white border border-gray-100 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+             <ul className="neu-dropdown">
                {filtered.map(opt => (
-                 <li key={opt} onMouseDown={() => handleAutoSelect(name, opt)} className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm flex justify-between items-center group">
+                 <li key={opt} onMouseDown={() => handleAutoSelect(name, opt)}>
                    {opt}
-                   {(formData as any)[name] === opt && <Check size={14} className="text-blue-600"/>}
+                   {(formData as any)[name] === opt && <Check size={14} style={{ color: "var(--cb-primary)" }}/>}
                  </li>
                ))}
-               {filtered.length === 0 && <li className="px-4 py-2 text-xs text-gray-400 italic">Type to add new...</li>}
+               {filtered.length === 0 && (
+                 <li className="italic" style={{ color: "var(--cb-text-placeholder)", fontSize: "0.75rem", cursor: "default" }}>
+                   Type to add new...
+                 </li>
+               )}
              </ul>
            )}
         </div>
@@ -168,16 +204,38 @@ export default function BargainEntryPage() {
   const filteredBuyers = parties.filter(p => p.company_name.toLowerCase().includes(buyerSearch.toLowerCase()));
 
   return (
-    <div className="max-w-7xl mx-auto animate-in fade-in duration-500 font-sans text-slate-800">
-      <div className="flex justify-between items-center mb-6">
-        <div><h1 className="text-2xl font-bold text-slate-800">Bargain Entry</h1><p className="text-sm text-slate-500">Log new deals.</p></div>
-        <button onClick={() => setIsFormOpen(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition shadow-sm font-medium"><Plus size={18} /> New Deal</button>
+    <div className="max-w-7xl mx-auto neu-fade-in">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="neu-page-title text-3xl">Bargain Entry</h1>
+          <p className="mt-1 font-medium" style={{ color: "var(--cb-text-label)" }}>Log new deals.</p>
+        </div>
+        <button onClick={() => setIsFormOpen(true)} className="neu-btn neu-btn-primary">
+          <Plus size={18} /> New Deal
+        </button>
       </div>
 
       {isFormOpen && (
-        <div className="bg-white p-8 rounded-xl shadow-2xl border border-gray-100 mb-8 relative">
-          <button onClick={() => setIsFormOpen(false)} className="absolute top-5 right-5 text-gray-400 hover:text-red-500 transition"><X size={20} /></button>
-          <h2 className="text-lg font-bold mb-6 text-slate-800 border-b border-gray-100 pb-3 flex items-center gap-2"><FileText size={20} className="text-blue-600"/> Deal Details</h2>
+        <div className="neu-card p-8 mb-8 relative">
+          <button
+            onClick={() => setIsFormOpen(false)}
+            className="absolute top-5 right-5 p-2 rounded-full transition-colors duration-150 cursor-pointer"
+            style={{ color: "var(--cb-text-label)" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--cb-danger)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--cb-text-label)"; }}
+          >
+            <X size={20} />
+          </button>
+          <h2
+            className="text-lg font-bold mb-6 pb-3 flex items-center gap-2"
+            style={{
+              color: "var(--cb-text-heading)",
+              borderBottom: "2px solid var(--cb-divider)",
+              fontFamily: "var(--font-playfair-display), 'Playfair Display', serif",
+            }}
+          >
+            <FileText size={20} style={{ color: "var(--cb-primary)" }}/> Deal Details
+          </h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">
             
@@ -194,20 +252,54 @@ export default function BargainEntryPage() {
                 </div>
                 
                 <div className="col-span-1 relative">
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Seller</label>
-                    <input type="text" value={sellerSearch} onChange={(e) => { setSellerSearch(e.target.value); setIsSellerDropdownOpen(true); }} onFocus={() => setIsSellerDropdownOpen(true)} onBlur={() => setTimeout(() => setIsSellerDropdownOpen(false), 200)} placeholder="Search..." className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm cursor-pointer" required />
-                    {isSellerDropdownOpen && <ul className="absolute z-50 w-full bg-white border border-gray-100 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto">{filteredSellers.map(p => <li key={p.id} onMouseDown={() => handlePartySelect('seller', p.id, p.company_name, p.station, p.state)} className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm">{p.company_name}</li>)}</ul>}
+                    <label className="neu-label">Seller</label>
+                    <input
+                      type="text"
+                      value={sellerSearch}
+                      onChange={(e) => { setSellerSearch(e.target.value); setIsSellerDropdownOpen(true); }}
+                      onFocus={() => setIsSellerDropdownOpen(true)}
+                      onBlur={() => setTimeout(() => setIsSellerDropdownOpen(false), 200)}
+                      placeholder="Search..."
+                      className="neu-input cursor-pointer"
+                      required
+                    />
+                    {isSellerDropdownOpen && (
+                      <ul className="neu-dropdown">
+                        {filteredSellers.map(p => (
+                          <li key={p.id} onMouseDown={() => handlePartySelect('seller', p.id, p.company_name, p.station, p.state)}>
+                            {p.company_name}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                 </div>
                 
                 <div className="col-span-1 relative">
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Buyer</label>
-                    <input type="text" value={buyerSearch} onChange={(e) => { setBuyerSearch(e.target.value); setIsBuyerDropdownOpen(true); }} onFocus={() => setIsBuyerDropdownOpen(true)} onBlur={() => setTimeout(() => setIsBuyerDropdownOpen(false), 200)} placeholder="Search..." className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm cursor-pointer" required />
-                    {isBuyerDropdownOpen && <ul className="absolute z-50 w-full bg-white border border-gray-100 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto">{filteredBuyers.map(p => <li key={p.id} onMouseDown={() => handlePartySelect('buyer', p.id, p.company_name, '', '')} className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm">{p.company_name}</li>)}</ul>}
+                    <label className="neu-label">Buyer</label>
+                    <input
+                      type="text"
+                      value={buyerSearch}
+                      onChange={(e) => { setBuyerSearch(e.target.value); setIsBuyerDropdownOpen(true); }}
+                      onFocus={() => setIsBuyerDropdownOpen(true)}
+                      onBlur={() => setTimeout(() => setIsBuyerDropdownOpen(false), 200)}
+                      placeholder="Search..."
+                      className="neu-input cursor-pointer"
+                      required
+                    />
+                    {isBuyerDropdownOpen && (
+                      <ul className="neu-dropdown">
+                        {filteredBuyers.map(p => (
+                          <li key={p.id} onMouseDown={() => handlePartySelect('buyer', p.id, p.company_name, '', '')}>
+                            {p.company_name}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                 </div>
                 
                 <div className="col-span-1">
-                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Station</label>
-                   <input name="station" value={formData.station} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm" />
+                   <label className="neu-label">Station</label>
+                   <input name="station" value={formData.station} onChange={handleChange} className="neu-input" />
                 </div>
 
                 {/* Row 2 */}
@@ -215,16 +307,16 @@ export default function BargainEntryPage() {
                    {renderSmartDropdown("State", "state", stateOptions)}
                 </div>
                 <div className="col-span-1">
-                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Bales</label>
-                   <input type="number" name="bales" value={formData.bales} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm font-mono" required />
+                   <label className="neu-label">Bales</label>
+                   <input type="number" name="bales" value={formData.bales} onChange={handleChange} className="neu-input font-mono" required />
                 </div>
                 <div className="col-span-1">
-                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Rate</label>
-                   <input type="number" name="rate" value={formData.rate} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm font-mono" required />
+                   <label className="neu-label">Rate</label>
+                   <input type="number" name="rate" value={formData.rate} onChange={handleChange} className="neu-input font-mono" required />
                 </div>
                 <div className="col-span-1">
-                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Payment (Days)</label>
-                   <input type="number" name="payment_condition" value={formData.payment_condition} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm" />
+                   <label className="neu-label">Payment (Days)</label>
+                   <input type="number" name="payment_condition" value={formData.payment_condition} onChange={handleChange} className="neu-input" />
                 </div>
 
                 {/* Row 3 */}
@@ -235,8 +327,8 @@ export default function BargainEntryPage() {
                   {renderSmartDropdown("Cash Disc", "cash_disc", cashDiscOptions)}
                 </div>
                 <div className="col-span-1">
-                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Delivery Terms</label>
-                   <input name="delivery_terms" value={formData.delivery_terms} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm" />
+                   <label className="neu-label">Delivery Terms</label>
+                   <input name="delivery_terms" value={formData.delivery_terms} onChange={handleChange} className="neu-input" />
                 </div>
                 <div className="col-span-1">
                    {renderSmartDropdown("Delivery Type", "delivery_type", DELIVERY_TYPE_OPTIONS)}
@@ -250,8 +342,8 @@ export default function BargainEntryPage() {
                    {renderSmartDropdown("Cotton Certificate", "cotton_certificate", certificateOptions)}
                 </div>
                 <div className="col-span-1">
-                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Delivery From</label>
-                   <input name="delivery_from" value={formData.delivery_from} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm" />
+                   <label className="neu-label">Delivery From</label>
+                   <input name="delivery_from" value={formData.delivery_from} onChange={handleChange} className="neu-input" />
                 </div>
                  <div className="col-span-1">
                    {renderSmartDropdown("Status", "status", STATUS_OPTIONS)}
@@ -262,46 +354,62 @@ export default function BargainEntryPage() {
                    {renderSmartDropdown("Unit", "unit", UNIT_OPTIONS)}
                 </div>
                 <div className="col-span-1">
-                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Advised By</label>
-                   <input name="advised_by" value={formData.advised_by} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm" />
+                   <label className="neu-label">Advised By</label>
+                   <input name="advised_by" value={formData.advised_by} onChange={handleChange} className="neu-input" />
                 </div>
                 
                 {/* Weight Terms */}
                 <div className="col-span-2 flex items-center gap-8 pt-6 pl-2">
-                   <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mr-2">Weight Terms:</label>
-                   <label className={`flex items-center gap-3 cursor-pointer p-2 rounded-lg transition border ${formData.weight_terms === 'Mill Weight' ? 'bg-blue-50 border-blue-200' : 'border-transparent hover:bg-gray-50'}`}>
-                      <input type="radio" name="weight_terms" value="Mill Weight" checked={formData.weight_terms === 'Mill Weight'} onChange={handleChange} className="w-5 h-5 text-blue-600 focus:ring-blue-500 scale-125 cursor-pointer"/>
-                      <span className="text-sm font-medium">Mill Weight</span>
+                   <label className="neu-label mr-2" style={{ marginBottom: 0, fontSize: "0.8rem" }}>Weight Terms:</label>
+                   <label
+                     className="flex items-center gap-3 cursor-pointer p-2 rounded-lg transition-all duration-150"
+                     style={{
+                       background: formData.weight_terms === 'Mill Weight' ? 'rgba(74, 127, 196, 0.08)' : 'transparent',
+                       border: formData.weight_terms === 'Mill Weight' ? '1px solid rgba(74, 127, 196, 0.2)' : '1px solid transparent',
+                       borderRadius: "var(--cb-radius-sm)",
+                     }}
+                   >
+                      <input type="radio" name="weight_terms" value="Mill Weight" checked={formData.weight_terms === 'Mill Weight'} onChange={handleChange} className="w-4 h-4 cursor-pointer accent-[#4a7fc4]"/>
+                      <span className="text-sm font-medium" style={{ color: "var(--cb-text-body)" }}>Mill Weight</span>
                    </label>
-                   <label className={`flex items-center gap-3 cursor-pointer p-2 rounded-lg transition border ${formData.weight_terms === 'Spot Weight' ? 'bg-blue-50 border-blue-200' : 'border-transparent hover:bg-gray-50'}`}>
-                      <input type="radio" name="weight_terms" value="Spot Weight" checked={formData.weight_terms === 'Spot Weight'} onChange={handleChange} className="w-5 h-5 text-blue-600 focus:ring-blue-500 scale-125 cursor-pointer"/>
-                      <span className="text-sm font-medium">Spot Weight</span>
+                   <label
+                     className="flex items-center gap-3 cursor-pointer p-2 rounded-lg transition-all duration-150"
+                     style={{
+                       background: formData.weight_terms === 'Spot Weight' ? 'rgba(74, 127, 196, 0.08)' : 'transparent',
+                       border: formData.weight_terms === 'Spot Weight' ? '1px solid rgba(74, 127, 196, 0.2)' : '1px solid transparent',
+                       borderRadius: "var(--cb-radius-sm)",
+                     }}
+                   >
+                      <input type="radio" name="weight_terms" value="Spot Weight" checked={formData.weight_terms === 'Spot Weight'} onChange={handleChange} className="w-4 h-4 cursor-pointer accent-[#4a7fc4]"/>
+                      <span className="text-sm font-medium" style={{ color: "var(--cb-text-body)" }}>Spot Weight</span>
                    </label>
                 </div>
             </div>
 
             {/* --- BOTTOM SECTION --- */}
-            <div className="border-t border-gray-100 pt-6 mt-2">
-               <h3 className="text-sm font-bold text-blue-600 mb-4 flex items-center gap-2">Quality Condition & Remarks</h3>
+            <div className="pt-6 mt-2" style={{ borderTop: "1px solid var(--cb-divider)" }}>
+               <h3 className="neu-section-title mb-4">Quality Condition & Remarks</h3>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {renderSmartDropdown("QC Seller", "qc_seller", qcOptions)}
                   {renderSmartDropdown("QC Buyer", "qc_buyer", qcOptions)}
                   
                   {renderSmartDropdown("Bargain Type", "bargain_type", bargainTypeOptions)}
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Bargain No. (Manual)</label>
-                    <input name="bargain_no_manual" value={formData.bargain_no_manual} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm" />
+                    <label className="neu-label">Bargain No. (Manual)</label>
+                    <input name="bargain_no_manual" value={formData.bargain_no_manual} onChange={handleChange} className="neu-input" />
                   </div>
                </div>
                <div className="mt-4">
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Remarks</label>
-                  <textarea name="remarks" value={formData.remarks} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm h-16 resize-none" />
+                  <label className="neu-label">Remarks</label>
+                  <textarea name="remarks" value={formData.remarks} onChange={handleChange} className="neu-input" style={{ height: "64px", resize: "none" }} />
                </div>
             </div>
 
-            <div className="flex justify-end gap-4 pt-6 border-t border-gray-100">
-              <button type="button" onClick={() => setIsFormOpen(false)} className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition">Cancel</button>
-              <button type="submit" className="bg-blue-600 text-white px-8 py-2.5 rounded-lg hover:bg-blue-700 flex items-center gap-2 font-semibold shadow-md hover:shadow-lg transition transform active:scale-95">
+            <div className="flex justify-end gap-4 pt-6" style={{ borderTop: "1px solid var(--cb-divider)" }}>
+              <button type="button" onClick={() => setIsFormOpen(false)} className="neu-btn">
+                Cancel
+              </button>
+              <button type="submit" className="neu-btn neu-btn-primary">
                 <Save size={18} /> Save Deal
               </button>
             </div>
@@ -309,35 +417,44 @@ export default function BargainEntryPage() {
         </div>
       )}
 
-      {/* Table - Kept Clean */}
-      <div className="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-             <h3 className="font-bold text-slate-700">Recent Deals</h3>
-             <div className="relative"><Search className="absolute left-3 top-2.5 text-gray-400" size={16} /><input type="text" placeholder="Search..." className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm outline-none" /></div>
+      {/* Table */}
+      <div className="neu-card overflow-hidden p-2 sm:p-4">
+        <div className="p-3 flex justify-between items-center mb-2">
+             <h3 className="font-bold" style={{ color: "var(--cb-text-heading)" }}>Recent Deals</h3>
+             <div className="relative">
+               <Search className="absolute right-3 top-2.5" size={16} style={{ color: "var(--cb-text-label)" }} />
+               <input type="text" placeholder="Search..." className="neu-input pl-4 pr-9 py-2" style={{ width: "220px" }} />
+             </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs tracking-wider">
+        <div className="overflow-x-auto" style={{ borderRadius: "12px" }}>
+          <table className="neu-table">
+            <thead>
                <tr>
-                <th className="px-6 py-3">Deal No</th>
-                <th className="px-6 py-3">Date</th>
-                <th className="px-6 py-3">Seller</th>
-                <th className="px-6 py-3">Buyer</th>
-                <th className="px-6 py-3">Bales</th>
-                <th className="px-6 py-3">Rate</th>
-                <th className="px-6 py-3 text-right">Status</th>
+                <th>Deal No</th>
+                <th>Date</th>
+                <th>Seller</th>
+                <th>Buyer</th>
+                <th>Bales</th>
+                <th>Rate</th>
+                <th className="text-right">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading ? (<tr><td colSpan={7} className="text-center py-8 text-gray-400">Loading...</td></tr>) : bargains.map((deal) => (
-                <tr key={deal.deal_no} className="hover:bg-blue-50/50 transition duration-150">
-                  <td className="px-6 py-3 font-mono text-blue-600 font-bold">{deal.smart_deal_id}</td>
-                  <td className="px-6 py-3 text-slate-600">{deal.bargain_date}</td>
-                  <td className="px-6 py-3 font-medium text-slate-700">{deal.seller_name}</td>
-                  <td className="px-6 py-3 font-medium text-slate-700">{deal.buyer_name}</td>
-                  <td className="px-6 py-3 font-mono">{deal.bales}</td>
-                  <td className="px-6 py-3 font-mono">{deal.rate}</td>
-                  <td className="px-6 py-3 text-right"><span className="px-2.5 py-1 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full text-xs font-semibold">{deal.status}</span></td>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={7} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>Loading...</td></tr>
+              ) : bargains.map((deal) => (
+                <tr key={deal.deal_no}>
+                  <td className="font-mono font-bold" style={{ color: "var(--cb-primary)" }}>{deal.smart_deal_id}</td>
+                  <td>{deal.bargain_date}</td>
+                  <td className="font-medium" style={{ color: "var(--cb-text-heading)" }}>{deal.seller_name}</td>
+                  <td className="font-medium" style={{ color: "var(--cb-text-heading)" }}>{deal.buyer_name}</td>
+                  <td className="font-mono">{deal.bales}</td>
+                  <td className="font-mono">{deal.rate}</td>
+                  <td className="text-right">
+                    <span className="neu-chip" style={{ color: "var(--cb-warning)", fontSize: "0.7rem" }}>
+                      {deal.status}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>

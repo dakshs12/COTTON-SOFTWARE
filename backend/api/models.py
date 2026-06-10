@@ -142,7 +142,7 @@ class DeliveryDetails(models.Model):
     bill_no = models.CharField(max_length=50)
     bill_date = models.DateField()
     truck_no = models.CharField(max_length=20)
-    transport_name = models.CharField(max_length=100)
+    transport_name = models.CharField(max_length=100, blank=True, null=True)
     quantity_bales = models.IntegerField()
     rate = models.DecimalField(max_digits=10, decimal_places=2)
     net_weight = models.DecimalField(max_digits=10, decimal_places=2)
@@ -152,5 +152,38 @@ class DeliveryDetails(models.Model):
     total_bill_amount = models.DecimalField(max_digits=12, decimal_places=2)
     remarks = models.TextField(blank=True, null=True)
 
+    # --- NEW: Billing Flags (To track commission status) ---
+    # We track Buyer and Seller separately so you can bill them at different times
+    seller_billed = models.BooleanField(default=False) 
+    buyer_billed = models.BooleanField(default=False)
+
     def __str__(self):
         return f"Bill #{self.bill_no}"
+
+class BrokerageBill(models.Model):
+    bill_no = models.CharField(max_length=50, unique=True)
+    bill_date = models.DateField()
+    
+    # Who are we billing?
+    party = models.ForeignKey(PartyMaster, on_delete=models.CASCADE)
+    firm = models.ForeignKey(FirmMaster, on_delete=models.CASCADE) # The Broker Firm issuing the bill
+    
+    # The list of truck deliveries included in this bill
+    deliveries = models.ManyToManyField(DeliveryDetails)
+
+    # Calculations
+    total_bales = models.IntegerField()
+    rate = models.DecimalField(max_digits=10, decimal_places=2) # Brokerage Rate (e.g. 60)
+    gross_amount = models.DecimalField(max_digits=12, decimal_places=2) # Bales * Rate
+    
+    # Tax Logic
+    gst_percent = models.DecimalField(max_digits=5, decimal_places=2, default=18.00)
+    cgst_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    sgst_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    igst_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    net_amount = models.DecimalField(max_digits=12, decimal_places=2) # Final Amount
+    amount_in_words = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"Brokerage Bill #{self.bill_no}"

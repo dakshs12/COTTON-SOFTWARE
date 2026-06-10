@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Save, Plus, CheckCircle, X, Search, FileCheck, ChevronDown } from 'lucide-react';
+import { Save, Plus, CheckCircle, X, ChevronDown, FileCheck } from 'lucide-react';
 // Import the Custom Calendar
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 
@@ -96,37 +96,56 @@ export default function PassingEntryPage() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto animate-in fade-in duration-500 font-sans text-slate-800">
+    <div className="max-w-7xl mx-auto neu-fade-in">
       
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Passing Entry</h1>
-          <p className="text-sm text-slate-500">Record quality approvals.</p>
+          <h1 className="neu-page-title text-3xl">Passing Entry</h1>
+          <p className="mt-1 font-medium" style={{ color: "var(--cb-text-label)" }}>
+            Record quality approvals.
+          </p>
         </div>
         <button 
           onClick={() => setIsFormOpen(true)}
-          className="bg-blue-600 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition shadow-sm font-medium"
+          className="neu-btn neu-btn-primary"
         >
           <Plus size={18} />
           New Entry
         </button>
       </div>
 
-      {/* Form Modal */}
+      {/* Form */}
       {isFormOpen && (
-        <div className="bg-white p-8 rounded-xl shadow-2xl border border-gray-100 mb-8 relative">
-          <button onClick={() => setIsFormOpen(false)} className="absolute top-5 right-5 text-gray-400 hover:text-red-500 transition"><X size={20} /></button>
-          <h2 className="text-lg font-bold mb-6 text-slate-800 border-b border-gray-100 pb-3 flex items-center gap-2">
-            <CheckCircle size={20} className="text-blue-600"/> Quality Approval Form
+        <div className="neu-card p-8 mb-8 relative">
+          <button
+            onClick={() => setIsFormOpen(false)}
+            className="absolute top-5 right-5 p-2 rounded-full transition-colors duration-150 cursor-pointer"
+            style={{ color: "var(--cb-text-label)" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--cb-danger)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--cb-text-label)"; }}
+          >
+            <X size={20} />
+          </button>
+          <h2
+            className="text-lg font-bold mb-6 pb-3 flex items-center gap-2"
+            style={{
+              color: "var(--cb-text-heading)",
+              borderBottom: "2px solid var(--cb-divider)",
+              fontFamily: "var(--font-playfair-display), 'Playfair Display', serif",
+            }}
+          >
+            <CheckCircle size={20} style={{ color: "var(--cb-primary)" }}/> Quality Approval Form
           </h2>
           
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-6">
             
             {/* --- Section 1: Link to Deal --- */}
-            <div className="md:col-span-4 bg-blue-50 p-4 rounded-lg border border-blue-100 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div
+              className="md:col-span-4 p-5 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-6 neu-pressed"
+            >
                <div className="col-span-1 relative">
-                  <label className="block text-xs font-bold text-blue-700 uppercase mb-1.5">Select Deal</label>
+                  <label className="neu-label" style={{ color: "var(--cb-primary)" }}>Select Deal</label>
                   <div className="relative">
                     <input 
                       type="text" 
@@ -135,16 +154,24 @@ export default function PassingEntryPage() {
                       onFocus={() => setIsDealDropdownOpen(true)}
                       onBlur={() => setTimeout(() => setIsDealDropdownOpen(false), 200)}
                       placeholder="Search Deal..."
-                      className="w-full border border-blue-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none bg-white cursor-pointer"
+                      className="neu-input cursor-pointer pr-10"
                       required
                     />
-                    <ChevronDown size={16} className="absolute right-3 top-3.5 text-blue-400 pointer-events-none"/>
+                    <ChevronDown
+                      size={16}
+                      className="absolute right-3 top-3 pointer-events-none"
+                      style={{ color: "var(--cb-primary)" }}
+                    />
                     {isDealDropdownOpen && (
-                      <ul className="absolute z-50 w-full bg-white border border-gray-100 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto">
+                      <ul className="neu-dropdown">
                         {filteredBargains.map(b => (
-                          <li key={b.deal_no} onMouseDown={() => handleDealSelect(b)} className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm">
-                            <span className="font-bold text-blue-700">{b.smart_deal_id}</span>
-                            <span className="text-xs text-gray-500 block">{b.seller_name} ➔ {b.buyer_name}</span>
+                          <li key={b.deal_no} onMouseDown={() => handleDealSelect(b)}>
+                            <div>
+                              <span className="font-bold" style={{ color: "var(--cb-primary)" }}>{b.smart_deal_id}</span>
+                              <span className="text-xs block" style={{ color: "var(--cb-text-label)" }}>
+                                {b.seller_name} ➔ {b.buyer_name}
+                              </span>
+                            </div>
                           </li>
                         ))}
                       </ul>
@@ -153,19 +180,23 @@ export default function PassingEntryPage() {
                </div>
 
                <div className="col-span-1">
-                 <label className="block text-xs font-bold text-blue-400 uppercase mb-1.5">Seller</label>
-                 <div className="text-sm font-semibold text-slate-700 mt-2">{selectedDealDisplay.seller || "-"}</div>
+                 <label className="neu-label" style={{ color: "var(--cb-text-placeholder)" }}>Seller</label>
+                 <div className="text-sm font-semibold mt-2" style={{ color: "var(--cb-text-heading)" }}>
+                   {selectedDealDisplay.seller || "-"}
+                 </div>
                </div>
                <div className="col-span-1">
-                 <label className="block text-xs font-bold text-blue-400 uppercase mb-1.5">Buyer</label>
-                 <div className="text-sm font-semibold text-slate-700 mt-2">{selectedDealDisplay.buyer || "-"}</div>
+                 <label className="neu-label" style={{ color: "var(--cb-text-placeholder)" }}>Buyer</label>
+                 <div className="text-sm font-semibold mt-2" style={{ color: "var(--cb-text-heading)" }}>
+                   {selectedDealDisplay.buyer || "-"}
+                 </div>
                </div>
             </div>
 
             {/* --- Section 2: Passing Details --- */}
             <div className="col-span-1">
-               <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Passing No</label>
-               <input name="passing_no" value={formData.passing_no} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition" required />
+               <label className="neu-label">Passing No</label>
+               <input name="passing_no" value={formData.passing_no} onChange={handleChange} className="neu-input" required />
             </div>
             
             <div className="col-span-1">
@@ -187,23 +218,25 @@ export default function PassingEntryPage() {
             </div>
 
             <div className="col-span-1">
-               <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Lot No</label>
-               <input name="lot_no" value={formData.lot_no} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition" required />
+               <label className="neu-label">Lot No</label>
+               <input name="lot_no" value={formData.lot_no} onChange={handleChange} className="neu-input" required />
             </div>
 
             <div className="md:col-span-2">
-               <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Approved By</label>
-               <input name="approved_by" value={formData.approved_by} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition" required />
+               <label className="neu-label">Approved By</label>
+               <input name="approved_by" value={formData.approved_by} onChange={handleChange} className="neu-input" required />
             </div>
             <div className="md:col-span-2">
-               <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Remarks</label>
-               <input name="remarks" value={formData.remarks} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition" />
+               <label className="neu-label">Remarks</label>
+               <input name="remarks" value={formData.remarks} onChange={handleChange} className="neu-input" />
             </div>
 
             {/* Footer */}
-            <div className="md:col-span-4 flex justify-end gap-4 mt-6 pt-6 border-t border-gray-100">
-              <button type="button" onClick={() => setIsFormOpen(false)} className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition">Cancel</button>
-              <button type="submit" className="bg-green-600 text-white px-8 py-2.5 rounded-lg hover:bg-green-700 flex items-center gap-2 font-semibold shadow-md hover:shadow-lg transition transform active:scale-95">
+            <div className="md:col-span-4 flex justify-end gap-4 mt-6 pt-6" style={{ borderTop: "1px solid var(--cb-divider)" }}>
+              <button type="button" onClick={() => setIsFormOpen(false)} className="neu-btn">
+                Cancel
+              </button>
+              <button type="submit" className="neu-btn neu-btn-primary" style={{ color: "var(--cb-secondary)", borderColor: "rgba(90, 143, 74, 0.3)" }}>
                 <Save size={18} /> Save Passing
               </button>
             </div>
@@ -213,38 +246,40 @@ export default function PassingEntryPage() {
       )}
 
       {/* List Table */}
-      <div className="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-           <h3 className="font-bold text-slate-700">Recent Approvals</h3>
+      <div className="neu-card overflow-hidden p-2 sm:p-4">
+        <div className="p-3 mb-2">
+           <h3 className="font-bold" style={{ color: "var(--cb-text-heading)" }}>Recent Approvals</h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs tracking-wider">
+        <div className="overflow-x-auto" style={{ borderRadius: "12px" }}>
+          <table className="neu-table">
+            <thead>
               <tr>
-                <th className="px-6 py-3">Passing No</th>
-                <th className="px-6 py-3">Date</th>
-                <th className="px-6 py-3">Deal No</th>
-                <th className="px-6 py-3">Seller</th>
-                <th className="px-6 py-3">Buyer</th>
-                <th className="px-6 py-3">Lot No</th>
-                <th className="px-6 py-3 text-right">Action</th>
+                <th>Passing No</th>
+                <th>Date</th>
+                <th>Deal No</th>
+                <th>Seller</th>
+                <th>Buyer</th>
+                <th>Lot No</th>
+                <th className="text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="text-center py-8 text-gray-400">Loading data...</td></tr>
+                <tr><td colSpan={7} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>Loading data...</td></tr>
               ) : passings.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-8 text-gray-400">No passing entries found.</td></tr>
+                <tr><td colSpan={7} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>No passing entries found.</td></tr>
               ) : passings.map((pass) => (
-                <tr key={pass.id} className="hover:bg-blue-50/50 transition duration-150">
-                  <td className="px-6 py-3 font-medium text-slate-700">{pass.passing_no}</td>
-                  <td className="px-6 py-3 text-slate-600">{pass.approval_date}</td>
-                  <td className="px-6 py-3 font-mono text-blue-600 font-bold">{pass.deal_no}</td>
-                  <td className="px-6 py-3 text-slate-600">{pass.seller_name}</td>
-                  <td className="px-6 py-3 text-slate-600">{pass.buyer_name}</td>
-                  <td className="px-6 py-3 font-mono">{pass.lot_no}</td>
-                  <td className="px-6 py-3 text-right">
-                     <span className="text-green-600 flex justify-end"><FileCheck size={18}/></span>
+                <tr key={pass.id}>
+                  <td className="font-medium" style={{ color: "var(--cb-text-heading)" }}>{pass.passing_no}</td>
+                  <td>{pass.approval_date}</td>
+                  <td className="font-mono font-bold" style={{ color: "var(--cb-primary)" }}>{pass.deal_no}</td>
+                  <td>{pass.seller_name}</td>
+                  <td>{pass.buyer_name}</td>
+                  <td className="font-mono">{pass.lot_no}</td>
+                  <td className="text-right">
+                     <span style={{ color: "var(--cb-secondary)" }} className="flex justify-end">
+                       <FileCheck size={18}/>
+                     </span>
                   </td>
                 </tr>
               ))}

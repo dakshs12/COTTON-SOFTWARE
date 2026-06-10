@@ -29,28 +29,71 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8 font-sans text-black">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-blue-700">Cotton Broker Software</h1>
-        <p className="text-gray-600">Welcome back, Broker.</p>
-      </header>
+    <div className="max-w-7xl mx-auto neu-fade-in">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="neu-page-title text-3xl">Dashboard</h1>
+          <p className="mt-1 font-medium" style={{ color: "var(--cb-text-label)" }}>
+            Welcome back, Broker. Here is your business overview.
+          </p>
+        </div>
+      </div>
       
       {loading ? (
-        <p className="text-lg">Loading data from Python...</p>
+        <p className="text-base" style={{ color: "var(--cb-text-label)" }}>
+          Loading data from server...
+        </p>
       ) : (
-        <div className="bg-white shadow rounded-lg p-6 max-w-2xl">
-          <h2 className="text-xl font-semibold mb-4 border-b pb-2">Party Master List</h2>
+        <div className="neu-card p-6 max-w-2xl">
+          <h2
+            className="text-xl font-bold mb-5 pb-3"
+            style={{
+              color: "var(--cb-text-heading)",
+              borderBottom: "2px solid var(--cb-divider)",
+              fontFamily: "var(--font-playfair-display), 'Playfair Display', serif",
+            }}
+          >
+            Party Master List
+          </h2>
           {parties.length === 0 ? (
-            <p className="text-gray-500">No parties found. Add some in the Admin Panel!</p>
+            <p style={{ color: "var(--cb-text-label)" }}>
+              No parties found. Add some in the Party Master!
+            </p>
           ) : (
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {parties.map((party) => (
-                <li key={party.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
+                <li
+                  key={party.id}
+                  className="flex justify-between items-center p-3 rounded-xl transition-colors duration-150"
+                  style={{ borderRadius: "var(--cb-radius-sm)" }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = "#dde3eb";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
+                  }}
+                >
                   <div>
-                    <span className="font-bold block">{party.company_name}</span>
-                    <span className="text-sm text-gray-500">{party.station}</span>
+                    <span
+                      className="font-bold block text-sm"
+                      style={{ color: "var(--cb-text-heading)" }}
+                    >
+                      {party.company_name}
+                    </span>
+                    <span
+                      className="text-xs"
+                      style={{ color: "var(--cb-text-label)" }}
+                    >
+                      {party.station}
+                    </span>
                   </div>
-                  <span className="text-blue-600 font-mono">{party.mobile}</span>
+                  <span
+                    className="font-mono text-sm font-medium"
+                    style={{ color: "var(--cb-primary)" }}
+                  >
+                    {party.mobile}
+                  </span>
                 </li>
               ))}
             </ul>

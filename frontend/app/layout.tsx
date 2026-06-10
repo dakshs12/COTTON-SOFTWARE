@@ -1,11 +1,29 @@
 import type { Metadata } from "next";
+import { Playfair_Display, DM_Sans, Quicksand } from "next/font/google";
 import "./globals.css";
 import Sidebar from "./components/Sidebar";
 
+const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair-display",
+  subsets: ["latin"],
+});
+
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+});
+
+const quicksand = Quicksand({
+  variable: "--font-quicksand",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
-  title: "Cotton Broker Software",
-  description: "Manage bargains, passings, and deliveries.",
+  title: "CottBook — Brokerage Management",
+  description: "Cotton brokerage platform for managing bargains, passings, deliveries, and invoicing.",
 };
+
+import { Agentation } from "agentation";
 
 export default function RootLayout({
   children,
@@ -14,15 +32,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="bg-gray-100 min-h-screen text-slate-900 flex">
-        {/* The Sidebar stays fixed on the left */}
+      <body
+        className={`${playfairDisplay.variable} ${dmSans.variable} ${quicksand.variable} min-h-screen flex`}
+        suppressHydrationWarning
+      >
+        {/* Sidebar — fixed left, light neumorphic */}
         <Sidebar />
-        
-        {/* The 'children' is the actual page content (Dashboard, Party Form, etc.) */}
-        {/* We add margin-left (ml-64) so the content doesn't get hidden behind the sidebar */}
-        <main className="flex-1 ml-64 p-8">
+
+        {/* Main content area — offset by sidebar width */}
+        <main
+          className="flex-1 p-8"
+          style={{ marginLeft: "var(--cb-sidebar-width)" }}
+        >
           {children}
         </main>
+
+        {/* Agentation visual feedback tool (development only) */}
+        {process.env.NODE_ENV === "development" && <Agentation />}
       </body>
     </html>
   );

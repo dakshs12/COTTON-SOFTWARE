@@ -8,9 +8,11 @@ import {
   FileText, 
   CheckCircle, 
   Truck, 
-  ClipboardList, 
   BarChart3, 
-  LogOut 
+  LogOut,
+  Receipt,
+  Clock,
+  ClipboardList
 } from 'lucide-react';
 
 const menuItems = [
@@ -31,6 +33,13 @@ const menuItems = [
     ]
   },
   {
+    title: "BROKERAGE",
+    items: [
+      { name: "Bill Generation", path: "/brokerage/bill-generation", icon: Receipt },
+      { name: "Due List", path: "/brokerage/due-list", icon: Clock },
+    ],
+  },
+  {
     title: 'REPORTS',
     items: [
       { name: 'Ledgers & Lists', path: '/reports/party', icon: ClipboardList },
@@ -43,55 +52,111 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="w-64 bg-slate-900 text-white h-screen fixed left-0 top-0 overflow-y-auto flex flex-col">
-      {/* Header / Logo Area */}
-      <div className="p-6 border-b border-slate-800">
-        <h1 className="text-2xl font-bold text-blue-400">CottonSoft</h1>
-        <p className="text-xs text-slate-400 mt-1">Broker Management v1.0</p>
+    <div
+      className="fixed left-0 top-0 h-screen overflow-y-auto flex flex-col z-50"
+      style={{
+        width: "var(--cb-sidebar-width)",
+        background: "var(--cb-bg)",
+        borderRight: "1px solid var(--cb-divider)",
+        boxShadow: "4px 0 12px rgba(188, 195, 207, 0.25)",
+      }}
+    >
+      {/* ── Brand Header ── */}
+      <div
+        className="px-7 py-6"
+        style={{ borderBottom: "1px solid var(--cb-divider)" }}
+      >
+        <h1
+          className="text-2xl font-bold tracking-tight"
+          style={{
+            fontFamily: "var(--font-playfair-display), 'Playfair Display', serif",
+            color: "var(--cb-primary)",
+          }}
+        >
+          CottBook
+        </h1>
+        <p
+          className="text-xs mt-1 font-medium"
+          style={{
+            fontFamily: "var(--font-quicksand), 'Quicksand', sans-serif",
+            color: "var(--cb-text-label)",
+          }}
+        >
+          Brokerage Management
+        </p>
       </div>
 
-      {/* Navigation Links */}
-      <nav className="flex-1 p-4 space-y-6">
+      {/* ── Navigation ── */}
+      <nav className="flex-1 px-4 py-5 space-y-5">
         {menuItems.map((section: any, index) => (
           <div key={index}>
-            {/* Section Title (e.g. MASTER, TRANSACTION) */}
+            {/* Section Title */}
             {section.title && (
-              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-2">
+              <h3
+                className="text-xs font-bold uppercase tracking-widest mb-2.5 px-3"
+                style={{
+                  fontFamily: "var(--font-quicksand), 'Quicksand', sans-serif",
+                  color: "var(--cb-text-placeholder)",
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.1em",
+                }}
+              >
                 {section.title}
               </h3>
             )}
             
             <div className="space-y-1">
               {section.items ? (
-                // If it has sub-items (like Master -> Party)
                 section.items.map((item: any) => {
                   const isActive = pathname === item.path;
                   return (
                     <Link 
                       key={item.path} 
                       href={item.path}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
-                        isActive 
-                          ? 'bg-blue-600 text-white shadow-md' 
-                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                      }`}
+                      className="flex items-center gap-3 px-3 py-2.5 transition-all duration-200 text-sm font-medium"
+                      style={{
+                        borderRadius: "var(--cb-radius-sm)",
+                        color: isActive ? "var(--cb-primary)" : "var(--cb-text-body)",
+                        background: "var(--cb-bg)",
+                        boxShadow: isActive ? "var(--cb-pressed-sm)" : "none",
+                        fontWeight: isActive ? 700 : 500,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isActive) {
+                          (e.currentTarget as HTMLElement).style.backgroundColor = "#dde3eb";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.backgroundColor = "var(--cb-bg)";
+                      }}
                     >
-                      <item.icon size={18} />
+                      <item.icon size={18} strokeWidth={isActive ? 2.5 : 1.8} />
                       {item.name}
                     </Link>
                   );
                 })
               ) : (
-                // If it is a single item (like Dashboard)
+                // Single item (Dashboard)
                 <Link 
-                  href={section.path}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
-                    pathname === section.path 
-                      ? 'bg-blue-600 text-white shadow-md' 
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  }`}
+                  href={section.path || '/'}
+                  className="flex items-center gap-3 px-3 py-2.5 transition-all duration-200 text-sm font-medium"
+                  style={{
+                    borderRadius: "var(--cb-radius-sm)",
+                    color: pathname === section.path ? "var(--cb-primary)" : "var(--cb-text-body)",
+                    background: "var(--cb-bg)",
+                    boxShadow: pathname === section.path ? "var(--cb-pressed-sm)" : "none",
+                    fontWeight: pathname === section.path ? 700 : 500,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (pathname !== section.path) {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "#dde3eb";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = "var(--cb-bg)";
+                  }}
                 >
-                  <section.icon size={18} />
+                  <section.icon size={18} strokeWidth={pathname === section.path ? 2.5 : 1.8} />
                   {section.name}
                 </Link>
               )}
@@ -100,10 +165,26 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer / Exit Button */}
-      <div className="p-4 border-t border-slate-800">
-        <button className="flex items-center gap-3 px-3 py-2 text-red-400 hover:bg-red-900/20 w-full rounded-lg transition-colors text-sm font-medium">
-          <LogOut size={18} />
+      {/* ── Footer ── */}
+      <div
+        className="px-4 py-4"
+        style={{ borderTop: "1px solid var(--cb-divider)" }}
+      >
+        <button
+          className="flex items-center gap-3 px-3 py-2.5 w-full transition-all duration-200 text-sm font-medium cursor-pointer"
+          style={{
+            borderRadius: "var(--cb-radius-sm)",
+            color: "var(--cb-danger)",
+            background: "var(--cb-bg)",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.backgroundColor = "#f5e0e0";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.backgroundColor = "var(--cb-bg)";
+          }}
+        >
+          <LogOut size={18} strokeWidth={1.8} />
           Exit Software
         </button>
       </div>

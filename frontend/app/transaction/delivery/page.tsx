@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Save, Plus, Truck, X, Search, ChevronDown } from 'lucide-react';
+import { Save, Plus, Truck, X, ChevronDown } from 'lucide-react';
 // Import the Custom Calendar
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 
@@ -119,38 +119,68 @@ export default function DeliveryEntryPage() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto animate-in fade-in duration-500 font-sans text-slate-800">
+    <div className="max-w-7xl mx-auto neu-fade-in">
       
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Delivery Details</h1>
-          <p className="text-sm text-slate-500">Generate bills and track logistics.</p>
+          <h1 className="neu-page-title text-3xl">Delivery Details</h1>
+          <p className="mt-1 font-medium" style={{ color: "var(--cb-text-label)" }}>
+            Generate bills and track logistics.
+          </p>
         </div>
-        <button onClick={() => setIsFormOpen(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition shadow-sm font-medium">
+        <button onClick={() => setIsFormOpen(true)} className="neu-btn neu-btn-primary">
           <Plus size={18} /> New Delivery
         </button>
       </div>
 
       {isFormOpen && (
-        <div className="bg-white p-8 rounded-xl shadow-2xl border border-gray-100 mb-8 relative">
-          <button onClick={() => setIsFormOpen(false)} className="absolute top-5 right-5 text-gray-400 hover:text-red-500 transition"><X size={20} /></button>
+        <div className="neu-card p-8 mb-8 relative">
+          <button
+            onClick={() => setIsFormOpen(false)}
+            className="absolute top-5 right-5 p-2 rounded-full transition-colors duration-150 cursor-pointer"
+            style={{ color: "var(--cb-text-label)" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--cb-danger)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--cb-text-label)"; }}
+          >
+            <X size={20} />
+          </button>
           
-          <div className="flex items-center gap-4 mb-6 border-b border-gray-100 pb-3">
-            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><Truck size={20} className="text-blue-600"/> Delivery Entry</h2>
+          <div className="flex items-center gap-4 mb-6 pb-3" style={{ borderBottom: "2px solid var(--cb-divider)" }}>
+            <h2
+              className="text-lg font-bold flex items-center gap-2"
+              style={{
+                color: "var(--cb-text-heading)",
+                fontFamily: "var(--font-playfair-display), 'Playfair Display', serif",
+              }}
+            >
+              <Truck size={20} style={{ color: "var(--cb-primary)" }}/> Delivery Entry
+            </h2>
             
             {/* Direct Delivery Toggle */}
-            <label className="flex items-center gap-2 text-sm cursor-pointer bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition">
-              <input type="checkbox" checked={isDirectDelivery} onChange={() => { setIsDirectDelivery(!isDirectDelivery); setSearchTerm(""); }} className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
-              <span className="font-semibold text-slate-600">Direct Delivery (Skip Passing)</span>
+            <label
+              className="flex items-center gap-2 text-sm cursor-pointer px-3 py-1.5 rounded-full transition-all duration-150"
+              style={{
+                background: isDirectDelivery ? "rgba(74, 127, 196, 0.08)" : "#dde3eb",
+                border: isDirectDelivery ? "1px solid rgba(74, 127, 196, 0.2)" : "1px solid transparent",
+                borderRadius: "var(--cb-radius-pill)",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={isDirectDelivery}
+                onChange={() => { setIsDirectDelivery(!isDirectDelivery); setSearchTerm(""); }}
+                className="rounded cursor-pointer accent-[#4a7fc4]"
+              />
+              <span className="font-semibold" style={{ color: "var(--cb-text-body)" }}>Direct Delivery (Skip Passing)</span>
             </label>
           </div>
           
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-6">
             
             {/* --- Search Section --- */}
-            <div className="md:col-span-4 bg-slate-50 p-4 rounded-lg border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-4 p-5 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-6 neu-pressed">
                <div className="col-span-1 relative">
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wide">
+                  <label className="neu-label" style={{ color: "var(--cb-primary)" }}>
                     {isDirectDelivery ? "Select Bargain" : "Select Passing"}
                   </label>
                   <div className="relative">
@@ -161,17 +191,17 @@ export default function DeliveryEntryPage() {
                       onFocus={() => setIsDropdownOpen(true)}
                       onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
                       placeholder={isDirectDelivery ? "Search Deal No..." : "Search Passing No..."}
-                      className="w-full border border-blue-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none bg-white cursor-pointer"
+                      className="neu-input cursor-pointer pr-10"
                     />
-                    <ChevronDown size={16} className="absolute right-3 top-3.5 text-blue-400 pointer-events-none"/>
+                    <ChevronDown size={16} className="absolute right-3 top-3 pointer-events-none" style={{ color: "var(--cb-primary)" }}/>
                     {isDropdownOpen && (
-                      <ul className="absolute z-50 w-full bg-white border border-gray-100 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto">
+                      <ul className="neu-dropdown">
                         {filteredList.map((item: any) => (
-                          <li key={item.id || item.deal_no} onMouseDown={() => handleSelection(item)} className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm">
+                          <li key={item.id || item.deal_no} onMouseDown={() => handleSelection(item)}>
                             {isDirectDelivery ? (
-                                <span><span className="font-bold text-blue-700">{item.smart_deal_id}</span> - {item.seller_name}</span>
+                                <span><span className="font-bold" style={{ color: "var(--cb-primary)" }}>{item.smart_deal_id}</span> - {item.seller_name}</span>
                             ) : (
-                                <span><span className="font-bold text-green-700">{item.passing_no}</span> (Deal: {item.deal_no})</span>
+                                <span><span className="font-bold" style={{ color: "var(--cb-secondary)" }}>{item.passing_no}</span> (Deal: {item.deal_no})</span>
                             )}
                           </li>
                         ))}
@@ -179,14 +209,20 @@ export default function DeliveryEntryPage() {
                     )}
                   </div>
                </div>
-               <div className="col-span-1"><label className="block text-xs font-bold text-slate-400 uppercase mb-1 tracking-wide">Seller</label><div className="font-semibold text-slate-700">{displayInfo.seller || "-"}</div></div>
-               <div className="col-span-1"><label className="block text-xs font-bold text-slate-400 uppercase mb-1 tracking-wide">Buyer</label><div className="font-semibold text-slate-700">{displayInfo.buyer || "-"}</div></div>
+               <div className="col-span-1">
+                 <label className="neu-label" style={{ color: "var(--cb-text-placeholder)" }}>Seller</label>
+                 <div className="font-semibold" style={{ color: "var(--cb-text-heading)" }}>{displayInfo.seller || "-"}</div>
+               </div>
+               <div className="col-span-1">
+                 <label className="neu-label" style={{ color: "var(--cb-text-placeholder)" }}>Buyer</label>
+                 <div className="font-semibold" style={{ color: "var(--cb-text-heading)" }}>{displayInfo.buyer || "-"}</div>
+               </div>
             </div>
 
             {/* --- Logistics --- */}
             <div className="col-span-1">
-               <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Bill / Invoice No</label>
-               <input name="bill_no" value={formData.bill_no} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20 transition" required />
+               <label className="neu-label">Bill / Invoice No</label>
+               <input name="bill_no" value={formData.bill_no} onChange={handleChange} className="neu-input" required />
             </div>
             
             <div className="col-span-1">
@@ -199,41 +235,61 @@ export default function DeliveryEntryPage() {
             </div>
 
             <div className="col-span-1">
-               <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Truck No</label>
-               <input name="truck_no" value={formData.truck_no} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20 transition" required />
+               <label className="neu-label">Truck No</label>
+               <input name="truck_no" value={formData.truck_no} onChange={handleChange} className="neu-input" required />
             </div>
             <div className="col-span-1">
-               <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">Transport Name</label>
-               <input name="transport_name" value={formData.transport_name} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20 transition" />
+               <label className="neu-label">Transport Name</label>
+               <input name="transport_name" value={formData.transport_name} onChange={handleChange} className="neu-input" />
             </div>
 
             {/* --- Calculation --- */}
-            <div className="md:col-span-4 border-t pt-4 grid grid-cols-1 md:grid-cols-5 gap-4 bg-green-50/50 p-4 rounded-lg">
+            <div
+              className="md:col-span-4 grid grid-cols-1 md:grid-cols-5 gap-4 p-5 rounded-xl mt-2"
+              style={{ borderTop: "1px solid var(--cb-divider)", background: "rgba(90, 143, 74, 0.04)", border: "1px solid rgba(90, 143, 74, 0.12)", borderRadius: "var(--cb-radius-lg)" }}
+            >
                 <div className="col-span-1">
-                    <label className="block text-xs font-bold text-green-700 uppercase mb-1.5 tracking-wide">Bales</label>
-                    <input type="number" name="quantity_bales" value={formData.quantity_bales} onChange={handleChange} className="w-full border border-green-200 p-2 rounded outline-none font-mono" />
+                    <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Bales</label>
+                    <input type="number" name="quantity_bales" value={formData.quantity_bales} onChange={handleChange} className="neu-input font-mono" />
                 </div>
                 <div className="col-span-1">
-                    <label className="block text-xs font-bold text-green-700 uppercase mb-1.5 tracking-wide">Rate</label>
-                    <input type="number" name="rate" value={formData.rate} onChange={handleChange} className="w-full border border-green-200 p-2 rounded outline-none font-mono" />
+                    <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Rate</label>
+                    <input type="number" name="rate" value={formData.rate} onChange={handleChange} className="neu-input font-mono" />
                 </div>
                  <div className="col-span-1">
-                    <label className="block text-xs font-bold text-green-700 uppercase mb-1.5 tracking-wide">Cotton Value</label>
-                    <input value={formData.cotton_value} readOnly className="w-full bg-green-100 border border-green-200 p-2 rounded outline-none font-mono font-bold" />
+                    <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Cotton Value</label>
+                    <input
+                      value={formData.cotton_value}
+                      readOnly
+                      className="neu-input font-mono font-bold"
+                      style={{ background: "rgba(90, 143, 74, 0.06)" }}
+                    />
                 </div>
                  <div className="col-span-1">
-                    <label className="block text-xs font-bold text-green-700 uppercase mb-1.5 tracking-wide">GST (5%)</label>
-                    <input value={formData.gst_amount} readOnly className="w-full bg-green-100 border border-green-200 p-2 rounded outline-none font-mono" />
+                    <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>GST (5%)</label>
+                    <input
+                      value={formData.gst_amount}
+                      readOnly
+                      className="neu-input font-mono"
+                      style={{ background: "rgba(90, 143, 74, 0.06)" }}
+                    />
                 </div>
                  <div className="col-span-1">
-                    <label className="block text-xs font-bold text-green-700 uppercase mb-1.5 tracking-wide">Total Bill</label>
-                    <input value={formData.total_bill_amount} readOnly className="w-full bg-green-200 border border-green-300 p-2 rounded outline-none font-mono text-lg font-bold text-green-900" />
+                    <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Total Bill</label>
+                    <input
+                      value={formData.total_bill_amount}
+                      readOnly
+                      className="neu-input font-mono text-lg font-bold"
+                      style={{ background: "rgba(90, 143, 74, 0.1)", color: "var(--cb-secondary)" }}
+                    />
                 </div>
             </div>
 
-            <div className="md:col-span-4 flex justify-end gap-4 mt-2 border-t pt-4">
-              <button type="button" onClick={() => setIsFormOpen(false)} className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition">Cancel</button>
-              <button type="submit" className="bg-green-600 text-white px-8 py-2.5 rounded-lg hover:bg-green-700 flex items-center gap-2 font-semibold shadow-md hover:shadow-lg transition transform active:scale-95">
+            <div className="md:col-span-4 flex justify-end gap-4 mt-2 pt-4" style={{ borderTop: "1px solid var(--cb-divider)" }}>
+              <button type="button" onClick={() => setIsFormOpen(false)} className="neu-btn">
+                Cancel
+              </button>
+              <button type="submit" className="neu-btn neu-btn-primary" style={{ color: "var(--cb-secondary)", borderColor: "rgba(90, 143, 74, 0.3)" }}>
                 <Save size={18} /> Save Delivery
               </button>
             </div>
@@ -242,34 +298,40 @@ export default function DeliveryEntryPage() {
       )}
 
       {/* List Table */}
-      <div className="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 bg-gray-50/50"><h3 className="font-bold text-slate-700">Recent Deliveries</h3></div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs tracking-wider">
+      <div className="neu-card overflow-hidden p-2 sm:p-4">
+        <div className="p-3 mb-2">
+          <h3 className="font-bold" style={{ color: "var(--cb-text-heading)" }}>Recent Deliveries</h3>
+        </div>
+        <div className="overflow-x-auto" style={{ borderRadius: "12px" }}>
+          <table className="neu-table">
+            <thead>
               <tr>
-                <th className="px-6 py-3">Bill No</th>
-                <th className="px-6 py-3">Date</th>
-                <th className="px-6 py-3">Deal / Passing</th>
-                <th className="px-6 py-3">Truck No</th>
-                <th className="px-6 py-3">Bales</th>
-                <th className="px-6 py-3 text-right">Bill Amount</th>
+                <th>Bill No</th>
+                <th>Date</th>
+                <th>Deal / Passing</th>
+                <th>Truck No</th>
+                <th>Bales</th>
+                <th className="text-right">Bill Amount</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {loading ? (
-                 <tr><td colSpan={6} className="text-center py-8 text-gray-400">Loading...</td></tr>
+                 <tr><td colSpan={6} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>Loading...</td></tr>
               ) : deliveries.map((del) => (
-                <tr key={del.id} className="hover:bg-blue-50/50 transition duration-150">
-                  <td className="px-6 py-3 font-bold text-slate-700">{del.bill_no}</td>
-                  <td className="px-6 py-3 text-slate-600">{del.bill_date}</td>
-                  <td className="px-6 py-3 text-xs">
-                    <div className="font-bold text-blue-600">{del.deal_display}</div>
-                    {del.passing_ref ? <div className="text-green-600">Ref: {del.passing_ref}</div> : <div className="text-orange-500 italic">Direct</div>}
+                <tr key={del.id}>
+                  <td className="font-bold" style={{ color: "var(--cb-text-heading)" }}>{del.bill_no}</td>
+                  <td>{del.bill_date}</td>
+                  <td className="text-xs">
+                    <div className="font-bold" style={{ color: "var(--cb-primary)" }}>{del.deal_display}</div>
+                    {del.passing_ref ? (
+                      <div style={{ color: "var(--cb-secondary)" }}>Ref: {del.passing_ref}</div>
+                    ) : (
+                      <div className="italic" style={{ color: "var(--cb-warning)" }}>Direct</div>
+                    )}
                   </td>
-                  <td className="px-6 py-3 font-mono">{del.truck_no}</td>
-                  <td className="px-6 py-3 font-mono">{del.quantity_bales}</td>
-                  <td className="px-6 py-3 text-right font-bold text-green-700">₹{del.total_bill_amount}</td>
+                  <td className="font-mono">{del.truck_no}</td>
+                  <td className="font-mono">{del.quantity_bales}</td>
+                  <td className="text-right font-bold" style={{ color: "var(--cb-secondary)" }}>₹{del.total_bill_amount}</td>
                 </tr>
               ))}
             </tbody>

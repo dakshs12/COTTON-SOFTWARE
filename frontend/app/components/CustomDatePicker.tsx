@@ -48,10 +48,6 @@ export default function CustomDatePicker({ label, value, onChange }: DatePickerP
 
   const handleDayClick = (day: number) => {
     const newDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-    // Adjust for timezone offset
-    const offset = newDate.getTimezoneOffset();
-    const adjustedDate = new Date(newDate.getTime() - (offset*60*1000));
-    
     setSelectedDate(newDate);
   };
 
@@ -86,35 +82,50 @@ export default function CustomDatePicker({ label, value, onChange }: DatePickerP
   const dayNames = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
   return (
-    <div className="relative group" ref={containerRef}>
-      <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wide">
-        {label}
-      </label>
+    <div className="relative" ref={containerRef}>
+      <label className="neu-label">{label}</label>
       
-      {/* Input Box - Looks identical to other fields */}
+      {/* Input Box — flat neumorphic input style */}
       <div 
         onClick={() => setIsOpen(!isOpen)}
-        className="relative w-full border border-gray-300 p-2.5 rounded-lg flex items-center justify-between cursor-pointer hover:border-blue-400 transition bg-white"
+        className="neu-input flex items-center justify-between cursor-pointer"
       >
-        <span className={`text-sm ${value ? "text-gray-700 font-medium" : "text-gray-400"}`}>
+        <span
+          className="text-sm"
+          style={{ color: value ? "var(--cb-text-body)" : "var(--cb-text-placeholder)", fontWeight: value ? 500 : 400 }}
+        >
           {value ? value.split("-").reverse().join("-") : "Select Date"} 
         </span>
-        <CalendarIcon size={16} className="text-gray-400" />
+        <CalendarIcon size={16} style={{ color: "var(--cb-text-label)" }} />
       </div>
 
       {/* Popup Calendar */}
       {isOpen && (
-        <div className="absolute z-50 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 p-4 w-72 animate-in fade-in zoom-in-95 duration-200 left-0">
-          
+        <div
+          className="absolute z-50 mt-2 p-4 w-72 neu-fade-in left-0 neu-card"
+        >
           {/* Header */}
           <div className="flex justify-between items-center mb-4">
-            <button onClick={handlePrevMonth} type="button" className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 border border-gray-200">
+            <button
+              onClick={handlePrevMonth}
+              type="button"
+              className="neu-btn p-2"
+              style={{ padding: "0.4rem" }}
+            >
               <ChevronLeft size={16} />
             </button>
-            <span className="font-bold text-gray-800 text-sm">
+            <span
+              className="font-bold text-sm"
+              style={{ color: "var(--cb-text-heading)" }}
+            >
               {monthNames[month]} {year}
             </span>
-            <button onClick={handleNextMonth} type="button" className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 border border-gray-200">
+            <button
+              onClick={handleNextMonth}
+              type="button"
+              className="neu-btn p-2"
+              style={{ padding: "0.4rem" }}
+            >
               <ChevronRight size={16} />
             </button>
           </div>
@@ -122,7 +133,16 @@ export default function CustomDatePicker({ label, value, onChange }: DatePickerP
           {/* Days Header */}
           <div className="grid grid-cols-7 mb-2 text-center">
             {dayNames.map(d => (
-              <div key={d} className="text-xs font-medium text-gray-400">{d}</div>
+              <div
+                key={d}
+                className="text-xs font-semibold"
+                style={{
+                  color: "var(--cb-text-placeholder)",
+                  fontFamily: "var(--font-quicksand), 'Quicksand', sans-serif",
+                }}
+              >
+                {d}
+              </div>
             ))}
           </div>
 
@@ -141,11 +161,29 @@ export default function CustomDatePicker({ label, value, onChange }: DatePickerP
                   key={d}
                   type="button"
                   onClick={() => handleDayClick(d)}
-                  className={`
-                    h-8 w-8 rounded-full text-sm flex items-center justify-center transition
-                    ${isSelected ? "bg-purple-600 text-white font-bold shadow-md scale-105" : "text-gray-700 hover:bg-gray-100"}
-                    ${!isSelected && isToday ? "text-purple-600 font-bold bg-purple-50" : ""}
-                  `}
+                  className="h-8 w-8 rounded-full text-sm flex items-center justify-center transition-all duration-150"
+                  style={{
+                    background: isSelected ? "var(--cb-primary)" : "transparent",
+                    color: isSelected ? "#ffffff" : "var(--cb-text-body)",
+                    fontWeight: isSelected || isToday ? 700 : 400,
+                    boxShadow: isSelected ? "var(--cb-raised-sm)" : "none",
+                    ...(isToday && !isSelected ? {
+                      background: "rgba(74, 127, 196, 0.1)",
+                      color: "var(--cb-primary)",
+                    } : {}),
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "#dde3eb";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected && !(isToday)) {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
+                    } else if (isToday && !isSelected) {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(74, 127, 196, 0.1)";
+                    }
+                  }}
                 >
                   {d}
                 </button>
@@ -154,18 +192,23 @@ export default function CustomDatePicker({ label, value, onChange }: DatePickerP
           </div>
 
           {/* Footer */}
-          <div className="flex justify-between gap-3 pt-3 border-t border-gray-100">
+          <div
+            className="flex justify-between gap-3 pt-3"
+            style={{ borderTop: "1px solid var(--cb-divider)" }}
+          >
             <button 
               type="button"
               onClick={handleToday}
-              className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-lg border border-gray-200 w-full uppercase"
+              className="neu-btn w-full text-xs uppercase tracking-wide"
+              style={{ fontSize: "0.7rem", letterSpacing: "0.05em" }}
             >
               Today
             </button>
             <button 
               type="button"
               onClick={handleSetDate}
-              className="px-4 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow-md w-full uppercase"
+              className="neu-btn neu-btn-primary w-full text-xs uppercase tracking-wide"
+              style={{ fontSize: "0.7rem", letterSpacing: "0.05em" }}
             >
               Set Date
             </button>
