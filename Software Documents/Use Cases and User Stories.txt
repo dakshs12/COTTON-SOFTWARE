@@ -1,0 +1,69 @@
+Use Cases and User Stories
+Actor Definitions (Based on RBAC)
+	•	Admin (The Business Owner): Has global read/write/delete access. Can view financial analytics, generate final invoices, and manage employee accounts.
+	•	Employee (Data Entry/Operations): Has restricted access. Can only create and view daily operational entries (Bargains, Passings, Deliveries). Cannot view total revenue or generate final bills.
+
+Category 1: Core Operations (Currently Built)
+Use Case 1.1: The Daily Sauda (Bargain Entry)
+	•	User Story: As an Employee, I want to quickly log a new deal between a Buyer and Seller, so that the transaction is officially recorded in the system.
+	•	Step-by-Step Flow:
+	•	Employee navigates to "Bargain Entry".
+	•	Employee selects "Seller" (e.g., a Ginner) and "Buyer" (e.g., a Mill) from smart, searchable dropdowns.
+	•	Employee enters Bales, Rate, and Payment Condition (e.g., "15" days).
+	•	System validates the data and saves the Bargain to the database, linking it to the specific tenant_id.
+	•	Exception Handling: If a mandatory field (like Rate) is missing, the system throws an inline error preventing the save.
+Use Case 1.2: Linking Truck Dispatches (Delivery Details)
+	•	User Story: As an Employee, I want to log a truck dispatch and link it directly to a Bargain, so that the total deal volume is tracked.
+	•	Step-by-Step Flow:
+	•	Employee navigates to "Delivery Details".
+	•	Employee selects the "Direct Delivery" toggle (bypassing Passing).
+	•	Employee selects the corresponding Bargain from a dropdown.
+	•	Employee enters Truck No, Date, and Bales.
+	•	System auto-fetches the deal Rate from the Bargain and auto-calculates the total_bill_amount.
+	•	System saves the record. The seller_billed and buyer_billed flags remain False by default.
+
+Category 2: Revenue & Billing (Currently Built)
+Use Case 2.1: The Brokerage Billing Cycle
+	•	User Story: As an Admin, I want to generate a combined brokerage invoice for all unbilled trucks for a specific party, so that I can collect my commission.
+	•	Step-by-Step Flow:
+	•	Admin navigates to the "Brokerage Bill Generation" module.
+	•	Admin selects a Party (e.g., "Jayman Textiles").
+	•	System scans the database and populates a table with only the unbilled deliveries where Jayman Textiles was involved.
+	•	Admin ticks the checkboxes for 5 specific trucks.
+	•	System dynamically calculates the Tax: It compares the Broker Firm's state (e.g., MP) with the Party's state (e.g., Maharashtra). Since they are different, it auto-applies 18% IGST.
+	•	Admin clicks "Generate Bill". System saves the BrokerageBill and flips the buyer_billed (or seller) flags to True for those 5 trucks.
+	•	Admin clicks "Print" to view the final, letterhead-styled PDF invoice.
+
+Category 3: Advanced Management & Analytics (Planned)
+Use Case 3.1: Monitoring the Due List (Collections)
+	•	User Story: As an Admin, I want to see a dashboard of overdue payments, so that I know which parties to call for follow-ups.
+	•	Step-by-Step Flow:
+	•	Admin navigates to "Due List & Collections".
+	•	System runs a background calculation: Delivery Date + Payment Condition Days (from the linked Bargain).
+	•	System displays a list of all transactions where today's date is past the calculated due date.
+	•	Overdue rows are highlighted in red, displaying the exact number of days overdue.
+Use Case 3.2: Reviewing Business Health (Analytics)
+	•	User Story: As an Admin, I want to view graphical charts of my business performance, so that I can identify my most profitable clients.
+	•	Step-by-Step Flow:
+	•	Admin navigates to "Analytics Dashboard".
+	•	System aggregates data from all BargainEntry and BrokerageBill records.
+	•	System displays a Bar Chart showing "Top 5 Buyers by Volume (Bales)".
+	•	System displays a Line Graph showing "Brokerage Revenue Month-over-Month".
+
+Category 4: Communication & Phase 2
+Use Case 4.1: Instant WhatsApp Dispatch Alert (Phase 1 - Core Feature)
+	•	User Story: As an Employee, I want to instantly notify a Buyer or Seller when a truck is dispatched or a Sauda is created, so that they have real-time logistics and deal updates.
+	•	Step-by-Step Flow:
+	•	Employee saves a new DeliveryDetails or BargainEntry record.
+	•	A "Send WhatsApp Update" button appears next to the saved row.
+	•	Employee clicks the button.
+	•	System hits the WhatsApp API (e.g., Meta Cloud API or Interakt), fetching the Party's whatsapp_no from PartyMaster.
+	•	System sends a formatted template: "🚚 CottonSoft Alert: Truck [Truck No] dispatched with [Bales] Bales for Deal [Bargain No]."
+Use Case 4.2: Uploading a Weight Bridge Slip (Document Vault - Phase 2)
+	•	User Story: As an Employee, I want to attach a photo of a physical weight slip to a digital delivery record, so that we have an audit trail in case of a weight dispute.
+	•	Step-by-Step Flow:
+	•	Employee opens an existing Delivery record.
+	•	Employee clicks "Upload Document".
+	•	System securely uploads the file to Cloudflare R2 and saves the URL to the DocumentVault table, linking it to the Delivery ID.
+	•	Admin can later click a "View Slip" link to instantly see the stored image.
+

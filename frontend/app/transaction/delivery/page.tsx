@@ -5,6 +5,18 @@ import { Save, Plus, Truck, X, ChevronDown } from 'lucide-react';
 // Import the Custom Calendar
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 
+// Helper to format date as DD-MM-YYYY
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
+  if (dateStr.includes('/')) return dateStr;
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    if (parts[0].length === 4) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    if (parts[2].length === 4) return dateStr;
+  }
+  return dateStr;
+};
+
 export default function DeliveryEntryPage() {
   const [deliveries, setDeliveries] = useState<any[]>([]);
   const [passings, setPassings] = useState<any[]>([]);
@@ -320,7 +332,7 @@ export default function DeliveryEntryPage() {
               ) : deliveries.map((del) => (
                 <tr key={del.id}>
                   <td className="font-bold" style={{ color: "var(--cb-text-heading)" }}>{del.bill_no}</td>
-                  <td>{del.bill_date}</td>
+                  <td>{formatDate(del.bill_date)}</td>
                   <td className="text-xs">
                     <div className="font-bold" style={{ color: "var(--cb-primary)" }}>{del.deal_display}</div>
                     {del.passing_ref ? (

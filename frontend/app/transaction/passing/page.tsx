@@ -5,6 +5,18 @@ import { Save, Plus, CheckCircle, X, ChevronDown, FileCheck } from 'lucide-react
 // Import the Custom Calendar
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 
+// Helper to format date as DD-MM-YYYY
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
+  if (dateStr.includes('/')) return dateStr;
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    if (parts[0].length === 4) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    if (parts[2].length === 4) return dateStr;
+  }
+  return dateStr;
+};
+
 export default function PassingEntryPage() {
   const [passings, setPassings] = useState<any[]>([]);
   const [bargains, setBargains] = useState<any[]>([]);
@@ -271,7 +283,7 @@ export default function PassingEntryPage() {
               ) : passings.map((pass) => (
                 <tr key={pass.id}>
                   <td className="font-medium" style={{ color: "var(--cb-text-heading)" }}>{pass.passing_no}</td>
-                  <td>{pass.approval_date}</td>
+                  <td>{formatDate(pass.approval_date)}</td>
                   <td className="font-mono font-bold" style={{ color: "var(--cb-primary)" }}>{pass.deal_no}</td>
                   <td>{pass.seller_name}</td>
                   <td>{pass.buyer_name}</td>

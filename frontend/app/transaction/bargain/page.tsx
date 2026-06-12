@@ -5,6 +5,18 @@ import { Save, Plus, FileText, X, Search, ChevronDown, Check } from 'lucide-reac
 // Import the new Calendar from your existing folder
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 
+// Helper to format date as DD-MM-YYYY
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
+  if (dateStr.includes('/')) return dateStr;
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    if (parts[0].length === 4) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    if (parts[2].length === 4) return dateStr;
+  }
+  return dateStr;
+};
+
 export default function BargainEntryPage() {
   const [bargains, setBargains] = useState<any[]>([]);
   const [parties, setParties] = useState<any[]>([]);
@@ -445,7 +457,7 @@ export default function BargainEntryPage() {
               ) : bargains.map((deal) => (
                 <tr key={deal.deal_no}>
                   <td className="font-mono font-bold" style={{ color: "var(--cb-primary)" }}>{deal.smart_deal_id}</td>
-                  <td>{deal.bargain_date}</td>
+                  <td>{formatDate(deal.bargain_date)}</td>
                   <td className="font-medium" style={{ color: "var(--cb-text-heading)" }}>{deal.seller_name}</td>
                   <td className="font-medium" style={{ color: "var(--cb-text-heading)" }}>{deal.buyer_name}</td>
                   <td className="font-mono">{deal.bales}</td>

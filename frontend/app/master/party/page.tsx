@@ -35,6 +35,7 @@ export default function PartyMasterPage() {
     gst_no: '', pan_no: '', ho_unit: '',
     bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
   });
+  const [editId, setEditId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchParties();
@@ -70,9 +71,15 @@ export default function PartyMasterPage() {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     try {
-      await axios.post('http://127.0.0.1:8000/api/parties/', formData);
-      alert('Party Saved Successfully!');
+      if (editId) {
+        await axios.put(`http://127.0.0.1:8000/api/parties/${editId}/`, formData);
+        alert('Party Updated Successfully!');
+      } else {
+        await axios.post('http://127.0.0.1:8000/api/parties/', formData);
+        alert('Party Saved Successfully!');
+      }
       setIsFormOpen(false);
+      setEditId(null);
       fetchParties();
       setFormData({
         party_code: '', company_name: '', station: '', 
@@ -86,6 +93,20 @@ export default function PartyMasterPage() {
       console.error("Error saving party:", error);
       alert('Error saving data.');
     }
+  };
+
+  const handleEdit = (party: any) => {
+    setFormData({
+        party_code: party.party_code || '', company_name: party.company_name || '', station: party.station || '', 
+        address: party.address || '', state: party.state || '', party_type: party.party_type || 'Mill',
+        contact_person: party.contact_person || '', mobile: party.mobile || '', whatsapp_no: party.whatsapp_no || '', 
+        email1: party.email1 || '', email2: party.email2 || '',
+        gst_no: party.gst_no || '', pan_no: party.pan_no || '', ho_unit: party.ho_unit || '',
+        bank_name: party.bank_name || '', branch: party.branch || '', bank_ac_no: party.bank_ac_no || '', ifsc_code: party.ifsc_code || ''
+    });
+    setEditId(party.id);
+    setIsFormOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const filteredStates = useMemo(() => {
@@ -140,7 +161,7 @@ export default function PartyMasterPage() {
                 fontFamily: "var(--font-playfair-display), 'Playfair Display', serif",
               }}
             >
-              New Party Entry
+              {editId ? 'Edit Party Details' : 'New Party Entry'}
             </h2>
             
             <form onSubmit={handleSubmit} className="space-y-8">
@@ -274,7 +295,18 @@ export default function PartyMasterPage() {
               <div className="flex justify-end gap-5 pt-8">
                 <button
                   type="button"
-                  onClick={() => setIsFormOpen(false)}
+                  onClick={() => {
+                    setIsFormOpen(false);
+                    setEditId(null);
+                    setFormData({
+                      party_code: '', company_name: '', station: '', 
+                      address: '', state: '', party_type: 'Mill',
+                      contact_person: '', mobile: '', whatsapp_no: '', 
+                      email1: '', email2: '',
+                      gst_no: '', pan_no: '', ho_unit: '',
+                      bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
+                    });
+                  }}
                   className="neu-btn"
                 >
                   Cancel
@@ -283,7 +315,7 @@ export default function PartyMasterPage() {
                   type="submit"
                   className="neu-btn neu-btn-primary"
                 >
-                  <Save size={18} strokeWidth={2.5} /> Save Party
+                  <Save size={18} strokeWidth={2.5} /> {editId ? 'Update Party' : 'Save Party'}
                 </button>
               </div>
 
@@ -295,7 +327,11 @@ export default function PartyMasterPage() {
         <div className="neu-card p-4 sm:p-5 overflow-hidden">
           
           {/* Table Toolbar */}
-          <div className="p-3 mb-3 flex gap-4">
+          <div className="p-3 mb-3 flex items-center justify-between gap-4">
+            <span className="font-bold flex items-center gap-2" style={{ fontFamily: "var(--font-playfair-display)" }}>
+              <span className="w-1.5 h-6 rounded-full" style={{ background: "var(--cb-primary)" }}></span>
+              {editId ? 'Edit Party Details' : 'Parties List'}
+            </span>
             <div className="relative flex-1 max-w-md">
               <Search className="absolute right-4 top-3" size={18} style={{ color: "var(--cb-text-label)" }} />
               <input 
@@ -342,8 +378,8 @@ export default function PartyMasterPage() {
                     </td>
                     <td className="font-mono font-medium" style={{ color: "var(--cb-text-label)" }}>{party.mobile}</td>
                     <td className="text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="neu-btn p-2" style={{ color: "var(--cb-primary)", padding: "0.4rem" }}>
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ opacity: 1 }}>
+                        <button onClick={() => handleEdit(party)} className="neu-btn p-2" style={{ color: "var(--cb-primary)", padding: "0.4rem" }}>
                           <Edit2 size={16} strokeWidth={2.5}/>
                         </button>
                         <button className="neu-btn p-2" style={{ color: "var(--cb-danger)", padding: "0.4rem" }}>

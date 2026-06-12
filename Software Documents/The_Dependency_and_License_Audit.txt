@@ -1,0 +1,22 @@
+The Dependency & License Audit
+Frontend Dependencies
+	•	Next.js (Framework): MIT License. Highly permissive; perfectly safe for commercial use.
+	•	React (UI Library): MIT License. Safe for commercial use.
+	•	Tailwind CSS (Styling): MIT License. Safe for commercial use.
+	•	Lucide React (Icons): ISC License. Functionally equivalent to the MIT and BSD licenses; completely safe.
+	•	Axios (HTTP Client): MIT License. Safe for commercial use.
+UI, Animation & Visualization Libraries
+	•	Neumorphism UI (Design System): MIT License. Open-source UI kit implementing the neumorphic design paradigm. Commercially safe.
+	•	Framer Motion (Animation): MIT License. Safe for commercial use.
+	•	React Spring (Animation): MIT License. Safe for commercial use.
+	•	AutoAnimate (Animation): MIT License. Safe for commercial use.
+	•	Nivo (Data Visualization): MIT License. Safe for commercial use.
+	•	Tremor (Dashboard Components): Apache 2.0 License. Highly permissive; grants explicit patent rights in addition to copyright. Fully safe for commercial, closed-source use.
+Backend Dependencies
+	•	Python (Language): Python Software Foundation (PSF) License. Permissive and safe for commercial applications.
+	•	Django (Web Framework): BSD (3-Clause) License. A highly permissive open-source license that places almost no restrictions on what you can do with the software commercially.
+	•	Django REST Framework (API Layer): BSD (2-Clause) License. Commercially safe.
+Database & Infrastructure
+	•	SQLite (Current Dev DB): Public Domain. No licensing restrictions whatsoever.
+	•	PostgreSQL (Planned Prod DB): PostgreSQL License. A liberal Open Source license, similar to BSD or MIT. Fully approved for commercial, closed-source hosting.
+Architect's Verdict on Step 1: There is zero licensing risk in our current architecture. We have successfully avoided restrictive libraries, meaning you retain 100% intellectual property rights over the CottonSoft codebase.

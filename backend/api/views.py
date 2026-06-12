@@ -116,3 +116,70 @@ def generate_brokerage_bill(request):
 
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+
+from django.db.models import Sum, Count
+from django.db.models.functions import TruncMonth
+
+@api_view(['GET'])
+def get_dashboard_analytics(request):
+    try:
+        # 1. KPI Metrics
+        total_deals = BargainEntry.objects.count()
+        
+        # Calculate Total Bales (from BargainEntry)
+        total_bales_agg = BargainEntry.objects.aggregate(Sum('bales'))
+        total_bales = total_bales_agg['bales__sum'] or 0
+        
+        # Calculate Pending Bales (Deliveries not yet billed)
+        # Using DeliveryDetails because it represents actual dispatched bales
+        # We check seller_billed or buyer_billed
+        pending_deliveries = DeliveryDetails.objects.filter(seller_billed=False) | DeliveryDetails.objects.filter(buyer_billed=False)
+        # Simple pending calculation (if either isn't billed)
+        total_pending_bales = pending_deliveries.distinct().aggregate(Sum('quantity_bales'))['quantity_bales__sum'] or 0
+
+        # Total Brokerage Revenue (Gross Amount from BrokerageBills)
+        total_brokerage_agg = BrokerageBill.objects.aggregate(Sum('gross_amount'))
+        total_brokerage = total_brokerage_agg['gross_amount__sum'] or 0
+        
+        # 2. Top 5 Buyers by Volume
+        top_buyers = list(BargainEntry.objects.values('buyer__company_name')
+                          .annotate(total_bales=Sum('bales'))
+                          .order_by('-total_bales')[:5])
+                          
+        # 3. Top 5 Sellers by Volume
+        top_sellers = list(BargainEntry.objects.values('seller__company_name')
+                           .annotate(total_bales=Sum('bales'))
+                           .order_by('-total_bales')[:5])
+                           
+        # 4. Revenue Month-over-Month (BrokerageBill)
+        # Group by Month of bill_date
+        revenue_trends_query = (
+            BrokerageBill.objects
+            .annotate(month=TruncMonth('bill_date'))
+            .values('month')
+            .annotate(revenue=Sum('gross_amount'))
+            .order_by('month')
+        )
+        
+        # Format dates for frontend
+        revenue_trends = [
+            {
+                "month": rt['month'].strftime('%b %Y') if rt['month'] else 'Unknown',
+                "revenue": float(rt['revenue'])
+            }
+            for rt in revenue_trends_query
+        ]
+
+        return Response({
+            "kpi": {
+                "total_deals": total_deals,
+                "total_bales": total_bales,
+                "total_pending_bales": total_pending_bales,
+                "total_brokerage": float(total_brokerage),
+            },
+            "top_buyers": top_buyers,
+            "top_sellers": top_sellers,
+            "revenue_trends": revenue_trends
+        })
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)

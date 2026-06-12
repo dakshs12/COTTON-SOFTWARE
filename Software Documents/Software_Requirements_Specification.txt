@@ -1,0 +1,50 @@
+Software Requirements Specification (SRS) – CottonSoft
+1. Tech Stack Definition
+This stack is chosen for maximum speed, enterprise-grade security, and scalability.
+	•	Frontend (User Interface): Next.js 14 (React framework), TypeScript, Tailwind CSS (Styling), Lucide React (Icons), Axios (HTTP Client).
+	•	UI Design System: Neumorphism UI. All components will use soft, dual inner/outer box shadows to create a tactile sense of depth, producing a clean and premium aesthetic that distinguishes the app from flat or material design patterns.
+	•	Animation Libraries: 
+	•	Framer Motion (React): The industry standard for enterprise React apps. It handles complex “layout animations”—if you delete a row in a table, the others slide up smoothly instead of snapping.
+	•	React Spring: Uses spring physics (mass, tension, friction) instead of time duration. This makes UI interactions feel snappy and organic, like a native iOS app.
+	•	AutoAnimate: A “drop-in” library that automatically animates list sorting and filtering with zero configuration. Great for adding polish to data tables instantly.
+	•	Data Visualization: 
+	•	Nivo: Built on top of D3.js but for React. It provides beautiful, animated charts out of the box.
+	•	Tremor: Specifically designed for building dashboards. It offers “sparklines” and “KPI cards” that look professional immediately.
+	•	Backend (Core Logic & API): Python 3.x, Django 5.x, Django REST Framework (DRF).
+	•	Database: 
+	•	Current (Dev): SQLite (local file-based, fast prototyping).
+	•	Planned (Production): PostgreSQL (Industry standard for multi-tenant SaaS, robust relational data integrity).
+	•	Hosting/Infrastructure (Planned Target): 
+	•	Frontend: Vercel (Optimized for Next.js).
+	•	Backend & DB: AWS (Amazon Web Services), DigitalOcean, or Render or CloudFlare.
+	•	Authentication: JWT (JSON Web Tokens) for secure, stateless login sessions.
+2. Functional Requirements
+These are the exact features the software must execute.
+	•	F.REQ.1 - Master Data Management: System must allow CRUD (Create, Read, Update, Delete) operations for Broker Firms and Trading Parties (Mills, Buyers, Sellers), storing tax (GST/PAN) and banking details.
+	•	F.REQ.2 - Transaction Engine: System must track Bargains (deals), link Passings (quality checks) to Bargains, and link Deliveries (trucks) to either Passings or directly to Bargains.
+	•	F.REQ.3 - Smart Brokerage Billing: System must automatically filter unbilled deliveries by party, auto-calculate IGST vs. CGST/SGST based on Firm/Party state matching and generate a printable PDF invoice.
+	•	F.REQ.4 - Role-Based Access Control (RBAC): System must enforce roles. 'Admins' have global access (view revenue, generating bills, delete records). 'Employees' have restricted access (only create/view operational transactions like bargains and deliveries).
+	•	F.REQ.5 - Analytics & Reporting: System must generate visual dashboards tracking metric KPIs (Total Bales, Gross Brokerage) and rank parties by volume, revenue, and dispute frequency.
+	•	F.REQ.6 - Collections (Due List): System must auto-calculate payment due dates based on dispatch/passing dates + payment condition days, highlighting overdue accounts.
+	•	F.REQ.7 - Document Vault (Phase 2): Users must be able to upload images/PDFs (Weight slips, BCI certificates) and attach them directly to specific Delivery Details records.
+	•	F.REQ.8 - Multi-Tenancy: System must allow multiple distinct brokerages to register, isolating all their data completely from one another.
+3. Non-Functional Requirements
+These define how the system performs, scales, and protects itself.
+	•	N.REQ.1 - Security & Data Isolation: Implementation of Row-Level Security (RLS) or strict Django queryset filtering so that Tenant A (Broker 1) can never query or access Tenant B's (Broker 2) data.
+	•	N.REQ.2 - Performance: API endpoints for standard data retrieval (fetching party lists, pending deliveries) must resolve in under 300 milliseconds to ensure a "snappy" front-end experience.
+	•	N.REQ.3 - Data Integrity: Strict database constraints (e.g., on_delete=models.RESTRICT where applicable) to ensure a user cannot accidentally delete a "Party" if that party is linked to an active "Bargain".
+	•	N.REQ.4 - Responsive Design: While primarily a desktop/tablet web app, the UI must gracefully adapt to smaller screens for on-the-go data checking.
+4. Third-Party Integrations
+APIs we will need to implement our planned features.
+	•	Communication API: Meta WhatsApp Cloud API (or Twilio/Interakt) to dispatch automated "Sauda Slips" and truck delivery updates to clients.
+	•	SMS Gateway: Fast2SMS or Textlocal for instantaneous, low-bandwidth text alerts (highly reliable in India).
+	•	Cloud Object Storage (Phase 2): Cloudflare R2 to securely store and serve user-uploaded files (Document Vault, Firm Logos, generated PDF Invoices). Chosen specifically for its zero egress fees and S3-API compatibility, ensuring highly cost-effective scaling.
+5. Application State & Data Flow
+How the frontend and backend talk to each other.
+	•	Action: The user interacts with the Next.js UI (e.g., clicks "Generate Bill").
+	•	Request: Axios packages the data (Delivery IDs, Totals) into a JSON payload and sends an asynchronous HTTP POST request to the Django Backend, attaching the user's JWT token in the header.
+	•	Processing: Django REST Framework receives the request, verifies the JWT token (checks if user is Admin/Employee), and validates the payload.
+	•	Database Interaction: Django ORM executes the SQL commands on the PostgreSQL database (creating the bill, marking deliveries as billed=True).
+	•	Response: The backend sends a JSON response back to Next.js (200 OK or 400 Bad Request).
+	•	State Update: Next.js uses React hooks (useState, useEffect) to update the local application state, seamlessly removing the billed trucks from the UI without requiring a full page reload.
+

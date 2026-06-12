@@ -69,6 +69,18 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+@media print {
+  @page {
+    margin: 0;
+    size: A4 portrait;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background: white;
+  }
+}
+
 /* ============================================================
    Scrollbar
    ============================================================ */

@@ -20,6 +20,20 @@ const numberToWords = (num: number): string => {
   return str;
 };
 
+// Helper to format date as DD-MM-YYYY
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
+  if (dateStr.includes('/')) return dateStr; // Already formatted or different format
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    // If it's YYYY-MM-DD
+    if (parts[0].length === 4) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    // If it's DD-MM-YYYY already
+    if (parts[2].length === 4) return dateStr;
+  }
+  return dateStr;
+};
+
 export default function BillGenerationPage() {
   const [loading, setLoading] = useState(true);
   
@@ -58,6 +72,8 @@ export default function BillGenerationPage() {
     net_amount: 0,
     amount_in_words: ''
   });
+
+  const [useLetterhead, setUseLetterhead] = useState(true);
 
   useEffect(() => {
     fetchMasters();
@@ -128,19 +144,25 @@ export default function BillGenerationPage() {
     let cgst = 0, sgst = 0, igst = 0;
     const selectedParty = parties.find(p => p.id == formData.party_id);
     const selectedFirm = firms.find(f => f.id == formData.firm_id);
+    const gstRate = Number(totals.gst_percent) || 0;
 
     if (selectedParty && selectedFirm) {
         const pState = selectedParty.state?.toLowerCase().trim();
         const fState = selectedFirm.state?.toLowerCase().trim();
 
         if (pState && fState && pState === fState) {
-            cgst = (gross * 9) / 100;
-            sgst = (gross * 9) / 100;
+            cgst = (gross * (gstRate / 2)) / 100;
+            sgst = (gross * (gstRate / 2)) / 100;
+            igst = 0;
         } else {
-            igst = (gross * 18) / 100;
+            igst = (gross * gstRate) / 100;
+            cgst = 0;
+            sgst = 0;
         }
     } else {
-        igst = (gross * 18) / 100; // Default
+        igst = (gross * gstRate) / 100;
+        cgst = 0;
+        sgst = 0;
     }
 
     const net = Math.round(gross + cgst + sgst + igst);
@@ -156,7 +178,7 @@ export default function BillGenerationPage() {
         amount_in_words: numberToWords(net)
     }));
 
-  }, [selectedIds, totals.rate, formData.party_id, formData.firm_id]);
+  }, [selectedIds, totals.rate, totals.gst_percent, formData.party_id, formData.firm_id]);
 
   const handleGenerate = async () => {
     if (selectedIds.length === 0) return alert("Please select deliveries.");
@@ -194,7 +216,7 @@ export default function BillGenerationPage() {
   const selectedDeliveryItems = pendingDeliveries.filter(d => selectedIds.includes(d.id));
 
   return (
-    <div className="max-w-7xl mx-auto neu-fade-in pb-20">
+    <div className="max-w-7xl mx-auto neu-fade-in pb-20 print:max-w-none print:w-full print:m-0 print:p-0">
       
       {/* SCREEN VIEW (HIDDEN ON PRINT) */}
       <div className="print:hidden">
@@ -276,6 +298,17 @@ export default function BillGenerationPage() {
                                 <CustomDatePicker label="Bill Date" value={formData.bill_date} onChange={(val) => setFormData({...formData, bill_date: val})} />
                             </div>
                         </div>
+
+                        <div className="flex items-center gap-3 pt-4">
+                            <input 
+                              type="checkbox" 
+                              id="useLetterhead" 
+                              checked={useLetterhead} 
+                              onChange={(e) => setUseLetterhead(e.target.checked)} 
+                              className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                            <label htmlFor="useLetterhead" className="neu-label mb-0 cursor-pointer text-sm font-bold">Use Letterhead</label>
+                        </div>
                     </div>
                 </div>
 
@@ -284,12 +317,22 @@ export default function BillGenerationPage() {
                     <h3 className="font-bold mb-4" style={{ color: "var(--cb-text-heading)" }}>Summary</h3>
                     <div className="space-y-3 text-sm">
                         <div className="flex justify-between items-center py-2" style={{ borderBottom: "1px solid var(--cb-divider)" }}>
-                            <span className="font-bold" style={{ color: "var(--cb-text-body)" }}>Brokerage Rate</span>
+                            <span className="font-bold" style={{ color: "var(--cb-text-body)" }}>Brokerage Rate (₹)</span>
                             <input
                               type="number"
                               value={totals.rate}
                               onChange={(e) => setTotals({...totals, rate: parseFloat(e.target.value) || 0})}
-                              className="neu-input w-20 text-right font-mono"
+                              className="neu-input w-24 text-right font-mono"
+                              style={{ padding: "0.3rem 0.5rem" }}
+                            />
+                        </div>
+                        <div className="flex justify-between items-center py-2" style={{ borderBottom: "1px solid var(--cb-divider)" }}>
+                            <span className="font-bold" style={{ color: "var(--cb-text-body)" }}>GST (%)</span>
+                            <input
+                              type="number"
+                              value={totals.gst_percent}
+                              onChange={(e) => setTotals({...totals, gst_percent: parseFloat(e.target.value) || 0})}
+                              className="neu-input w-24 text-right font-mono"
                               style={{ padding: "0.3rem 0.5rem" }}
                             />
                         </div>
@@ -298,15 +341,15 @@ export default function BillGenerationPage() {
                         </div>
                         {totals.igst > 0 ? (
                             <div className="flex justify-between font-medium" style={{ color: "var(--cb-warning)" }}>
-                              <span>IGST (18%)</span><span>₹{totals.igst}</span>
+                              <span>IGST ({totals.gst_percent}%)</span><span>₹{totals.igst}</span>
                             </div>
                         ) : (
                             <>
                                 <div className="flex justify-between font-medium" style={{ color: "var(--cb-primary)" }}>
-                                  <span>CGST (9%)</span><span>₹{totals.cgst}</span>
+                                  <span>CGST ({totals.gst_percent / 2}%)</span><span>₹{totals.cgst}</span>
                                 </div>
                                 <div className="flex justify-between font-medium" style={{ color: "var(--cb-primary)" }}>
-                                  <span>SGST (9%)</span><span>₹{totals.sgst}</span>
+                                  <span>SGST ({totals.gst_percent / 2}%)</span><span>₹{totals.sgst}</span>
                                 </div>
                             </>
                         )}
@@ -317,10 +360,9 @@ export default function BillGenerationPage() {
                         <button
                           onClick={handleGenerate}
                           disabled={selectedIds.length === 0}
-                          className="neu-btn neu-btn-primary w-full mt-4 py-3 disabled:opacity-50"
-                          style={{ justifyContent: "center" }}
+                          className="neu-btn neu-btn-primary w-full mt-4 py-3 disabled:opacity-50 flex justify-center items-center gap-2"
                         >
-                            <Save size={20} /> Generate Bill
+                            <Save size={20} /> Generate & Save Bill
                         </button>
                     </div>
                 </div>
@@ -392,110 +434,132 @@ export default function BillGenerationPage() {
           </div>
       </div>
 
-      {/* --- REAL PRINT TEMPLATE (Matches your Screenshot EXACTLY) --- */}
-      <div className="hidden print:block font-serif text-black p-4">
-          {/* Header */}
-          <div className="flex justify-between items-start border-b-2 border-black pb-4 mb-4">
-              <div>
-                  <h1 className="text-2xl font-bold text-red-800 uppercase tracking-wide">{selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</h1>
-                  <p className="font-bold text-sm">Cotton Broker & Commission Agent</p>
-                  <p className="text-xs mt-1 w-64">{selectedFirmObj?.address || "Address Line 1, City - Zip"}</p>
-                  <p className="text-xs">Email: {selectedFirmObj?.email || "-"}</p>
-                  <p className="text-xs font-bold mt-1">GST: {selectedFirmObj?.gst_no}</p>
-                  <p className="text-xs font-bold">PAN: {selectedFirmObj?.pan_no}</p>
+      {/* --- REAL PRINT TEMPLATE (Matches Image 2 Exactly) --- */}
+      <div className="hidden print:block font-sans text-black bg-white">
+          <div className="w-full mx-auto min-h-[297mm] px-8 py-10 relative bg-white" style={{ fontFamily: "Arial, sans-serif" }}>
+              
+              {/* Header / Letterhead Area */}
+              <div className="mb-8">
+                  {useLetterhead && selectedFirmObj?.letterhead ? (
+                      <div className="w-full">
+                          {/* We assume the uploaded letterhead is a banner image that spans the top */}
+                          <img src={selectedFirmObj.letterhead} alt="Letterhead" className="w-full h-auto max-h-48 object-contain object-top" />
+                      </div>
+                  ) : useLetterhead && !selectedFirmObj?.letterhead ? (
+                      /* Fallback generic letterhead if checked but no image uploaded */
+                      <div className="flex justify-between items-start border-b border-gray-300 pb-4">
+                          <div>
+                              <h1 className="text-2xl font-bold uppercase tracking-wide">{selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</h1>
+                              <p className="font-bold text-sm">Cotton Broker & Commission Agent</p>
+                              <p className="text-sm">{selectedFirmObj?.address}</p>
+                              <p className="text-sm">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}, {selectedFirmObj?.state}</p>
+                              <p className="text-sm">Email: {selectedFirmObj?.email || "-"}</p>
+                              <p className="text-sm font-bold mt-1">CIN: {selectedFirmObj?.cin_no || "-"}</p>
+                              <p className="text-sm font-bold">GST: {selectedFirmObj?.gst_no}</p>
+                              <p className="text-sm font-bold">PAN: {selectedFirmObj?.pan_no}</p>
+                          </div>
+                      </div>
+                  ) : (
+                      /* Blank Space for Pre-Printed Letterhead Paper */
+                      <div className="h-40 w-full"></div>
+                  )}
               </div>
-              {/* Logo Placeholder */}
-              <div className="w-24 h-24 border border-dashed border-gray-400 rounded-full flex items-center justify-center text-xs text-gray-500">
-                  Logo
-              </div>
-          </div>
 
-          {/* Bill Info */}
-          <div className="flex justify-between items-end mb-6">
-              <div className="text-sm">
-                  <p className="font-bold">To,</p>
-                  <p className="font-bold uppercase text-lg">{selectedPartyObj?.company_name}</p>
-                  <p>{selectedPartyObj?.address}</p>
-                  <p className="font-bold">GST No: {selectedPartyObj?.gst_no}</p>
+              {/* Bill Meta Data */}
+              <div className="mb-6 leading-relaxed">
+                  <p className="font-bold text-sm">To,</p>
+                  <p className="font-bold text-base">M/s. {selectedPartyObj?.company_name || "-"}, {selectedPartyObj?.station || "-"}</p>
+                  <p className="font-bold text-sm">(GST No.: {selectedPartyObj?.gst_no || "-"})</p>
+                  
+                  <div className="flex justify-between font-bold text-sm mt-1">
+                      <p>Bill No.: {formData.bill_no || "-"}</p>
+                      <p>Date: {formatDate(formData.bill_date)}</p>
+                  </div>
               </div>
-              <div className="text-sm text-right">
-                  <p className="font-bold">Bill No: <span className="text-lg">{formData.bill_no}</span></p>
-                  <p className="font-bold">Date: {formData.bill_date}</p>
-              </div>
-          </div>
 
-          {/* Table */}
-          <table className="w-full text-xs border-collapse border-t-2 border-b-2 border-black mb-4">
-              <thead>
-                  <tr className="border-b border-black border-dashed">
-                      <th className="py-2 text-left">Name</th>
-                      <th className="py-2 text-left">Station</th>
-                      <th className="py-2 text-center">Bales</th>
-                      <th className="py-2 text-center">Truck No</th>
-                      <th className="py-2 text-center">Deal Date</th>
-                      <th className="py-2 text-right">Deal Rate</th>
-                  </tr>
-              </thead>
-              <tbody className="leading-relaxed">
-                  {selectedDeliveryItems.map((item) => (
-                      <tr key={item.id}>
-                          <td className="py-1">{item.counter_party}</td>
-                          <td className="py-1">{item.station}</td>
-                          <td className="py-1 text-center">{item.bales}</td>
-                          <td className="py-1 text-center font-mono">{item.truck_no}</td>
-                          <td className="py-1 text-center">{item.date}</td>
-                          <td className="py-1 text-right">{item.deal_rate}</td>
+              {/* Table */}
+              <table className="w-full text-sm mb-2" style={{ borderTop: "2px solid black", borderBottom: "1px dashed black" }}>
+                  <thead>
+                      <tr style={{ borderBottom: "1px solid black" }}>
+                          <th className="py-2 text-left font-bold">Name</th>
+                          <th className="py-2 text-center font-bold">Station</th>
+                          <th className="py-2 text-center font-bold">Bales</th>
+                          <th className="py-2 text-center font-bold">Lot No</th>
+                          <th className="py-2 text-center font-bold">Bill No</th>
+                          <th className="py-2 text-center font-bold">Bill Date</th>
+                          <th className="py-2 text-right font-bold">Rate</th>
                       </tr>
-                  ))}
-              </tbody>
-          </table>
+                  </thead>
+                  <tbody className="font-mono">
+                      {selectedDeliveryItems.map((item, idx) => (
+                          <tr key={item.id}>
+                              <td className="py-2 text-left">{item.counter_party}</td>
+                              <td className="py-2 text-center">{item.station}</td>
+                              <td className="py-2 text-center">{item.bales}</td>
+                              <td className="py-2 text-center">{item.lot_no || "-"}</td>
+                              <td className="py-2 text-center">{item.party_bill_no || "-"}</td>
+                              <td className="py-2 text-center">{formatDate(item.date)}</td>
+                              <td className="py-2 text-right">{item.deal_rate}</td>
+                          </tr>
+                      ))}
+                  </tbody>
+              </table>
 
-          {/* Total Bales */}
-          <div className="flex justify-between text-sm font-bold border-b border-black border-dashed pb-2 mb-2">
-              <span>Total Bales :</span>
-              <span>{totals.total_bales}</span>
-          </div>
-
-          {/* Financials */}
-          <div className="text-sm w-1/2 ml-auto">
-              <div className="flex justify-between py-1">
-                  <span>Brokerage @{totals.rate}/- Per Bale</span>
-                  <span>{totals.gross_amount.toFixed(2)}</span>
+              {/* Total Bales */}
+              <div className="text-center font-bold text-sm py-2 mb-6" style={{ borderBottom: "1px dashed black" }}>
+                  Total Bales : &nbsp;&nbsp;&nbsp;{totals.total_bales}
               </div>
-              {totals.igst > 0 ? (
-                 <div className="flex justify-between py-1"><span>IGST @18%</span><span>{totals.igst.toFixed(2)}</span></div>
-              ) : (
-                 <>
-                   <div className="flex justify-between py-1"><span>CGST @9%</span><span>{totals.cgst.toFixed(2)}</span></div>
-                   <div className="flex justify-between py-1"><span>SGST @9%</span><span>{totals.sgst.toFixed(2)}</span></div>
-                 </>
-              )}
-              <div className="flex justify-between py-2 border-t-2 border-b-2 border-black font-bold text-lg mt-2">
-                  <span>Total Amount :</span>
-                  <span>Rs. {totals.net_amount.toFixed(2)}</span>
+
+              {/* Calculations */}
+              <div className="w-2/3 text-sm font-mono leading-loose mb-6">
+                  <div className="flex justify-between">
+                      <span>Brokerage @{totals.rate}/- Per Bale</span>
+                      <span>Rs. {totals.gross_amount.toFixed(2)}</span>
+                  </div>
+                  {totals.igst > 0 ? (
+                      <div className="flex justify-between">
+                          <span>IGST @{totals.gst_percent}%</span>
+                          <span>Rs. {totals.igst.toFixed(2)}</span>
+                      </div>
+                  ) : (
+                      <>
+                          <div className="flex justify-between">
+                              <span>CGST @{totals.gst_percent / 2}%</span>
+                              <span>Rs. {totals.cgst.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                              <span>SGST @{totals.gst_percent / 2}%</span>
+                              <span>Rs. {totals.sgst.toFixed(2)}</span>
+                          </div>
+                      </>
+                  )}
+                  <div className="flex justify-between font-bold mt-2 pt-2" style={{ borderTop: "2px solid black", borderBottom: "2px solid black" }}>
+                      <span>Total Amount :</span>
+                      <span>Rs. {totals.net_amount.toFixed(2)}</span>
+                  </div>
               </div>
-          </div>
 
-          {/* Amount In Words */}
-          <div className="mt-4 text-sm font-bold border-b border-black border-dashed pb-4">
-              Total Amount in Words: <span className="uppercase">{totals.amount_in_words} Only</span>
-          </div>
+              {/* Amount in words */}
+              <div className="text-sm font-bold mb-16">
+                  Total Amount in Words: {totals.amount_in_words}
+              </div>
 
-          {/* Bank Details */}
-          <div className="mt-6 text-xs font-bold">
-              <p>Bank: {selectedFirmObj?.bank_name}</p>
-              <p>Branch: {selectedFirmObj?.branch}</p>
-              <p>A/c No: {selectedFirmObj?.bank_ac_no}</p>
-              <p>IFSC: {selectedFirmObj?.ifsc_code}</p>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-8 flex justify-between items-end text-xs">
-              <p>E & O.E (Subject to {selectedFirmObj?.city || 'Indore'} Jurisdiction)</p>
-              <div className="text-center">
-                  <p className="font-bold">For, {selectedFirmObj?.firm_name}</p>
-                  <div className="h-12"></div>
-                  <p>(Auth. Signatory)</p>
+              {/* Footer */}
+              <div className="flex justify-between items-end text-sm pt-4" style={{ borderTop: "1px solid black" }}>
+                  <div>
+                      <p className="font-bold underline mb-1">Bank Details:</p>
+                      <p className="font-bold">Bank: {selectedFirmObj?.bank_name}</p>
+                      <p className="font-bold">Branch: {selectedFirmObj?.branch}</p>
+                      <p className="font-bold">A/c No: {selectedFirmObj?.bank_ac_no}</p>
+                      <p className="font-bold">IFSC: {selectedFirmObj?.ifsc_code}</p>
+                      
+                      <p className="mt-6">E & O.E (Subject to {selectedFirmObj?.city || 'Indore'} Jurisdiction)</p>
+                  </div>
+                  <div className="text-right">
+                      <p className="font-bold">For: {selectedFirmObj?.firm_name}</p>
+                      <div className="h-16"></div>
+                      <p>(Auth. Signatory)</p>
+                  </div>
               </div>
           </div>
       </div>

@@ -15,4 +15,7 @@ urlpatterns = [
     # These will now work because 'views' is defined!
     path('brokerage/pending/', views.get_pending_deliveries),
     path('brokerage/generate/', views.generate_brokerage_bill),
+    
+    # Analytics
+    path('analytics/dashboard/', views.get_dashboard_analytics),
 ]

@@ -1,0 +1,104 @@
+The Database Schema Map
+1. Global Schema Rule (The Base Model)
+All operational tables (Masters, Transactions, Brokerage) will inherit from a custom Django BaseModel. This guarantees that every single row of operational data automatically contains the following columns for data isolation and strict enterprise auditing:
+	•	tenant_id (ForeignKey -> Tenant): CRITICAL. Forces strict data isolation. Backend queries will globally filter by the active user's tenant_id.
+	•	created_at (DateTime): Auto-stamped on creation.
+	•	updated_at (DateTime): Auto-stamped on modification.
+	•	is_deleted (Boolean): Default False. Ensures data is never permanently erased (Soft Delete) to protect historical analytics and linked invoices.
+	•	deleted_at (DateTime): Nullable. Timestamp of when the record was soft-deleted.
+	•	deleted_by (ForeignKey -> User): Nullable. Audit trail for RBAC, tracking exactly which Admin/Employee deleted the record.
+2. Identity & Access Management (The SaaS Core)
+Table: Tenant (Represents the subscribing Brokerage Company)
+	•	id (Primary Key, UUID)
+	•	company_name (String) - E.g., "Kalpdaksh Commotrade Pvt Ltd"
+	•	subscription_status (String) - Active, Suspended, Trial
+	•	created_at (DateTime)
+Table: User (Custom User Model for RBAC)
+	•	id (Primary Key, UUID)
+	•	tenant_id (ForeignKey -> Tenant) - Ties the user to their brokerage.
+	•	name (String)
+	•	email (String, Unique)
+	•	password_hash (String)
+	•	role (String) - Choices: Admin (Business Owner) or Employee (Staff)
+	•	is_active (Boolean) - Used to revoke access without deleting the user.
+3. The Master Data Module (Inherits Base Model)
+Table: FirmMaster (The Broker's own legal entities for billing)
+	•	id (Primary Key)
+	•	firm_name (String)
+	•	address, city, state, pincode (Strings)
+	•	gst_no, pan_no, cin_no (Strings)
+	•	bank_name, bank_ac_no, ifsc_code, branch (Strings)
+Table: PartyMaster (The CRM: Buyers, Sellers, Mills, Ginners)
+	•	id (Primary Key)
+	•	company_name (String)
+	•	party_type (String) - Mill, Trader, Ginner, etc.
+	•	station, state (Strings) - State is critical for IGST/CGST automation.
+	•	contact_person, mobile, whatsapp_no, email (Strings)
+	•	gst_no, pan_no (Strings)
+	•	bank_details (JSON / Strings)
+
+
+
+4. The Transaction Module (Inherits Base Model)
+Table: BargainEntry (The Sauda/Deal Book)
+	•	id (Primary Key)
+	•	bargain_date (Date)
+	•	bargain_no_manual (String, Nullable)
+	•	seller_id (ForeignKey -> PartyMaster)
+	•	buyer_id (ForeignKey -> PartyMaster)
+	•	station, state (Strings)
+	•	bales (Integer)
+	•	rate (Decimal)
+	•	unit (String) - e.g., Candy, Bales
+	•	payment_condition (Integer) - Days (Used for Due List calculations)
+	•	payment_by, cash_disc, delivery_type, deal_type, cotton_certificate (Strings)
+	•	weight_terms (String) - Mill Weight vs. Spot Weight
+	•	status (String) - Pending Passing, Approved, Cancelled
+Table: PassingEntry (Quality Control)
+	•	id (Primary Key)
+	•	bargain_id (ForeignKey -> BargainEntry)
+	•	passing_no (String)
+	•	approval_date (Date)
+	•	due_date (Date)
+	•	lot_no (String)
+	•	approved_by (String)
+	•	remarks (Text)
+
+Table: DeliveryDetails (Truck Logistics)
+	•	id (Primary Key)
+	•	bargain_id (ForeignKey -> BargainEntry)
+	•	passing_id (ForeignKey -> PassingEntry, Nullable) - Null if Direct Delivery.
+	•	bill_no, truck_no, transport_name (Strings)
+	•	bill_date (Date)
+	•	quantity_bales (Integer)
+	•	rate, net_weight, cotton_value, total_bill_amount (Decimals)
+	•	seller_billed (Boolean) - Default False
+	•	buyer_billed (Boolean) - Default False
+5. The Brokerage Module (Inherits Base Model)
+Table: BrokerageBill (Commission Invoices)
+	•	id (Primary Key)
+	•	bill_no (String)
+	•	bill_date (Date)
+	•	firm_id (ForeignKey -> FirmMaster) - The Broker generating the bill
+	•	party_id (ForeignKey -> PartyMaster) - The Party being billed
+	•	total_bales (Integer)
+	•	rate (Decimal) - Brokerage rate per bale
+	•	gross_amount (Decimal)
+	•	gst_percent, cgst_amount, sgst_amount, igst_amount (Decimals)
+	•	net_amount (Decimal)
+	•	amount_in_words (String)
+Table: BrokerageBill_Deliveries (Many-to-Many Mapping Table)
+	•	id (Primary Key)
+	•	brokeragebill_id (ForeignKey -> BrokerageBill)
+	•	deliverydetails_id (ForeignKey -> DeliveryDetails)
+6. Phase 2 Features (Future-Proofing the DB)
+Table: DocumentVault (File storage for Cloudflare R2)
+	•	id (Primary Key)
+	•	tenant_id (ForeignKey -> Tenant)
+	•	content_type (String) - Identifies which table this belongs to (e.g., "DeliveryDetails")
+	•	object_id (Integer) - The exact ID of the row it belongs to
+	•	document_type (String) - e.g., "Weight Slip", "BCI Certificate", "Logo"
+	•	file_url (String) - The secure Cloudflare R2 URL
+	•	uploaded_at (DateTime)
+	•	uploaded_by (ForeignKey -> User)
+

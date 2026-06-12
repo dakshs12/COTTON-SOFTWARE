@@ -56,11 +56,12 @@ class FirmMaster(models.Model):
     pan_no = models.CharField(max_length=20, blank=True, null=True)
     gst_no = models.CharField(max_length=20, blank=True, null=True)
     tan_no = models.CharField(max_length=20, blank=True, null=True)
-    
     bank_name = models.CharField(max_length=100, blank=True, null=True)
     branch = models.CharField(max_length=100, blank=True, null=True)
     bank_ac_no = models.CharField(max_length=50, blank=True, null=True)
     ifsc_code = models.CharField(max_length=20, blank=True, null=True)
+    
+    letterhead = models.ImageField(upload_to='letterheads/', blank=True, null=True)
 
     def __str__(self):
         return self.firm_name

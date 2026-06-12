@@ -30,6 +30,8 @@ export default function FirmMasterPage() {
     cin_no: '', pan_no: '', gst_no: '', tan_no: '',
     bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
   });
+  const [letterheadFile, setLetterheadFile] = useState<File | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchFirms();
@@ -57,9 +59,27 @@ export default function FirmMasterPage() {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     try {
-      await axios.post('http://127.0.0.1:8000/api/firms/', formData);
-      alert('Firm Saved Successfully!');
+      const data = new FormData();
+      Object.keys(formData).forEach(key => {
+        data.append(key, (formData as any)[key]);
+      });
+      if (letterheadFile) {
+        data.append('letterhead', letterheadFile);
+      }
+
+      if (editId) {
+        await axios.put(`http://127.0.0.1:8000/api/firms/${editId}/`, data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        alert('Firm Updated Successfully!');
+      } else {
+        await axios.post('http://127.0.0.1:8000/api/firms/', data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        alert('Firm Saved Successfully!');
+      }
       setIsFormOpen(false);
+      setEditId(null);
       fetchFirms();
       // Reset
       setFormData({
@@ -69,10 +89,24 @@ export default function FirmMasterPage() {
         cin_no: '', pan_no: '', gst_no: '', tan_no: '',
         bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
       });
+      setLetterheadFile(null);
     } catch (error) {
       console.error("Error saving firm:", error);
       alert('Error saving data.');
     }
+  };
+
+  const handleEdit = (firm: any) => {
+    setFormData({
+      firm_name: firm.firm_name || '', title: firm.title || '', firm_no: firm.firm_no || '',
+      address: firm.address || '', city: firm.city || '', pincode: firm.pincode || '', state: firm.state || '',
+      tele_o: firm.tele_o || '', mobile: firm.mobile || '', email: firm.email || '', website: firm.website || '', contact_person: firm.contact_person || '',
+      cin_no: firm.cin_no || '', pan_no: firm.pan_no || '', gst_no: firm.gst_no || '', tan_no: firm.tan_no || '',
+      bank_name: firm.bank_name || '', branch: firm.branch || '', bank_ac_no: firm.bank_ac_no || '', ifsc_code: firm.ifsc_code || ''
+    });
+    setEditId(firm.id);
+    setIsFormOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Smart Filter Logic
@@ -107,7 +141,17 @@ export default function FirmMasterPage() {
       {isFormOpen && (
         <div className="neu-card p-8 mb-8 relative">
           <button 
-            onClick={() => setIsFormOpen(false)}
+            onClick={() => {
+              setIsFormOpen(false);
+              setEditId(null);
+              setFormData({
+                firm_name: '', title: '', firm_no: '',
+                address: '', city: '', pincode: '', state: '',
+                tele_o: '', mobile: '', email: '', website: '', contact_person: '',
+                cin_no: '', pan_no: '', gst_no: '', tan_no: '',
+                bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
+              });
+            }}
             className="absolute top-5 right-5 p-2 rounded-full transition-colors duration-150 cursor-pointer"
             style={{ color: "var(--cb-text-label)" }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--cb-danger)"; }}
@@ -124,7 +168,7 @@ export default function FirmMasterPage() {
               fontFamily: "var(--font-playfair-display), 'Playfair Display', serif",
             }}
           >
-            <Building2 size={20} style={{ color: "var(--cb-primary)" }}/> New Firm Details
+            <Building2 size={20} style={{ color: "var(--cb-primary)" }}/> {editId ? 'Edit Firm Details' : 'New Firm Details'}
           </h2>
           
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -140,8 +184,13 @@ export default function FirmMasterPage() {
                 <input name="firm_name" value={formData.firm_name} onChange={handleChange} className="neu-input" required />
               </div>
               <div className="col-span-2">
-                 <label className="neu-label">Firm No</label>
-                 <input name="firm_no" value={formData.firm_no} onChange={handleChange} className="neu-input" />
+                 <label className="neu-label">Letterhead Image</label>
+                 <input 
+                   type="file" 
+                   accept="image/*"
+                   onChange={(e) => setLetterheadFile(e.target.files ? e.target.files[0] : null)} 
+                   className="neu-input p-1" 
+                 />
               </div>
             </div>
 
@@ -230,11 +279,21 @@ export default function FirmMasterPage() {
 
             {/* Footer Buttons */}
             <div className="md:col-span-4 flex justify-end gap-4 mt-6 pt-6" style={{ borderTop: "1px solid var(--cb-divider)" }}>
-              <button type="button" onClick={() => setIsFormOpen(false)} className="neu-btn">
+              <button type="button" onClick={() => {
+                setIsFormOpen(false);
+                setEditId(null);
+                setFormData({
+                  firm_name: '', title: '', firm_no: '',
+                  address: '', city: '', pincode: '', state: '',
+                  tele_o: '', mobile: '', email: '', website: '', contact_person: '',
+                  cin_no: '', pan_no: '', gst_no: '', tan_no: '',
+                  bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
+                });
+              }} className="neu-btn">
                 Cancel
               </button>
               <button type="submit" className="neu-btn neu-btn-primary">
-                <Save size={18} /> Save Firm
+                <Save size={18} /> {editId ? 'Update Firm' : 'Save Firm'}
               </button>
             </div>
 
@@ -276,8 +335,8 @@ export default function FirmMasterPage() {
                   </td>
                   <td>{firm.mobile}</td>
                   <td className="text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="neu-btn" style={{ color: "var(--cb-primary)", padding: "0.35rem" }}>
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ opacity: 1 }}>
+                      <button onClick={() => handleEdit(firm)} className="neu-btn" style={{ color: "var(--cb-primary)", padding: "0.35rem" }}>
                         <Edit2 size={16} />
                       </button>
                     </div>

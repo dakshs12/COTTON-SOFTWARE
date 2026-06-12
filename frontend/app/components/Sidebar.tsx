@@ -20,8 +20,8 @@ const menuItems = [
   { 
     title: 'MASTER',
     items: [
-      { name: 'Party Master', path: '/master/party', icon: Users },
       { name: 'Firm Master', path: '/master/firm', icon: Building2 },
+      { name: 'Party Master', path: '/master/party', icon: Users },
     ]
   },
   {
@@ -53,7 +53,7 @@ export default function Sidebar() {
 
   return (
     <div
-      className="fixed left-0 top-0 h-screen overflow-y-auto flex flex-col z-50"
+      className="fixed left-0 top-0 h-screen overflow-y-auto flex flex-col z-50 print:hidden"
       style={{
         width: "var(--cb-sidebar-width)",
         background: "var(--cb-bg)",
