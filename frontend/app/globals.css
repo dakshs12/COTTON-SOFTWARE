@@ -79,6 +79,14 @@ body {
     print-color-adjust: exact;
     background: white;
   }
+  body > * {
+    display: none !important;
+  }
+  body > main {
+    display: block !important;
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
 }
 
 /* ============================================================

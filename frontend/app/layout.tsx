@@ -48,7 +48,9 @@ export default function RootLayout({
         </main>
 
         {/* Agentation visual feedback tool (development only) */}
-        {process.env.NODE_ENV === "development" && <Agentation />}
+        <div className="print:hidden">
+          {process.env.NODE_ENV === "development" && <Agentation />}
+        </div>
       </body>
     </html>
   );

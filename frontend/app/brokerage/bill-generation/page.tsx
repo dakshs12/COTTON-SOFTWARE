@@ -436,10 +436,17 @@ export default function BillGenerationPage() {
 
       {/* --- REAL PRINT TEMPLATE (Matches Image 2 Exactly) --- */}
       <div className="hidden print:block font-sans text-black bg-white">
-          <div className="w-full mx-auto min-h-[297mm] px-8 py-10 relative bg-white" style={{ fontFamily: "Arial, sans-serif" }}>
+          
+          {/* Watermark for all pages */}
+          <div className="fixed bottom-8 left-0 right-0 flex justify-center items-center gap-2 text-[10pt] font-bold text-gray-500 opacity-80 z-50" style={{ fontFamily: "var(--font-quicksand)" }}>
+             <FileText size={14} /> CottBook &bull; Software for Cotton Brokers
+          </div>
+
+          <div className="w-full mx-auto min-h-[280mm] px-8 pt-8 pb-4 relative bg-transparent flex flex-col z-10 box-border" style={{ fontFamily: "Arial, sans-serif" }}>
               
-              {/* Header / Letterhead Area */}
-              <div className="mb-8">
+              <div className="flex-1 pb-8">
+                  {/* Header / Letterhead Area */}
+                  <div className="mb-8">
                   {useLetterhead && selectedFirmObj?.letterhead ? (
                       <div className="w-full">
                           {/* We assume the uploaded letterhead is a banner image that spans the top */}
@@ -478,22 +485,22 @@ export default function BillGenerationPage() {
               </div>
 
               {/* Table */}
-              <table className="w-full text-sm mb-2" style={{ borderTop: "2px solid black", borderBottom: "1px dashed black" }}>
+              <table className="w-full mb-2" style={{ borderTop: "2px solid black", borderBottom: "1px dashed black", fontFamily: "'Courier New', monospace", fontSize: "11pt", tableLayout: "fixed" }}>
                   <thead>
                       <tr style={{ borderBottom: "1px solid black" }}>
-                          <th className="py-2 text-left font-bold">Name</th>
-                          <th className="py-2 text-center font-bold">Station</th>
-                          <th className="py-2 text-center font-bold">Bales</th>
-                          <th className="py-2 text-center font-bold">Lot No</th>
-                          <th className="py-2 text-center font-bold">Bill No</th>
-                          <th className="py-2 text-center font-bold">Bill Date</th>
-                          <th className="py-2 text-right font-bold">Rate</th>
+                          <th className="py-2 text-left font-bold" style={{ width: "38%" }}>Name</th>
+                          <th className="py-2 text-center font-bold" style={{ width: "12%" }}>Station</th>
+                          <th className="py-2 text-center font-bold" style={{ width: "8%" }}>Bales</th>
+                          <th className="py-2 text-center font-bold" style={{ width: "10%" }}>Lot No</th>
+                          <th className="py-2 text-center font-bold" style={{ width: "12%" }}>Bill No</th>
+                          <th className="py-2 text-center font-bold" style={{ width: "13%" }}>Bill Date</th>
+                          <th className="py-2 text-right font-bold" style={{ width: "7%" }}>Rate</th>
                       </tr>
                   </thead>
-                  <tbody className="font-mono">
+                  <tbody>
                       {selectedDeliveryItems.map((item, idx) => (
                           <tr key={item.id}>
-                              <td className="py-2 text-left">{item.counter_party}</td>
+                              <td className="py-2 text-left pr-2">{item.counter_party}</td>
                               <td className="py-2 text-center">{item.station}</td>
                               <td className="py-2 text-center">{item.bales}</td>
                               <td className="py-2 text-center">{item.lot_no || "-"}</td>
@@ -506,46 +513,64 @@ export default function BillGenerationPage() {
               </table>
 
               {/* Total Bales */}
-              <div className="text-center font-bold text-sm py-2 mb-6" style={{ borderBottom: "1px dashed black" }}>
-                  Total Bales : &nbsp;&nbsp;&nbsp;{totals.total_bales}
-              </div>
+              <table className="w-full mb-6" style={{ fontFamily: "'Courier New', monospace", fontSize: "11pt", borderBottom: "1px dashed #ccc" }}>
+                  <tbody>
+                      <tr>
+                          <td style={{ width: "50%" }} className="py-2 text-right font-bold">Total Bales :</td>
+                          <td style={{ width: "8%" }} className="py-2 text-center font-bold">{totals.total_bales}</td>
+                          <td style={{ width: "42%" }}></td>
+                      </tr>
+                  </tbody>
+              </table>
 
               {/* Calculations */}
-              <div className="w-2/3 text-sm font-mono leading-loose mb-6">
-                  <div className="flex justify-between">
-                      <span>Brokerage @{totals.rate}/- Per Bale</span>
-                      <span>Rs. {totals.gross_amount.toFixed(2)}</span>
-                  </div>
-                  {totals.igst > 0 ? (
-                      <div className="flex justify-between">
-                          <span>IGST @{totals.gst_percent}%</span>
-                          <span>Rs. {totals.igst.toFixed(2)}</span>
-                      </div>
-                  ) : (
-                      <>
-                          <div className="flex justify-between">
-                              <span>CGST @{totals.gst_percent / 2}%</span>
-                              <span>Rs. {totals.cgst.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                              <span>SGST @{totals.gst_percent / 2}%</span>
-                              <span>Rs. {totals.sgst.toFixed(2)}</span>
-                          </div>
-                      </>
-                  )}
-                  <div className="flex justify-between font-bold mt-2 pt-2" style={{ borderTop: "2px solid black", borderBottom: "2px solid black" }}>
-                      <span>Total Amount :</span>
-                      <span>Rs. {totals.net_amount.toFixed(2)}</span>
-                  </div>
-              </div>
-
-              {/* Amount in words */}
-              <div className="text-sm font-bold mb-16">
-                  Total Amount in Words: {totals.amount_in_words}
-              </div>
+              <table style={{ width: "100%", marginBottom: "20px" }}>
+                  <tbody>
+                      <tr>
+                          <td style={{ width: "60%", verticalAlign: "top" }}>
+                              <table style={{ width: "100%", fontSize: "11pt", fontFamily: "'Courier New', monospace", lineHeight: "2" }}>
+                                  <tbody>
+                                      <tr>
+                                          <td>Brokerage @{totals.rate}/- Per Bale</td>
+                                          <td className="text-right">Rs. {totals.gross_amount.toFixed(2)}</td>
+                                      </tr>
+                                      {totals.igst > 0 ? (
+                                          <tr>
+                                              <td>IGST @{totals.gst_percent}%</td>
+                                              <td className="text-right">Rs. {totals.igst.toFixed(2)}</td>
+                                          </tr>
+                                      ) : (
+                                          <>
+                                              <tr>
+                                                  <td>CGST @{totals.gst_percent / 2}%</td>
+                                                  <td className="text-right">Rs. {totals.cgst.toFixed(2)}</td>
+                                              </tr>
+                                              <tr>
+                                                  <td>SGST @{totals.gst_percent / 2}%</td>
+                                                  <td className="text-right">Rs. {totals.sgst.toFixed(2)}</td>
+                                              </tr>
+                                          </>
+                                      )}
+                                      <tr><td colSpan={2} style={{ borderTop: "3px double black" }}></td></tr>
+                                      <tr>
+                                          <td className="font-bold">Total Amount :</td>
+                                          <td className="text-right font-bold">Rs. {totals.net_amount.toFixed(2)}</td>
+                                      </tr>
+                                      <tr><td colSpan={2} style={{ borderTop: "3px double black" }}></td></tr>
+                                      <tr>
+                                          <td colSpan={2} className="font-bold pb-8">Total Amount in Words: {totals.amount_in_words}</td>
+                                      </tr>
+                                  </tbody>
+                              </table>
+                          </td>
+                          <td style={{ width: "40%" }}></td>
+                      </tr>
+                  </tbody>
+              </table>
+              </div> {/* End flex-1 wrapper */}
 
               {/* Footer */}
-              <div className="flex justify-between items-end text-sm pt-4" style={{ borderTop: "1px solid black" }}>
+              <div className="mt-auto flex justify-between items-end text-sm pt-4 relative z-10 bg-white" style={{ borderTop: "1px solid black" }}>
                   <div>
                       <p className="font-bold underline mb-1">Bank Details:</p>
                       <p className="font-bold">Bank: {selectedFirmObj?.bank_name}</p>

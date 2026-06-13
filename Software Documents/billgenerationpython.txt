@@ -1,0 +1,407 @@
+    def open_bill_generation(self):
+        """Creates the UI for the Brokerage Bill Generation."""
+        self.clear_main_frame()
+        self.header_label.config(text="Brokerage Bill Generation")
+        self.bill_gen_entries = {}
+
+        # --- Top frame for controls ---
+        top_frame = ttk.Frame(self.main_frame)
+        top_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        # ... (The entire controls_frame remains the same) ...
+        controls_frame = ttk.LabelFrame(top_frame, text="Bill Parameters")
+        controls_frame.pack(fill=tk.X)
+        ttk.Label(controls_frame, text="Party:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        party_frame = ttk.Frame(controls_frame)
+        party_frame.grid(row=0, column=1, padx=5, pady=5, sticky=tk.EW)
+        party_code_entry = ttk.Entry(party_frame, width=12)
+        party_code_entry.pack(side=tk.LEFT, padx=(0, 2))
+        party_name_entry = ttk.Entry(party_frame)
+        party_name_entry.pack(side=tk.LEFT, expand=True, fill=tk.X)
+        party_btn = ttk.Button(party_frame, text="...", width=3, 
+                               command=lambda: self.select_party_popup(party_name_entry, party_code_entry))
+        party_btn.pack(side=tk.LEFT, padx=(2, 0))
+        party_code_entry.bind("<Return>", lambda e: self._on_party_code_lookup(e, party_code_entry, party_name_entry))
+        party_code_entry.bind("<FocusOut>", lambda e: self._on_party_code_lookup(e, party_code_entry, party_name_entry))
+        self.bill_gen_entries['party_name'] = party_name_entry
+        ttk.Label(controls_frame, text="Firm:").grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
+        firm_combo = ttk.Combobox(controls_frame, width=25)
+        firm_combo['values'] = database.get_all_firm_names()
+        firm_combo.grid(row=0, column=3, padx=5, pady=5, sticky=tk.W)
+        self.bill_gen_entries['firm_name'] = firm_combo
+        header_var = tk.BooleanVar(value=True)
+        header_check = ttk.Checkbutton(controls_frame, text="With header", variable=header_var)
+        header_check.grid(row=0, column=4, padx=10, pady=5, sticky=tk.W)
+        self.bill_gen_entries['with_header'] = header_var
+        ttk.Label(controls_frame, text="From:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        from_date = DateEntry(controls_frame, width=12, date_pattern='dd-mm-yyyy')
+        from_date.grid(row=1, column=1, padx=5, pady=5, sticky=tk.EW)
+        self.bill_gen_entries['from_date'] = from_date
+        ttk.Label(controls_frame, text="To:").grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
+        to_date = DateEntry(controls_frame, width=12, date_pattern='dd-mm-yyyy')
+        to_date.grid(row=1, column=3, padx=5, pady=5, sticky=tk.EW)
+        self.bill_gen_entries['to_date'] = to_date
+        ttk.Label(controls_frame, text="Rate:").grid(row=1, column=4, padx=5, pady=5, sticky=tk.W)
+        rate_entry = ttk.Entry(controls_frame, width=10)
+        rate_entry.grid(row=1, column=5, padx=5, pady=5, sticky=tk.W)
+        self.bill_gen_entries['rate'] = rate_entry
+        ttk.Label(controls_frame, text="Bill No:").grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+        bill_no_entry = ttk.Entry(controls_frame, width=15)
+        bill_no_entry.insert(0, database.get_next_bill_no())
+        bill_no_entry.config(state='readonly')
+        bill_no_entry.grid(row=2, column=1, padx=5, pady=5, sticky=tk.EW)
+        self.bill_gen_entries['bill_no'] = bill_no_entry
+        ttk.Label(controls_frame, text="Bill Date:").grid(row=2, column=2, padx=5, pady=5, sticky=tk.W)
+        bill_date = DateEntry(controls_frame, width=12, date_pattern='dd-mm-yyyy')
+        bill_date.grid(row=2, column=3, padx=5, pady=5, sticky=tk.EW)
+        self.bill_gen_entries['bill_date'] = bill_date
+        ttk.Label(controls_frame, text="GST %:").grid(row=2, column=4, padx=5, pady=5, sticky=tk.W)
+        gst_entry = ttk.Entry(controls_frame, width=10)
+        gst_entry.grid(row=2, column=5, padx=5, pady=5, sticky=tk.W)
+        self.bill_gen_entries['gst_percent'] = gst_entry
+        controls_frame.columnconfigure(1, weight=1)
+        controls_frame.columnconfigure(3, weight=1)
+
+        # --- Action Buttons ---
+        button_frame = ttk.Frame(top_frame)
+        button_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
+        generate_btn = ttk.Button(button_frame, text="Generate", command=self.generate_bill_preview)
+        generate_btn.pack(side=tk.LEFT)
+        print_btn = ttk.Button(button_frame, text="Print", command=self.print_bill)
+        print_btn.pack(side=tk.LEFT, padx=10)
+
+        # --- Bill Display Area ---
+        # A master frame with a white background to look like a single page
+        bill_page_frame = tk.Frame(self.main_frame, bg="white", relief=tk.SUNKEN, borderwidth=1)
+        bill_page_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        bill_page_frame.grid_columnconfigure(0, weight=1) # Make the single column expandable
+
+        # Create a dedicated header frame (will be shown/hidden)
+        self.bill_header_frame = tk.Frame(bill_page_frame, bg='white')
+        self.bill_header_frame.grid(row=0, column=0, sticky="ew")
+        self.bill_header_frame.grid_remove() # Start hidden
+
+        # Create a blank frame for spacing (will be shown/hidden)
+        # 4.5 cm is approx 170 pixels
+        self.blank_header_space = tk.Frame(bill_page_frame, bg='white', height=170)
+        self.blank_header_space.grid(row=0, column=0, sticky="ew")
+        self.blank_header_space.grid_remove() # Start hidden
+
+        # The header has two columns: text on the left, logo on the right
+        self.bill_header_frame.columnconfigure(0, weight=1) # Allow text column to expand
+        header_text_frame = tk.Frame(self.bill_header_frame, bg='white')
+        header_text_frame.grid(row=0, column=0, sticky="nw", padx=10)
+        header_logo_frame = tk.Frame(self.bill_header_frame, bg='white')
+        header_logo_frame.grid(row=0, column=1, sticky="ne", padx=10)
+
+        self.bill_header_labels = {
+            'firm_name': tk.Label(header_text_frame, font=("Times New Roman", 16, "bold"), foreground="#8B0000", bg='white'),
+            'tagline': tk.Label(header_text_frame, font=("Arial", 11, "bold"), bg='white'),
+            'address': tk.Label(header_text_frame, font=("Arial", 10), bg='white'),
+            'contact': tk.Label(header_text_frame, font=("Arial", 10), bg='white'),
+            'cin': tk.Label(header_text_frame, font=("Arial", 10), bg='white'),
+            'gst': tk.Label(header_text_frame, font=("Arial", 10, "bold"), bg='white'),
+            'pan': tk.Label(header_text_frame, font=("Arial", 10, "bold"), bg='white'),
+            'logo': tk.Label(header_logo_frame, bg='white')
+        }
+        for key, label in self.bill_header_labels.items():
+            if key != 'logo': label.pack(anchor=tk.W)
+        self.bill_header_labels['logo'].pack()
+
+        # Create a separator that we can show/hide
+        self.header_separator = ttk.Separator(bill_page_frame, orient='horizontal')
+        self.header_separator.grid(row=1, column=0, sticky="ew", pady=5)
+        self.header_separator.grid_remove() # Start hidden
+
+        # Main scrollable text area for the bill items
+        bill_text = tk.Text(bill_page_frame, wrap=tk.WORD, font=("Courier New", 12), borderwidth=0, highlightthickness=0)
+        bill_text.grid(row=2, column=0, sticky="nsew")
+        self.bill_gen_entries['bill_display_area'] = bill_text
+
+        # Make the text area row expand to fill space
+        bill_page_frame.grid_rowconfigure(2, weight=1)        
+
+
+    def print_bill(self):
+        """Saves the bill to the database, then generates a final HTML version
+        and opens it in a web browser for printing."""
+        
+        # --- 1. Get all inputs and fetch data ---
+        try:
+            party_name = self.bill_gen_entries['party_name'].get().strip()
+            firm_name = self.bill_gen_entries['firm_name'].get().strip()
+            from_date = self.bill_gen_entries['from_date'].get_date().strftime('%Y-%m-%d')
+            to_date = self.bill_gen_entries['to_date'].get_date().strftime('%Y-%m-%d')
+            bill_date_db = self.bill_gen_entries['bill_date'].get_date().strftime('%Y-%m-%d')
+            bill_date_str = self.bill_gen_entries['bill_date'].get_date().strftime('%d-%m-%Y')
+            bill_no = self.bill_gen_entries['bill_no'].get().strip()
+            brokerage_rate = float(self.bill_gen_entries['rate'].get())
+            gst_percent = float(self.bill_gen_entries['gst_percent'].get())
+            with_header = self.bill_gen_entries['with_header'].get()
+        except (ValueError, AttributeError):
+            messagebox.showwarning("No Content", "Please generate a bill first before printing."); return
+        
+        firm_data = database.get_firm_by_name(firm_name)
+        party_data = database.get_party_by_name(party_name)
+        records = database.get_deliveries_for_billing(party_name, from_date, to_date)
+        if not all([firm_data, party_data, records]):
+            messagebox.showwarning("No Data", "No delivery records found for the selected party and date range."); return
+
+        # --- 2. Calculations ---
+        total_bales = sum(int(r['bales']) for r in records if r['bales'])
+        brokerage_amount = total_bales * brokerage_rate
+        cgst_percent, sgst_percent, igst_percent = 0,0,0
+        cgst_amount, sgst_amount, igst_amount = 0,0,0
+        if firm_data['state'].strip().lower() == party_data['state'].strip().lower():
+            cgst_percent = gst_percent / 2; sgst_percent = gst_percent / 2
+            cgst_amount = brokerage_amount * (cgst_percent / 100)
+            sgst_amount = brokerage_amount * (sgst_percent / 100)
+        else:
+            igst_percent = gst_percent
+            igst_amount = brokerage_amount * (igst_percent / 100)
+        total_amount = brokerage_amount + cgst_amount + sgst_amount + igst_amount
+        amount_in_words = num2words(total_amount, lang='en_IN').title() + " Only"
+
+        # --- 3. Save the Bill to the Database ---
+        bill_summary_data = {
+            'bill_no': bill_no, 'bill_date': bill_date_db, 'party_name': party_name,
+            'firm_name': firm_name, 'from_date': from_date, 'to_date': to_date,
+            'brokerage_rate': brokerage_rate, 'total_bales': total_bales,
+            'brokerage_amount': brokerage_amount, 'cgst_percent': cgst_percent,
+            'sgst_percent': sgst_percent, 'cgst_amount': cgst_amount,
+            'sgst_amount': sgst_amount, 'total_amount': total_amount
+        }
+        database.save_brokerage_bill(bill_summary_data, records)
+        messagebox.showinfo("Success", f"Bill No. {bill_no} has been saved successfully.")
+
+        # --- 4. Build the HTML String for Printing ---
+        html = f"""
+        <html><head><title>Brokerage Bill - {bill_no}</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; font-size: 11pt; display: flex; flex-direction: column; min-height: 95vh; }}
+            .content-wrapper {{ flex: 1; }} .header-container {{ overflow: auto; padding-bottom: 10px; }}
+            .header-text {{ float: left; width: 75%; }} .header-logo {{ float: right; width: 25%; text-align: right; }}
+            .header-logo img {{ width: 135px; height: 135px; }}
+            table {{ width: 100%; border-collapse: collapse; font-family: 'Courier New', monospace; table-layout: fixed; font-size: 10pt; }}
+            th, td {{ padding: 2px; text-align: left; vertical-align: top; word-wrap: break-word; }}
+            .underline {{ border-bottom: 1px solid black; }}
+            .text-right {{ text-align: right; }} .text-center {{ text-align: center; }}
+            .bold {{ font-weight: bold; }}
+            .footer {{ width: 100%; overflow: auto; font-size: 9pt; padding-top: 10px; border-top: 1px solid #ccc; }}
+        </style></head><body><div class="content-wrapper">
+        """
+
+        if with_header:
+            html += f"""
+            <div class="header-container">
+                <div class="header-logo"><img src="file:///{self.logo_path}" alt="Logo"></div>
+                <div class="header-text">
+                    <div style="font-size: 1.5em; color: #8B0000;" class="bold">{firm_data['firm_name'].upper()}</div>
+                    <div class="bold">Cotton Broker & Commission Agent</div>
+                    <div>{firm_data['address']}, {firm_data['city']} - {firm_data['pin_code']}(MP)</div>
+                    <div>Tel. {firm_data['tele_o']} Email: {firm_data['email']}</div>
+                    <div>CIN: {firm_data['cin_no']}</div>
+                    <div class="bold">GST: {firm_data['gst_no']}</div>
+                    <div class="bold">PAN: {firm_data['pan_no']}</div>
+                </div></div><hr>"""
+        else:
+            html += '<div style="height: 170px;"></div>'
+
+        html += f"""
+        <p><span class="bold">To,</span><br><span class="bold">M/s. {party_data['company_name']}, {party_data['station']}</span><br>
+           <span class="bold">(GST No.: {party_data['gst_no']})</span><br>
+           <span class="bold">Bill No.: {bill_no}</span><span class="bold" style="float: right;">Date: {bill_date_str}</span>
+        </p><hr style="border-style: double;">"""
+        
+        html += """
+        <table>
+            <thead><tr class="underline">
+                <th style="width:38%;">Name</th><th style="width:12%;">Station</th>
+                <th class="text-center" style="width:8%;">Bales</th><th class="text-center" style="width:10%;">Lot No</th>
+                <th class="text-center" style="width:12%;">Bill No</th><th class="text-center" style="width:13%;">Bill Date</th>
+                <th class="text-right" style="width:7%;">Rate</th>
+            </tr></thead><tbody>"""
+        for r in records:
+            bill_date_formatted = datetime.strptime(r['bill_date'], '%Y-%m-%d').strftime('%d-%m-%Y')
+            html += f"""
+            <tr><td>{r['other_party_name']}</td><td>{r['station']}</td>
+                <td class="text-center">{r['bales']}</td><td class="text-center">{r['lot_no'] or ''}</td>
+                <td class="text-center">{r['bill_no']}</td><td class="text-center">{bill_date_formatted}</td>
+                <td class="text-right">{r['rate']}</td></tr>"""
+        html += f"""
+            </tbody><tfoot>
+                <tr><td colspan="7" style="border-bottom: 1px solid black;"></td></tr>
+                <tr>
+                    <td colspan="2" class="text-right bold">Total Bales :</td>
+                    <td class="text-center bold">{total_bales}</td>
+                    <td colspan="4"></td>
+                </tr></tfoot></table>"""
+        
+        html += '<hr style="border-style: dashed; border-color: #ccc; margin-top: 10px; margin-bottom: 10px;">'
+
+        html += f"""
+        <table style="width: 100%;"><tr><td style="width: 60%;">
+            <table style="font-size: 11pt;">
+                <tr><td>Brokerage @{int(brokerage_rate)}/- Per Bale</td><td class="text-right">Rs. {brokerage_amount:,.2f}</td></tr>"""
+        if igst_amount > 0:
+            html += f'<tr><td>IGST @{int(igst_percent)}%</td><td class="text-right">Rs. {igst_amount:,.2f}</td></tr>'
+        else:
+            html += f'<tr><td>CGST @{int(cgst_percent)}%</td><td class="text-right">Rs. {cgst_amount:,.2f}</td></tr>'
+            html += f'<tr><td>SGST @{int(sgst_percent)}%</td><td class="text-right">Rs. {sgst_amount:,.2f}</td></tr>'
+        html += '<tr><td colspan="2"><hr style="border-style: double;"></td></tr>'
+        html += f'<tr><td class="bold">Total Amount :</td><td class="text-right bold">Rs. {total_amount:,.2f}</td></tr>'
+        html += '<tr><td colspan="2"><hr style="border-style: double;"></td></tr>'
+        html += f'<tr><td colspan="2" class="bold">Total Amount in Words: {amount_in_words}</td></tr>'
+        html += "</table></td><td style='width: 40%;'></td></tr></table>"
+        
+        html += "</div>"
+
+        html += f"""
+        <div class="footer">
+            <div class="bold" style="padding-bottom:15px;">
+                Bank Details:<br>
+                Bank: {firm_data['bank_name']}<br>Branch: {firm_data['branch']}<br>
+                A/c No: {firm_data['bank_ac_no']}<br>IFSC: {firm_data['ifsc_code']}
+            </div>
+            <span style="float: left;">E & O.E (Subject to Indore Jurisdiction)</span>
+            <span style="float: right;" class="bold">For: {firm_data['firm_name']}</span>
+        </div></body></html>"""
+
+        # --- 5. Save and Open the HTML file ---
+        try:
+            file_path = os.path.join(os.path.expanduser("~"), "bill_preview.html")
+            with open(file_path, "w", encoding="utf-8") as f: f.write(html)
+            webbrowser.open(f"file://{os.path.realpath(file_path)}")
+
+            # Refresh the Bill No on the form for the next entry
+            next_bill_no = database.get_next_bill_no()
+            bill_no_widget = self.bill_gen_entries['bill_no']
+            bill_no_widget.config(state='normal')
+            bill_no_widget.delete(0, tk.END)
+            bill_no_widget.insert(0, next_bill_no)
+            bill_no_widget.config(state='readonly')
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not generate file for printing: {e}")
+
+
+    def generate_bill_preview(self):
+        """Fetches data, performs calculations, and displays the formatted bill."""
+        
+        # --- 1. Get Inputs & 2. Fetch Data ---
+        try:
+            party_name = self.bill_gen_entries['party_name'].get().strip()
+            firm_name = self.bill_gen_entries['firm_name'].get().strip()
+            from_date = self.bill_gen_entries['from_date'].get_date().strftime('%Y-%m-%d')
+            to_date = self.bill_gen_entries['to_date'].get_date().strftime('%Y-%m-%d')
+            bill_date_str = self.bill_gen_entries['bill_date'].get_date().strftime('%d-%m-%Y')
+            bill_no = self.bill_gen_entries['bill_no'].get().strip()
+            brokerage_rate = float(self.bill_gen_entries['rate'].get())
+            gst_percent = float(self.bill_gen_entries['gst_percent'].get())
+            with_header = self.bill_gen_entries['with_header'].get()
+        except (ValueError, AttributeError) as e:
+            messagebox.showerror("Input Error", f"Please fill all fields correctly. Invalid input: {e}"); return
+        if not all([party_name, firm_name, from_date, to_date, bill_no]):
+            messagebox.showerror("Input Error", "Party, Firm, Dates, and Bill No. are required."); return
+        
+        firm_data = database.get_firm_by_name(firm_name)
+        party_data = database.get_party_by_name(party_name)
+        records = database.get_deliveries_for_billing(party_name, from_date, to_date)
+        if not firm_data: messagebox.showerror("Error", f"Could not find details for firm: {firm_name}"); return
+        if not party_data: messagebox.showerror("Error", f"Could not find details for party: {party_name}"); return
+
+        # --- 3. Calculations ---
+        total_bales = sum(int(r['bales']) for r in records if r['bales'])
+        brokerage_amount = total_bales * brokerage_rate
+        cgst_percent, sgst_percent, igst_percent = 0, 0, 0
+        cgst_amount, sgst_amount, igst_amount = 0, 0, 0
+        
+        if firm_data['state'].strip().lower() == party_data['state'].strip().lower():
+            cgst_percent = gst_percent / 2
+            sgst_percent = gst_percent / 2
+            cgst_amount = brokerage_amount * (cgst_percent / 100)
+            sgst_amount = brokerage_amount * (sgst_percent / 100)
+        else:
+            igst_percent = gst_percent
+            igst_amount = brokerage_amount * (igst_percent / 100)
+            
+        total_amount = brokerage_amount + cgst_amount + sgst_amount + igst_amount
+        amount_in_words = num2words(total_amount, lang='en_IN').title() + " Only"
+
+        # --- 4. Prepare and draw the entire bill ---
+        bill_display = self.bill_gen_entries['bill_display_area']
+        
+        if with_header:
+            self.bill_header_frame.grid()
+            self.header_separator.grid()
+            self.blank_header_space.grid_remove()
+            self.bill_header_labels['firm_name'].config(text=firm_data['firm_name'].upper())
+            self.bill_header_labels['tagline'].config(text="Cotton Broker & Commission Agent")
+            self.bill_header_labels['address'].config(text=f"{firm_data['address']}, {firm_data['city']} - {firm_data['pin_code']}(MP)")
+            self.bill_header_labels['contact'].config(text=f"Tel. {firm_data['tele_o']} Email: {firm_data['email']}")
+            self.bill_header_labels['cin'].config(text=f"CIN: {firm_data['cin_no']}")
+            self.bill_header_labels['gst'].config(text=f"GST: {firm_data['gst_no']}")
+            self.bill_header_labels['pan'].config(text=f"PAN: {firm_data['pan_no']}")
+            self.bill_header_labels['logo'].config(image=self.logo_tk_image)
+        else:
+            self.bill_header_frame.grid_remove()
+            self.header_separator.grid_remove()
+            self.blank_header_space.grid()
+
+        bill_display.config(state='normal')
+        bill_display.delete('1.0', tk.END)
+
+        # --- Bill Info, Bargain List, and Summary ---
+        bill_display.tag_configure('bold', font=('Courier New', 12, 'bold'))
+        bill_display.tag_configure('underline', underline=True)
+        bill_display.tag_configure('date_line', justify='right')
+        
+        bill_display.insert(tk.END, "To,\n", 'bold')
+        bill_display.insert(tk.END, f"M/s. {party_data['company_name']}, {party_data['station']}\n", ('bold'))
+        bill_display.insert(tk.END, f"(GST No.: {party_data['gst_no']})\n", 'bold')
+        bill_display.insert(tk.END, f"Bill No.: {bill_no}\n", ('bold'))
+        bill_display.insert(tk.END, f"Date: {bill_date_str}\n\n", ('date_line', 'bold'))
+        
+        width = 90
+        
+        # Cleaner single-line format for the item list
+        bill_display.insert(tk.END, "="*width + "\n")
+        bill_display.insert(tk.END, "{:<30} {:<20} {:>8} {:>10} {:>10} {:>12} {:>10}\n".format(
+            "Name", "Station", "Bales", "Lot No", "Bill No", "Bill Date", "Rate"), 'underline')
+        for r in records:
+            bill_date_formatted = datetime.strptime(r['bill_date'], '%Y-%m-%d').strftime('%d-%m-%Y')
+            line = "{:<30} {:<20} {:>8} {:>10} {:>10} {:>12} {:>10}\n".format(
+                r['other_party_name'][:28], r['station'][:18], r['bales'],
+                r['lot_no'] or '', r['bill_no'], bill_date_formatted, r['rate'])
+            bill_display.insert(tk.END, line)
+        bill_display.insert(tk.END, "-"*width + "\n")
+        
+        # Correctly aligned Total Bales
+        total_bales_format = "{:<52}{:>8}\n\n".format("Total Bales :", total_bales)
+        bill_display.insert(tk.END, total_bales_format, 'bold')
+        
+        # --- Summary ---
+        summary_line = "{:<35} {:>25}\n"
+        bill_display.insert(tk.END, summary_line.format(f"Brokerage @{int(brokerage_rate)}/- Per Bale", f"Rs. {brokerage_amount:,.2f}"), 'bold')
+        if igst_amount > 0:
+            bill_display.insert(tk.END, summary_line.format(f"IGST @{int(igst_percent)}%", f"Rs. {igst_amount:,.2f}"), 'bold')
+        else:
+            bill_display.insert(tk.END, summary_line.format(f"CGST @{int(cgst_percent)}%", f"Rs. {cgst_amount:,.2f}"), 'bold')
+            bill_display.insert(tk.END, summary_line.format(f"SGST @{int(sgst_percent)}%", f"Rs. {sgst_amount:,.2f}"), 'bold')
+        bill_display.insert(tk.END, "="*width + "\n")
+        bill_display.insert(tk.END, summary_line.format("Total Amount :", f"Rs. {total_amount:,.2f}"), 'bold')
+        bill_display.insert(tk.END, "="*width + "\n\n")
+        
+        bill_display.insert(tk.END, f"Total Amount in Words: {amount_in_words}\n\n\n", 'bold')
+
+        # --- Bank Details & Footer ---
+        bank_details = (f"Bank: {firm_data['bank_name']}\n"
+            f"Branch: {firm_data['branch']}\n"
+            f"A/c No: {firm_data['bank_ac_no']}\n"
+            f"IFSC: {firm_data['ifsc_code']}")
+        bill_display.insert(tk.END, bank_details, 'bold')
+        bill_display.tag_configure('footer_line', tabs=(f"{width-20}c", 'right'))
+        footer_text = f"E & O.E (Subject to Indore Jurisdiction)\tFor: {firm_data['firm_name']}"
+        bill_display.insert(tk.END, f"\n\n\n{footer_text}", ('bold', 'footer_line'))
+        
+        bill_display.config(state='disabled')
