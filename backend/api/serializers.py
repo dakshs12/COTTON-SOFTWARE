@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from .models import PartyMaster, FirmMaster, BargainEntry, PassingEntry, DeliveryDetails
+from .models import (
+    PartyMaster, FirmMaster, BargainEntry, PassingEntry, DeliveryDetails,
+    BrokerageBill, PartyPaymentReceipt, PaymentAllocation
+)
 
 class PartyMasterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -40,4 +43,28 @@ class DeliveryDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DeliveryDetails
+        fields = '__all__'
+
+class BrokerageBillSerializer(serializers.ModelSerializer):
+    party_name = serializers.CharField(source='party.company_name', read_only=True)
+    firm_name = serializers.CharField(source='firm.firm_name', read_only=True)
+    balance_due = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BrokerageBill
+        fields = '__all__'
+
+    def get_balance_due(self, obj):
+        return obj.net_amount - obj.amount_paid
+
+class PartyPaymentReceiptSerializer(serializers.ModelSerializer):
+    party_name = serializers.CharField(source='party.company_name', read_only=True)
+
+    class Meta:
+        model = PartyPaymentReceipt
+        fields = '__all__'
+
+class PaymentAllocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentAllocation
         fields = '__all__'

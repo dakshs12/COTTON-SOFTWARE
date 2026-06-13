@@ -183,3 +183,126 @@ def get_dashboard_analytics(request):
         })
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+
+# --- DUE LIST & PAYMENTS ---
+
+@api_view(['GET'])
+def get_party_dues(request):
+    """
+    Returns a list of all parties that have outstanding balances,
+    along with their total due amount and number of unpaid bills.
+    """
+    # Filter bills that are not fully paid
+    unpaid_bills = BrokerageBill.objects.filter(is_paid=False)
+    
+    # Aggregate dues grouped by Party
+    from django.db.models import Sum, F, Count
+    party_dues = (
+        unpaid_bills.values('party__id', 'party__company_name')
+        .annotate(
+            total_net=Sum('net_amount'),
+            total_paid=Sum('amount_paid'),
+            balance_due=Sum(F('net_amount') - F('amount_paid')),
+            bill_count=Count('id')
+        )
+        .order_by('-balance_due')
+    )
+    
+    data = []
+    for pd in party_dues:
+        data.append({
+            "party_id": pd['party__id'],
+            "company_name": pd['party__company_name'],
+            "balance_due": float(pd['balance_due']),
+            "bill_count": pd['bill_count']
+        })
+        
+    return Response(data)
+
+@api_view(['GET'])
+def get_party_due_bills(request, party_id):
+    """
+    Returns the list of specific unpaid bills for a single party.
+    """
+    bills = BrokerageBill.objects.filter(party_id=party_id, is_paid=False).order_by('bill_date')
+    serializer = BrokerageBillSerializer(bills, many=True)
+    return Response(serializer.data)
+
+from django.db import transaction
+
+@api_view(['POST'])
+def receive_party_payment(request):
+    """
+    Receives a lump-sum payment and allocates it to specified bills.
+    Expects:
+    {
+        "party_id": 1,
+        "amount": 155000,
+        "payment_mode": "NEFT",
+        "receipt_date": "2026-06-13",
+        "reference_no": "UPI123456",
+        "remarks": "",
+        "allocations": [
+            {"bill_id": 10, "allocated_amount": 50000},
+            {"bill_id": 11, "allocated_amount": 105000}
+        ]
+    }
+    """
+    from decimal import Decimal
+    data = request.data
+    party_id = data.get('party_id')
+    amount = Decimal(str(data.get('amount', '0')))
+    allocations = data.get('allocations', [])
+    
+    try:
+        with transaction.atomic():
+            party = PartyMaster.objects.get(id=party_id)
+            
+            # 1. Create the Receipt
+            receipt = PartyPaymentReceipt.objects.create(
+                party=party,
+                receipt_date=data.get('receipt_date'),
+                amount=amount,
+                payment_mode=data.get('payment_mode', 'Unknown'),
+                reference_no=data.get('reference_no', ''),
+                remarks=data.get('remarks', '')
+            )
+            
+            # 2. Process Allocations
+            total_allocated = Decimal('0.0')
+            for alloc in allocations:
+                bill_id = alloc['bill_id']
+                alloc_amount = Decimal(str(alloc['allocated_amount']))
+                
+                if alloc_amount <= 0:
+                    continue
+                    
+                bill = BrokerageBill.objects.select_for_update().get(id=bill_id, party=party)
+                
+                # Create allocation record
+                PaymentAllocation.objects.create(
+                    receipt=receipt,
+                    bill=bill,
+                    allocated_amount=alloc_amount
+                )
+                
+                # Update Bill
+                bill.amount_paid += alloc_amount
+                
+                # Check if fully paid (allow 1 Rupee rounding tolerance if needed, but exact is better)
+                if bill.amount_paid >= bill.net_amount:
+                    bill.is_paid = True
+                    # Cap amount_paid to net_amount to prevent negative balance display, though in accounting they might have advance.
+                    # We'll allow exact capping for now.
+                    
+                bill.save()
+                total_allocated += alloc_amount
+                
+            # Validations
+            if total_allocated > amount:
+                raise ValueError("Total allocated amount exceeds receipt amount!")
+                
+        return Response({"message": "Payment recorded and allocated successfully!"})
+    
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)

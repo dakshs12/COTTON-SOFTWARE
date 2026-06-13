@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid } from 'recharts';
-import { Briefcase, Package, Activity, DollarSign } from 'lucide-react';
+import { Briefcase, Package, Activity, IndianRupee } from 'lucide-react';
 
 interface DashboardData {
   kpi: {
@@ -18,16 +18,21 @@ interface DashboardData {
 
 export default function Home() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [partyDues, setPartyDues] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/api/analytics/dashboard/')
-      .then((response) => {
-        setData(response.data);
+    Promise.all([
+      axios.get('http://127.0.0.1:8000/api/analytics/dashboard/'),
+      axios.get('http://127.0.0.1:8000/api/brokerage/party-dues/')
+    ])
+      .then(([analyticsRes, duesRes]) => {
+        setData(analyticsRes.data);
+        setPartyDues(duesRes.data);
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Error fetching analytics:", error);
+        console.error("Error fetching dashboard data:", error);
         setLoading(false);
       });
   }, []);
@@ -64,7 +69,7 @@ export default function Home() {
         <div className="space-y-8">
           
           {/* KPI Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             
             {/* KPI 1 */}
             <div className="neu-card p-6 flex flex-col justify-between" style={{ borderRadius: "16px" }}>
@@ -96,28 +101,13 @@ export default function Home() {
               </div>
             </div>
 
-            {/* KPI 3 */}
-            <div className="neu-card p-6 flex flex-col justify-between" style={{ borderRadius: "16px" }}>
-              <div className="flex justify-between items-start mb-4">
-                <span className="text-sm font-bold tracking-wider uppercase" style={{ color: "var(--cb-text-label)", fontFamily: "var(--font-quicksand)" }}>Pending Bales</span>
-                <div className="p-2 rounded-full" style={{ background: "var(--cb-bg)", boxShadow: "var(--cb-shadow-sm)" }}>
-                  <Activity size={20} style={{ color: "var(--cb-warning)" }} />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-3xl font-bold" style={{ color: "var(--cb-text-heading)", fontFamily: "var(--font-playfair-display)" }}>
-                  {data.kpi.total_pending_bales.toLocaleString('en-IN')}
-                </h3>
-                <p className="text-xs mt-1" style={{ color: "var(--cb-text-label)" }}>Unbilled Deliveries</p>
-              </div>
-            </div>
 
             {/* KPI 4 */}
             <div className="neu-card p-6 flex flex-col justify-between" style={{ borderRadius: "16px" }}>
               <div className="flex justify-between items-start mb-4">
                 <span className="text-sm font-bold tracking-wider uppercase" style={{ color: "var(--cb-text-label)", fontFamily: "var(--font-quicksand)" }}>Total Brokerage</span>
                 <div className="p-2 rounded-full" style={{ background: "var(--cb-bg)", boxShadow: "var(--cb-shadow-sm)" }}>
-                  <DollarSign size={20} style={{ color: "var(--cb-success)" }} />
+                  <IndianRupee size={20} style={{ color: "var(--cb-success)" }} />
                 </div>
               </div>
               <div>
@@ -186,6 +176,46 @@ export default function Home() {
                     <Bar dataKey="total_bales" fill="var(--cb-secondary)" radius={[0, 4, 4, 0]} barSize={24} />
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Third Row: Outstanding Dues */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Outstanding Dues */}
+            <div className="neu-card p-6" style={{ borderRadius: "16px" }}>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold" style={{ color: "var(--cb-text-heading)", fontFamily: "var(--font-playfair-display)" }}>
+                  Outstanding Dues
+                </h3>
+                <span className="text-sm font-bold text-red-500 bg-red-50 px-3 py-1 rounded-full">
+                  Action Required
+                </span>
+              </div>
+              <div className="space-y-4">
+                {partyDues.slice(0, 5).map((party, i) => (
+                  <div key={party.party_id} className="flex justify-between items-center p-3 hover:bg-gray-50 rounded-xl transition-colors border border-transparent hover:border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-sm">
+                        {i + 1}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-800">{party.company_name}</h4>
+                        <p className="text-xs text-gray-500">{party.bill_count} Unpaid Bills</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-bold text-red-500 block">
+                        ₹ {party.balance_due.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {partyDues.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">No outstanding dues! 🎉</p>
+                )}
               </div>
             </div>
 

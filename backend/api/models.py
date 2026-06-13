@@ -185,6 +185,30 @@ class BrokerageBill(models.Model):
     
     net_amount = models.DecimalField(max_digits=12, decimal_places=2) # Final Amount
     amount_in_words = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Payment Tracking
+    amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    is_paid = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Brokerage Bill #{self.bill_no}"
+
+class PartyPaymentReceipt(models.Model):
+    party = models.ForeignKey(PartyMaster, on_delete=models.CASCADE, related_name='payments')
+    receipt_date = models.DateField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_mode = models.CharField(max_length=50) # Cash, NEFT, Cheque, RTGS, UPI
+    reference_no = models.CharField(max_length=100, blank=True, null=True)
+    remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Receipt {self.id} - {self.party.company_name} - {self.amount}"
+
+class PaymentAllocation(models.Model):
+    receipt = models.ForeignKey(PartyPaymentReceipt, on_delete=models.CASCADE, related_name='allocations')
+    bill = models.ForeignKey(BrokerageBill, on_delete=models.CASCADE, related_name='allocations')
+    allocated_amount = models.DecimalField(max_digits=12, decimal_places=2)
+
+    def __str__(self):
+        return f"Allocation {self.id}: {self.allocated_amount} to Bill #{self.bill.bill_no}"
