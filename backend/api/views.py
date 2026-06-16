@@ -306,3 +306,66 @@ def receive_party_payment(request):
     
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+
+@api_view(['GET'])
+def get_party_statement(request, party_id):
+    try:
+        from datetime import datetime
+        party = PartyMaster.objects.get(id=party_id)
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        bills_query = BrokerageBill.objects.filter(party=party)
+        payments_query = PartyPaymentReceipt.objects.filter(party=party)
+
+        if start_date:
+            bills_query = bills_query.filter(bill_date__gte=start_date)
+            payments_query = payments_query.filter(receipt_date__gte=start_date)
+        if end_date:
+            bills_query = bills_query.filter(bill_date__lte=end_date)
+            payments_query = payments_query.filter(receipt_date__lte=end_date)
+
+        transactions = []
+        
+        # Debits (Bills)
+        for bill in bills_query:
+            transactions.append({
+                "date": str(bill.bill_date),
+                "type": "Bill",
+                "ref_no": bill.bill_no,
+                "particulars": f"Brokerage Bill #{bill.bill_no} ({bill.total_bales} Bales)",
+                "debit": float(bill.net_amount),
+                "credit": 0.0
+            })
+            
+        # Credits (Payments)
+        for pay in payments_query:
+            transactions.append({
+                "date": str(pay.receipt_date),
+                "type": "Payment",
+                "ref_no": pay.reference_no or str(pay.id),
+                "particulars": f"Payment Received - {pay.payment_mode}",
+                "debit": 0.0,
+                "credit": float(pay.amount)
+            })
+
+        # Sort chronologically
+        transactions.sort(key=lambda x: x['date'])
+
+        # Calculate Running Balance
+        running_balance = 0.0
+        for tx in transactions:
+            running_balance += tx['debit'] - tx['credit']
+            tx['balance'] = running_balance
+
+        return Response({
+            "party": {
+                "id": party.id,
+                "company_name": party.company_name,
+                "station": party.station
+            },
+            "transactions": transactions,
+            "closing_balance": running_balance
+        })
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)

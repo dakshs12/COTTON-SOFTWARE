@@ -16,6 +16,7 @@ class PartyMaster(models.Model):
     station = models.CharField(max_length=100)
     address = models.TextField()
     state = models.CharField(max_length=100)
+    pincode = models.CharField(max_length=20, blank=True, null=True)
     party_type = models.CharField(max_length=20, choices=PARTY_TYPES)
     
     contact_person = models.CharField(max_length=100)

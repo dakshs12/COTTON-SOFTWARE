@@ -195,7 +195,7 @@ export default function FirmMasterPage() {
             </div>
 
             {/* --- Section 2: Address --- */}
-            <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-5 gap-6">
               <div className="col-span-2">
                 <label className="neu-label">Address</label>
                 <textarea name="address" value={formData.address} onChange={handleChange} className="neu-input" style={{ height: "42px", resize: "none", overflow: "hidden" }} required />
@@ -244,6 +244,11 @@ export default function FirmMasterPage() {
                   )}
                 </div>
               </div>
+
+              <div className="col-span-1">
+                 <label className="neu-label">Pin Code</label>
+                 <input name="pincode" value={formData.pincode} onChange={handleChange} className="neu-input" />
+              </div>
             </div>
 
             {/* --- Section 3: Contact & Web --- */}
@@ -255,9 +260,10 @@ export default function FirmMasterPage() {
                 <input name="tele_o" placeholder="Office Tele" value={formData.tele_o} onChange={handleChange} className="neu-input" />
                 <input name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="neu-input" />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                 <input name="website" placeholder="Website URL" value={formData.website} onChange={handleChange} className="neu-input" />
-                 <input name="pincode" placeholder="Pin Code" value={formData.pincode} onChange={handleChange} className="neu-input" />
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-4">
+                 <div className="col-span-2">
+                   <input name="website" placeholder="Website URL" value={formData.website} onChange={handleChange} className="neu-input" />
+                 </div>
               </div>
             </div>
 

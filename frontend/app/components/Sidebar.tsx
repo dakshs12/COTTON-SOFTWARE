@@ -10,7 +10,7 @@ import {
   Truck, 
   BarChart3, 
   LogOut,
-  Receipt,
+  ReceiptIndianRupee,
   Clock,
   ClipboardList
 } from 'lucide-react';
@@ -35,14 +35,14 @@ const menuItems = [
   {
     title: "BROKERAGE",
     items: [
-      { name: "Bill Generation", path: "/brokerage/bill-generation", icon: Receipt },
-      { name: "Due List", path: "/brokerage/due-list", icon: Clock },
+      { name: "Bill Generation", path: "/brokerage/bill-generation", icon: ReceiptIndianRupee },
     ],
   },
   {
     title: 'REPORTS',
     items: [
-      { name: 'Ledgers & Lists', path: '/reports/party', icon: ClipboardList },
+      { name: 'Bills Statement', path: '/reports/bills-statement', icon: ClipboardList },
+      { name: "Due List", path: "/reports/due-list", icon: Clock },
       { name: 'Analytics', path: '/reports/analytics', icon: BarChart3 },
     ]
   }

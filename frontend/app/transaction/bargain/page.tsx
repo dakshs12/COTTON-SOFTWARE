@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Save, Plus, FileText, X, Search, ChevronDown, Check } from 'lucide-react';
+import { Save, Plus, FileText, X, Search, ChevronDown, Check, Edit2 } from 'lucide-react';
 // Import the new Calendar from your existing folder
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 
@@ -22,6 +22,7 @@ export default function BargainEntryPage() {
   const [parties, setParties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   // Search States
   const [sellerSearch, setSellerSearch] = useState("");
@@ -31,6 +32,13 @@ export default function BargainEntryPage() {
 
   // Smart Dropdown State
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+
+  // Pagination & Search State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [isStatusFilterDropdownOpen, setIsStatusFilterDropdownOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // --- Fixed Option Lists ---
   const PAYMENT_BY_OPTIONS = ["Dispatch Date", "Mill Arrival Date", "Passing Date", "Settlement Date"];
@@ -67,7 +75,7 @@ export default function BargainEntryPage() {
     return Array.from(new Set([...DEFAULT_STATES, ...usedStates])).sort();
   }, [parties]);
 
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     bargain_date: new Date().toISOString().split('T')[0],
     seller: '', buyer: '', state: '', station: '',
     bales: '', rate: '', unit: 'Candy',
@@ -80,7 +88,9 @@ export default function BargainEntryPage() {
     qc_seller: '', qc_buyer: '',
     bargain_type: '', bargain_no_manual: '',
     remarks: ''
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
 
   useEffect(() => {
     fetchData();
@@ -126,6 +136,35 @@ export default function BargainEntryPage() {
     }
   };
 
+  const handleEditClick = (deal: any) => {
+    // Replace nulls with empty strings
+    const sanitizedDeal = Object.fromEntries(
+      Object.entries(deal).map(([k, v]) => [k, v === null ? '' : v])
+    );
+    
+    setFormData({
+      ...initialFormState,
+      ...sanitizedDeal,
+      seller: sanitizedDeal.seller?.toString() || '',
+      buyer: sanitizedDeal.buyer?.toString() || '',
+      bales: sanitizedDeal.bales?.toString() || '',
+      rate: sanitizedDeal.rate?.toString() || '',
+      payment_condition: sanitizedDeal.payment_condition?.toString() || '',
+    });
+    setSellerSearch(deal.seller_name || '');
+    setBuyerSearch(deal.buyer_name || '');
+    setEditingId(deal.id);
+    setIsFormOpen(true);
+  };
+
+  const handleCancel = () => {
+    setIsFormOpen(false);
+    setEditingId(null);
+    setFormData(initialFormState);
+    setSellerSearch("");
+    setBuyerSearch("");
+  };
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
@@ -144,19 +183,20 @@ export default function BargainEntryPage() {
     };
 
     try {
-      await axios.post('http://127.0.0.1:8000/api/bargains/', payload);
-      alert('Deal Saved Successfully!');
+      if (editingId) {
+        await axios.put(`http://127.0.0.1:8000/api/bargains/${editingId}/`, payload);
+        alert('Deal Updated Successfully!');
+      } else {
+        await axios.post('http://127.0.0.1:8000/api/bargains/', payload);
+        alert('Deal Saved Successfully!');
+      }
       setIsFormOpen(false);
+      setEditingId(null);
       fetchData();
       // Reset form
-      setFormData({ 
-        ...formData, 
-        bales: '', 
-        rate: '', 
-        remarks: '', 
-        bargain_no_manual: '',
-        payment_condition: '' 
-      }); 
+      setFormData(initialFormState);
+      setSellerSearch("");
+      setBuyerSearch("");
     } catch (error: any) {
       console.error("Error saving deal:", error);
       // Show the specific error message from the backend if available
@@ -214,6 +254,24 @@ export default function BargainEntryPage() {
 
   const filteredSellers = parties.filter(p => p.company_name.toLowerCase().includes(sellerSearch.toLowerCase()));
   const filteredBuyers = parties.filter(p => p.company_name.toLowerCase().includes(buyerSearch.toLowerCase()));
+
+  // --- Filter & Pagination Logic ---
+  const filteredBargains = bargains.filter(deal => {
+    const matchesSearch = 
+      (deal.smart_deal_id && deal.smart_deal_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (deal.buyer_name && deal.buyer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (deal.seller_name && deal.seller_name.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = statusFilter === 'All' || deal.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const totalPages = Math.ceil(filteredBargains.length / itemsPerPage);
+  const currentBargains = filteredBargains.slice(
+    (currentPage - 1) * itemsPerPage, 
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="max-w-7xl mx-auto neu-fade-in">
@@ -418,11 +476,11 @@ export default function BargainEntryPage() {
             </div>
 
             <div className="flex justify-end gap-4 pt-6" style={{ borderTop: "1px solid var(--cb-divider)" }}>
-              <button type="button" onClick={() => setIsFormOpen(false)} className="neu-btn">
+              <button type="button" onClick={handleCancel} className="neu-btn">
                 Cancel
               </button>
               <button type="submit" className="neu-btn neu-btn-primary">
-                <Save size={18} /> Save Deal
+                <Save size={18} /> {editingId ? "Update Deal" : "Save Deal"}
               </button>
             </div>
           </form>
@@ -430,12 +488,52 @@ export default function BargainEntryPage() {
       )}
 
       {/* Table */}
-      <div className="neu-card overflow-hidden p-2 sm:p-4">
-        <div className="p-3 flex justify-between items-center mb-2">
+      <div className="neu-card p-2 sm:p-4 mt-8">
+        <div className="p-3 flex justify-between items-center mb-2 flex-wrap gap-4">
              <h3 className="font-bold" style={{ color: "var(--cb-text-heading)" }}>Recent Deals</h3>
-             <div className="relative">
-               <Search className="absolute right-3 top-2.5" size={16} style={{ color: "var(--cb-text-label)" }} />
-               <input type="text" placeholder="Search..." className="neu-input pl-4 pr-9 py-2" style={{ width: "220px" }} />
+             <div className="flex gap-4 items-center">
+               <div className="relative">
+                 <button
+                   onClick={() => setIsStatusFilterDropdownOpen(!isStatusFilterDropdownOpen)}
+                   className="neu-input py-2 px-4 flex items-center justify-between gap-2"
+                   style={{ minWidth: "160px" }}
+                 >
+                   <span>{statusFilter === 'All' ? 'All Status' : statusFilter}</span>
+                   <ChevronDown size={16} style={{ color: "var(--cb-primary)" }} />
+                 </button>
+                 {isStatusFilterDropdownOpen && (
+                   <ul className="neu-dropdown z-50" style={{ maxHeight: 'none' }}>
+                     {["All", "Pending Passing", "Approved", "Rejected", "Cancelled"].map(status => (
+                       <li 
+                         key={status} 
+                         onClick={() => {
+                           setStatusFilter(status);
+                           setCurrentPage(1);
+                           setIsStatusFilterDropdownOpen(false);
+                         }}
+                         className="flex items-center justify-between"
+                       >
+                         {status === 'All' ? 'All Status' : status}
+                         {statusFilter === status && <Check size={14} style={{ color: "var(--cb-primary)" }}/>}
+                       </li>
+                     ))}
+                   </ul>
+                 )}
+               </div>
+               <div className="relative">
+                 <Search className="absolute right-3 top-2.5" size={16} style={{ color: "var(--cb-text-label)" }} />
+                 <input 
+                   type="text" 
+                   placeholder="Search deal, buyer, seller..." 
+                   className="neu-input pl-4 pr-9 py-2" 
+                   style={{ width: "240px" }}
+                   value={searchTerm}
+                   onChange={(e) => {
+                     setSearchTerm(e.target.value);
+                     setCurrentPage(1);
+                   }}
+                 />
+               </div>
              </div>
         </div>
         <div className="overflow-x-auto" style={{ borderRadius: "12px" }}>
@@ -449,13 +547,16 @@ export default function BargainEntryPage() {
                 <th>Bales</th>
                 <th>Rate</th>
                 <th className="text-right">Status</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>Loading...</td></tr>
-              ) : bargains.map((deal) => (
-                <tr key={deal.deal_no}>
+                <tr><td colSpan={8} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>Loading...</td></tr>
+              ) : currentBargains.length === 0 ? (
+                <tr><td colSpan={8} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>No deals found.</td></tr>
+              ) : currentBargains.map((deal) => (
+                <tr key={deal.deal_no || deal.id}>
                   <td className="font-mono font-bold" style={{ color: "var(--cb-primary)" }}>{deal.smart_deal_id}</td>
                   <td>{formatDate(deal.bargain_date)}</td>
                   <td className="font-medium" style={{ color: "var(--cb-text-heading)" }}>{deal.seller_name}</td>
@@ -467,11 +568,45 @@ export default function BargainEntryPage() {
                       {deal.status}
                     </span>
                   </td>
+                  <td className="text-right">
+                    <button 
+                      onClick={() => handleEditClick(deal)}
+                      className="p-1.5 rounded-md transition-colors cursor-pointer hover:bg-gray-100 text-gray-500 hover:text-[#4a7fc4]"
+                      title="Edit Deal"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination UI */}
+        {!loading && totalPages > 1 && (
+          <div className="p-4 flex justify-between items-center border-t border-gray-100 mt-4">
+            <span className="text-sm font-medium text-gray-500">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredBargains.length)} of {filteredBargains.length} entries
+            </span>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="neu-btn px-4 py-1.5"
+              >
+                Previous
+              </button>
+              <button 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="neu-btn px-4 py-1.5"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

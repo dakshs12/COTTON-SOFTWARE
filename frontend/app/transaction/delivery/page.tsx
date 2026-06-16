@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Save, Plus, Truck, X, ChevronDown } from 'lucide-react';
+import { Save, Plus, Truck, X, ChevronDown, Search, Edit2 } from 'lucide-react';
 // Import the Custom Calendar
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 
@@ -23,19 +23,27 @@ export default function DeliveryEntryPage() {
   const [bargains, setBargains] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const [isDirectDelivery, setIsDirectDelivery] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const [formData, setFormData] = useState({
+  // Table Pagination & Search State
+  const [tableSearchTerm, setTableSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const initialFormState = {
     bargain: '', passing: '',
     bill_no: '', bill_date: new Date().toISOString().split('T')[0],
     truck_no: '', transport_name: '',
     quantity_bales: 0, rate: 0, net_weight: 0,
     cotton_value: 0, gst_percent: 5, gst_amount: 0, total_bill_amount: 0,
     remarks: ''
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
 
   const [displayInfo, setDisplayInfo] = useState({ seller: '', buyer: '' });
 
@@ -99,36 +107,93 @@ export default function DeliveryEntryPage() {
     setIsDropdownOpen(false);
   };
 
+  const handleEditClick = (del: any) => {
+    // If it's a direct delivery, passing_ref might be empty
+    setIsDirectDelivery(!del.passing);
+    
+    // Replace nulls with empty strings to avoid React uncontrolled input warnings
+    const sanitizedDel = Object.fromEntries(
+      Object.entries(del).map(([k, v]) => [k, v === null ? '' : v])
+    );
+    
+    setFormData({
+      ...initialFormState,
+      ...sanitizedDel,
+      bargain: sanitizedDel.bargain?.toString() || '',
+      passing: sanitizedDel.passing?.toString() || '',
+      bill_date: sanitizedDel.bill_date || initialFormState.bill_date,
+    });
+    
+    setSearchTerm(del.deal_display || `Delivery #${del.id}`);
+    // We don't have full party names directly unless we find them from bargains
+    const matchedBargain = bargains.find(b => b?.id?.toString() === del.bargain?.toString() || b?.deal_no === del.bargain);
+    if (matchedBargain) {
+      setDisplayInfo({ seller: matchedBargain.seller_name, buyer: matchedBargain.buyer_name });
+    }
+    
+    setEditingId(del.id);
+    setIsFormOpen(true);
+  };
+
+  const handleCancel = () => {
+    setIsFormOpen(false);
+    setEditingId(null);
+    setFormData(initialFormState);
+    setSearchTerm("");
+    setDisplayInfo({ seller: '', buyer: '' });
+  };
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     try {
       const payload = { ...formData };
       if (!payload.passing) delete (payload as any).passing; 
 
-      await axios.post('http://127.0.0.1:8000/api/deliveries/', payload);
-      alert('Delivery Saved!');
+      if (editingId) {
+        await axios.put(`http://127.0.0.1:8000/api/deliveries/${editingId}/`, payload);
+        alert('Delivery Updated!');
+      } else {
+        await axios.post('http://127.0.0.1:8000/api/deliveries/', payload);
+        alert('Delivery Saved!');
+      }
       setIsFormOpen(false);
+      setEditingId(null);
       fetchData();
-      setFormData({
-        bargain: '', passing: '', bill_no: '', bill_date: new Date().toISOString().split('T')[0],
-        truck_no: '', transport_name: '', quantity_bales: 0, rate: 0, net_weight: 0,
-        cotton_value: 0, gst_percent: 5, gst_amount: 0, total_bill_amount: 0, remarks: ''
-      });
+      setFormData(initialFormState);
       setSearchTerm("");
+      setDisplayInfo({ seller: '', buyer: '' });
     } catch (error) {
       console.error("Error saving:", error);
       alert('Error saving data.');
     }
   };
 
-  const listToFilter = isDirectDelivery ? bargains : passings;
-  const filteredList = listToFilter.filter((item: any) => {
+  const getFilteredOptions = () => {
     if (isDirectDelivery) {
-      return item.smart_deal_id?.toLowerCase().includes(searchTerm.toLowerCase());
-    } else {
-      return item.passing_no?.toLowerCase().includes(searchTerm.toLowerCase());
+      return bargains.filter(b => 
+        (b.smart_deal_id && b.smart_deal_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (b.seller_name && b.seller_name.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
     }
-  });
+    return passings.filter(p => 
+      (p.passing_no && p.passing_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (p.deal_no && p.deal_no.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  };
+
+  // --- Filter & Pagination Logic ---
+  const filteredDeliveries = deliveries.filter(del => 
+    (del.bill_no && del.bill_no.toLowerCase().includes(tableSearchTerm.toLowerCase())) ||
+    (del.truck_no && del.truck_no.toLowerCase().includes(tableSearchTerm.toLowerCase())) ||
+    (del.deal_display && del.deal_display.toLowerCase().includes(tableSearchTerm.toLowerCase())) ||
+    (del.passing_ref && del.passing_ref.toLowerCase().includes(tableSearchTerm.toLowerCase()))
+  );
+
+  const totalPages = Math.ceil(filteredDeliveries.length / itemsPerPage);
+  const currentDeliveries = filteredDeliveries.slice(
+    (currentPage - 1) * itemsPerPage, 
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="max-w-7xl mx-auto neu-fade-in">
@@ -207,8 +272,8 @@ export default function DeliveryEntryPage() {
                     />
                     <ChevronDown size={16} className="absolute right-3 top-3 pointer-events-none" style={{ color: "var(--cb-primary)" }}/>
                     {isDropdownOpen && (
-                      <ul className="neu-dropdown">
-                        {filteredList.map((item: any) => (
+                      <ul className="neu-dropdown z-50">
+                        {getFilteredOptions().map((item: any) => (
                           <li key={item.id || item.deal_no} onMouseDown={() => handleSelection(item)}>
                             {isDirectDelivery ? (
                                 <span><span className="font-bold" style={{ color: "var(--cb-primary)" }}>{item.smart_deal_id}</span> - {item.seller_name}</span>
@@ -297,12 +362,12 @@ export default function DeliveryEntryPage() {
                 </div>
             </div>
 
-            <div className="md:col-span-4 flex justify-end gap-4 mt-2 pt-4" style={{ borderTop: "1px solid var(--cb-divider)" }}>
-              <button type="button" onClick={() => setIsFormOpen(false)} className="neu-btn">
+            <div className="flex justify-end gap-4 pt-6 mt-2" style={{ borderTop: "1px solid var(--cb-divider)" }}>
+              <button type="button" onClick={handleCancel} className="neu-btn">
                 Cancel
               </button>
-              <button type="submit" className="neu-btn neu-btn-primary" style={{ color: "var(--cb-secondary)", borderColor: "rgba(90, 143, 74, 0.3)" }}>
-                <Save size={18} /> Save Delivery
+              <button type="submit" className="neu-btn neu-btn-primary">
+                <Save size={18} /> {editingId ? "Update Delivery" : "Save Delivery"}
               </button>
             </div>
           </form>
@@ -310,9 +375,23 @@ export default function DeliveryEntryPage() {
       )}
 
       {/* List Table */}
-      <div className="neu-card overflow-hidden p-2 sm:p-4">
-        <div className="p-3 mb-2">
+      <div className="neu-card p-2 sm:p-4 mt-8">
+        <div className="p-3 mb-2 flex justify-between items-center flex-wrap gap-4">
           <h3 className="font-bold" style={{ color: "var(--cb-text-heading)" }}>Recent Deliveries</h3>
+          <div className="relative">
+             <Search className="absolute right-3 top-2.5" size={16} style={{ color: "var(--cb-text-label)" }} />
+             <input 
+               type="text" 
+               placeholder="Search bill, truck, deal..." 
+               className="neu-input pl-4 pr-9 py-2" 
+               style={{ width: "240px" }}
+               value={tableSearchTerm}
+               onChange={(e) => {
+                 setTableSearchTerm(e.target.value);
+                 setCurrentPage(1);
+               }}
+             />
+           </div>
         </div>
         <div className="overflow-x-auto" style={{ borderRadius: "12px" }}>
           <table className="neu-table">
@@ -324,12 +403,15 @@ export default function DeliveryEntryPage() {
                 <th>Truck No</th>
                 <th>Bales</th>
                 <th className="text-right">Bill Amount</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                 <tr><td colSpan={6} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>Loading...</td></tr>
-              ) : deliveries.map((del) => (
+                 <tr><td colSpan={7} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>Loading...</td></tr>
+              ) : currentDeliveries.length === 0 ? (
+                 <tr><td colSpan={7} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>No deliveries found.</td></tr>
+              ) : currentDeliveries.map((del) => (
                 <tr key={del.id}>
                   <td className="font-bold" style={{ color: "var(--cb-text-heading)" }}>{del.bill_no}</td>
                   <td>{formatDate(del.bill_date)}</td>
@@ -344,11 +426,45 @@ export default function DeliveryEntryPage() {
                   <td className="font-mono">{del.truck_no}</td>
                   <td className="font-mono">{del.quantity_bales}</td>
                   <td className="text-right font-bold" style={{ color: "var(--cb-secondary)" }}>₹{del.total_bill_amount}</td>
+                  <td className="text-right">
+                    <button 
+                      onClick={() => handleEditClick(del)}
+                      className="p-1.5 rounded-md transition-colors cursor-pointer hover:bg-gray-100 text-gray-500 hover:text-[#4a7fc4]"
+                      title="Edit Delivery"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination UI */}
+        {!loading && totalPages > 1 && (
+          <div className="p-4 flex justify-between items-center border-t border-gray-100 mt-4">
+            <span className="text-sm font-medium text-gray-500">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredDeliveries.length)} of {filteredDeliveries.length} entries
+            </span>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="neu-btn px-4 py-1.5"
+              >
+                Previous
+              </button>
+              <button 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="neu-btn px-4 py-1.5"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

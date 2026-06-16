@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Save, Plus, CheckCircle, X, ChevronDown, FileCheck } from 'lucide-react';
+import { Save, Plus, CheckCircle, X, ChevronDown, FileCheck, Search, Edit2 } from 'lucide-react';
 // Import the Custom Calendar
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 
@@ -22,13 +22,19 @@ export default function PassingEntryPage() {
   const [bargains, setBargains] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  // Pagination & Search State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Search State for Deal Selection
   const [dealSearch, setDealSearch] = useState("");
   const [isDealDropdownOpen, setIsDealDropdownOpen] = useState(false);
 
   // Form State
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     bargain: '', // This stores the ID
     passing_no: '',
     approval_date: new Date().toISOString().split('T')[0],
@@ -36,7 +42,9 @@ export default function PassingEntryPage() {
     lot_no: '',
     approved_by: '',
     remarks: ''
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
 
   // Display State
   const [selectedDealDisplay, setSelectedDealDisplay] = useState({
@@ -82,18 +90,50 @@ export default function PassingEntryPage() {
     setIsDealDropdownOpen(false);
   };
 
+  const handleEditClick = (pass: any) => {
+    const sanitizedPass = Object.fromEntries(
+      Object.entries(pass).map(([k, v]) => [k, v === null ? '' : v])
+    );
+    
+    setFormData({
+      ...initialFormState,
+      ...sanitizedPass,
+      bargain: sanitizedPass.bargain?.toString() || sanitizedPass.deal_no, // Depend on API structure
+      approval_date: sanitizedPass.approval_date || initialFormState.approval_date,
+    });
+    setDealSearch(pass.deal_no || '');
+    setSelectedDealDisplay({
+      seller: pass.seller_name || '',
+      buyer: pass.buyer_name || '',
+      rate: pass.rate || ''
+    });
+    setEditingId(pass.id);
+    setIsFormOpen(true);
+  };
+
+  const handleCancel = () => {
+    setIsFormOpen(false);
+    setEditingId(null);
+    setFormData(initialFormState);
+    setDealSearch("");
+    setSelectedDealDisplay({ seller: '', buyer: '', rate: '' });
+  };
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     try {
-      await axios.post('http://127.0.0.1:8000/api/passings/', formData);
-      alert('Passing Saved Successfully!');
+      if (editingId) {
+        await axios.put(`http://127.0.0.1:8000/api/passings/${editingId}/`, formData);
+        alert('Passing Updated Successfully!');
+      } else {
+        await axios.post('http://127.0.0.1:8000/api/passings/', formData);
+        alert('Passing Saved Successfully!');
+      }
       setIsFormOpen(false);
+      setEditingId(null);
       fetchData();
       // Reset
-      setFormData({
-        bargain: '', passing_no: '', approval_date: new Date().toISOString().split('T')[0],
-        due_date: '', lot_no: '', approved_by: '', remarks: ''
-      });
+      setFormData(initialFormState);
       setDealSearch("");
       setSelectedDealDisplay({ seller: '', buyer: '', rate: '' });
     } catch (error) {
@@ -102,9 +142,25 @@ export default function PassingEntryPage() {
     }
   };
 
+  // --- Derived State & Pagination ---
   const filteredBargains = bargains.filter(b => 
-    b.smart_deal_id?.toLowerCase().includes(dealSearch.toLowerCase()) || 
+    b.smart_deal_id?.toLowerCase().includes(dealSearch.toLowerCase()) ||
+    b.buyer_name?.toLowerCase().includes(dealSearch.toLowerCase()) ||
     b.seller_name?.toLowerCase().includes(dealSearch.toLowerCase())
+  );
+
+  const filteredPassings = passings.filter(pass => 
+    (pass.passing_no && pass.passing_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (pass.deal_no && pass.deal_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (pass.lot_no && pass.lot_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (pass.buyer_name && pass.buyer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (pass.seller_name && pass.seller_name.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const totalPages = Math.ceil(filteredPassings.length / itemsPerPage);
+  const currentPassings = filteredPassings.slice(
+    (currentPage - 1) * itemsPerPage, 
+    currentPage * itemsPerPage
   );
 
   return (
@@ -244,12 +300,12 @@ export default function PassingEntryPage() {
             </div>
 
             {/* Footer */}
-            <div className="md:col-span-4 flex justify-end gap-4 mt-6 pt-6" style={{ borderTop: "1px solid var(--cb-divider)" }}>
-              <button type="button" onClick={() => setIsFormOpen(false)} className="neu-btn">
+            <div className="flex justify-end gap-4 pt-6 mt-2 md:col-span-4" style={{ borderTop: "1px solid var(--cb-divider)" }}>
+              <button type="button" onClick={handleCancel} className="neu-btn">
                 Cancel
               </button>
-              <button type="submit" className="neu-btn neu-btn-primary" style={{ color: "var(--cb-secondary)", borderColor: "rgba(90, 143, 74, 0.3)" }}>
-                <Save size={18} /> Save Passing
+              <button type="submit" className="neu-btn neu-btn-primary">
+                <Save size={18} /> {editingId ? "Update Passing" : "Save Passing"}
               </button>
             </div>
 
@@ -258,9 +314,23 @@ export default function PassingEntryPage() {
       )}
 
       {/* List Table */}
-      <div className="neu-card overflow-hidden p-2 sm:p-4">
-        <div className="p-3 mb-2">
+      <div className="neu-card p-2 sm:p-4 mt-8">
+        <div className="p-3 mb-2 flex justify-between items-center flex-wrap gap-4">
            <h3 className="font-bold" style={{ color: "var(--cb-text-heading)" }}>Recent Approvals</h3>
+           <div className="relative">
+             <Search className="absolute right-3 top-2.5" size={16} style={{ color: "var(--cb-text-label)" }} />
+             <input 
+               type="text" 
+               placeholder="Search passing, deal, lot..." 
+               className="neu-input pl-4 pr-9 py-2" 
+               style={{ width: "240px" }}
+               value={searchTerm}
+               onChange={(e) => {
+                 setSearchTerm(e.target.value);
+                 setCurrentPage(1);
+               }}
+             />
+           </div>
         </div>
         <div className="overflow-x-auto" style={{ borderRadius: "12px" }}>
           <table className="neu-table">
@@ -278,9 +348,9 @@ export default function PassingEntryPage() {
             <tbody>
               {loading ? (
                 <tr><td colSpan={7} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>Loading data...</td></tr>
-              ) : passings.length === 0 ? (
+              ) : currentPassings.length === 0 ? (
                 <tr><td colSpan={7} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>No passing entries found.</td></tr>
-              ) : passings.map((pass) => (
+              ) : currentPassings.map((pass) => (
                 <tr key={pass.id}>
                   <td className="font-medium" style={{ color: "var(--cb-text-heading)" }}>{pass.passing_no}</td>
                   <td>{formatDate(pass.approval_date)}</td>
@@ -289,15 +359,49 @@ export default function PassingEntryPage() {
                   <td>{pass.buyer_name}</td>
                   <td className="font-mono">{pass.lot_no}</td>
                   <td className="text-right">
-                     <span style={{ color: "var(--cb-secondary)" }} className="flex justify-end">
-                       <FileCheck size={18}/>
-                     </span>
+                    <div className="flex justify-end items-center gap-3">
+                      <span style={{ color: "var(--cb-secondary)" }} title="Passed">
+                        <FileCheck size={18}/>
+                      </span>
+                      <button 
+                        onClick={() => handleEditClick(pass)}
+                        className="p-1.5 rounded-md transition-colors cursor-pointer hover:bg-gray-100 text-gray-500 hover:text-[#4a7fc4]"
+                        title="Edit Passing"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination UI */}
+        {!loading && totalPages > 1 && (
+          <div className="p-4 flex justify-between items-center border-t border-gray-100 mt-4">
+            <span className="text-sm font-medium text-gray-500">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredPassings.length)} of {filteredPassings.length} entries
+            </span>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="neu-btn px-4 py-1.5"
+              >
+                Previous
+              </button>
+              <button 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="neu-btn px-4 py-1.5"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

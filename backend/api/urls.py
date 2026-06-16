@@ -23,4 +23,7 @@ urlpatterns = [
     path('brokerage/party-dues/', views.get_party_dues),
     path('brokerage/party-dues/<int:party_id>/', views.get_party_due_bills),
     path('brokerage/receive-payment/', views.receive_party_payment),
+    
+    # Reports
+    path('statement/<int:party_id>/', views.get_party_statement),
 ]
