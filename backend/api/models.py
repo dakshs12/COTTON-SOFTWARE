@@ -108,10 +108,7 @@ class BargainEntry(models.Model):
     weight_terms = models.CharField(max_length=50, default="Mill Weight")
     
     # Bottom Section (Quality & Manual Fields)
-    qc_seller = models.CharField(max_length=100, blank=True, null=True)
-    qc_buyer = models.CharField(max_length=100, blank=True, null=True)
-    bargain_type = models.CharField(max_length=100, blank=True, null=True) # Bottom dropdown
-    bargain_no_manual = models.CharField(max_length=50, blank=True, null=True) # Manual book no
+    quality_condition = models.CharField(max_length=100, blank=True, null=True)
     
     advised_by = models.CharField(max_length=100, blank=True, null=True)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending Passing')
@@ -131,10 +128,11 @@ class BargainEntry(models.Model):
 
 class PassingEntry(models.Model):
     bargain = models.ForeignKey(BargainEntry, on_delete=models.CASCADE)
-    passing_no = models.CharField(max_length=50)
     approval_date = models.DateField()
     due_date = models.DateField(blank=True, null=True)
     lot_no = models.CharField(max_length=50)
+    pr_no = models.CharField(max_length=50, blank=True, null=True)
+    book_bargain_no = models.CharField(max_length=50, blank=True, null=True)
     approved_by = models.CharField(max_length=100)
     remarks = models.TextField(blank=True, null=True)
 
@@ -144,9 +142,10 @@ class DeliveryDetails(models.Model):
     bill_no = models.CharField(max_length=50)
     bill_date = models.DateField()
     truck_no = models.CharField(max_length=20)
+    lr_no = models.CharField(max_length=50, blank=True, null=True)
     transport_name = models.CharField(max_length=100, blank=True, null=True)
     quantity_bales = models.IntegerField()
-    rate = models.DecimalField(max_digits=10, decimal_places=2)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     net_weight = models.DecimalField(max_digits=10, decimal_places=2)
     cotton_value = models.DecimalField(max_digits=12, decimal_places=2)
     gst_percent = models.DecimalField(max_digits=5, decimal_places=2, default=5.00)

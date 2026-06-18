@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Save, Plus, Truck, X, ChevronDown, Search, Edit2 } from 'lucide-react';
+import { Save, Plus, Truck, X, ChevronDown, Search, Edit2, CheckCircle } from 'lucide-react';
 // Import the Custom Calendar
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 
@@ -28,6 +28,12 @@ export default function DeliveryEntryPage() {
   const [isDirectDelivery, setIsDirectDelivery] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   // Table Pagination & Search State
   const [tableSearchTerm, setTableSearchTerm] = useState('');
@@ -37,15 +43,18 @@ export default function DeliveryEntryPage() {
   const initialFormState = {
     bargain: '', passing: '',
     bill_no: '', bill_date: new Date().toISOString().split('T')[0],
-    truck_no: '', transport_name: '',
+    truck_no: '',
+    lr_no: '',
+    transport_name: '',
     quantity_bales: 0, rate: 0, net_weight: 0,
-    cotton_value: 0, gst_percent: 5, gst_amount: 0, total_bill_amount: 0,
+    cotton_value: 0, gst_amount: 0,
+    total_bill_amount: 0,
     remarks: ''
   };
 
   const [formData, setFormData] = useState(initialFormState);
 
-  const [displayInfo, setDisplayInfo] = useState({ seller: '', buyer: '' });
+  const [displayInfo, setDisplayInfo] = useState({ seller: '', buyer: '', station: '', lot_no: '', bargain_no: '' });
 
   useEffect(() => {
     fetchData();
@@ -58,9 +67,9 @@ export default function DeliveryEntryPage() {
         axios.get('http://127.0.0.1:8000/api/passings/'),
         axios.get('http://127.0.0.1:8000/api/bargains/')
       ]);
-      setDeliveries(delRes.data);
-      setPassings(passRes.data);
-      setBargains(barRes.data);
+      setDeliveries(delRes.data.reverse());
+      setPassings(passRes.data.reverse());
+      setBargains(barRes.data.reverse());
       setLoading(false);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -72,7 +81,7 @@ export default function DeliveryEntryPage() {
     const newData = { ...formData, [name]: value };
     setFormData(newData);
     
-    if (['quantity_bales', 'net_weight', 'gst_percent', 'rate'].includes(name)) {
+    if (['quantity_bales', 'rate', 'net_weight'].includes(name)) {
       calculateTotals(newData);
     }
   };
@@ -80,10 +89,9 @@ export default function DeliveryEntryPage() {
   const calculateTotals = (data: any) => {
     const bales = parseFloat(data.quantity_bales) || 0;
     const rate = parseFloat(data.rate) || 0;
-    const gst = parseFloat(data.gst_percent) || 0;
-
-    const baseValue = bales * rate; 
-    const gstAmt = (baseValue * gst) / 100;
+    const netWeight = parseFloat(data.net_weight) || 0;
+    const baseValue = rate * 0.2812 * netWeight; 
+    const gstAmt = (baseValue * 5) / 100; // Fixed 5% GST
     const total = baseValue + gstAmt;
 
     setFormData(prev => ({
@@ -95,15 +103,41 @@ export default function DeliveryEntryPage() {
   };
 
   const handleSelection = (item: any) => {
+    let seller = '', buyer = '', station = '', lotNo = '', bargainNo = '';
+    
     if (isDirectDelivery) {
-      setFormData({ ...formData, bargain: item.deal_no, passing: '', rate: item.rate });
-      setDisplayInfo({ seller: item.seller_name, buyer: item.buyer_name });
+      const newData = { ...formData, bargain: item.id, passing: '', rate: item.rate, quantity_bales: item.bales || formData.quantity_bales };
+      setFormData(newData);
+      calculateTotals(newData);
+      seller = item.seller_name;
+      buyer = item.buyer_name;
+      station = item.station;
+      bargainNo = item.smart_deal_id;
       setSearchTerm(item.smart_deal_id);
     } else {
-      setFormData({ ...formData, bargain: item.deal_no, passing: item.id, rate: item.rate || 0 }); 
-      setDisplayInfo({ seller: item.seller_name, buyer: item.buyer_name });
-      setSearchTerm(`Passing #${item.passing_no}`);
+      let bales = formData.quantity_bales;
+      let rate = item.deal_rate || formData.rate;
+      let dealSmartId = item.deal_no;
+      const matchedBargain = bargains.find(b => b?.id?.toString() === item.bargain?.toString() || b?.deal_no === item.bargain);
+      if (matchedBargain) {
+        station = matchedBargain.station;
+        bargainNo = matchedBargain.smart_deal_id || bargainNo;
+        bales = matchedBargain.bales || bales;
+        rate = matchedBargain.rate || rate;
+        dealSmartId = matchedBargain.smart_deal_id || dealSmartId;
+      }
+      const newData = { ...formData, bargain: item.bargain, passing: item.id, rate, quantity_bales: bales };
+      setFormData(newData);
+      calculateTotals(newData);
+      seller = item.seller_name;
+      buyer = item.buyer_name;
+      lotNo = item.lot_no;
+      bargainNo = item.deal_no; // from passing deal_no
+      
+      setSearchTerm(dealSmartId);
     }
+    
+    setDisplayInfo({ seller, buyer, station, lot_no: lotNo, bargain_no: bargainNo });
     setIsDropdownOpen(false);
   };
 
@@ -125,11 +159,22 @@ export default function DeliveryEntryPage() {
     });
     
     setSearchTerm(del.deal_display || `Delivery #${del.id}`);
-    // We don't have full party names directly unless we find them from bargains
+    let seller = '', buyer = '', station = '', lotNo = '', bargainNo = '';
+    if (!del.passing) {
+      bargainNo = del.deal_display;
+    } else {
+      bargainNo = del.deal_display;
+      const matchedPassing = passings.find(p => p.id === del.passing);
+      if (matchedPassing) lotNo = matchedPassing.lot_no;
+    }
+
     const matchedBargain = bargains.find(b => b?.id?.toString() === del.bargain?.toString() || b?.deal_no === del.bargain);
     if (matchedBargain) {
-      setDisplayInfo({ seller: matchedBargain.seller_name, buyer: matchedBargain.buyer_name });
+      seller = matchedBargain.seller_name;
+      buyer = matchedBargain.buyer_name;
+      station = matchedBargain.station;
     }
+    setDisplayInfo({ seller, buyer, station, lot_no: lotNo, bargain_no: bargainNo });
     
     setEditingId(del.id);
     setIsFormOpen(true);
@@ -140,31 +185,43 @@ export default function DeliveryEntryPage() {
     setEditingId(null);
     setFormData(initialFormState);
     setSearchTerm("");
-    setDisplayInfo({ seller: '', buyer: '' });
+    setDisplayInfo({ seller: '', buyer: '', station: '', lot_no: '', bargain_no: '' });
   };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     try {
-      const payload = { ...formData };
+      const payload = { 
+        ...formData,
+        quantity_bales: parseInt(formData.quantity_bales as any) || 0,
+        rate: parseFloat(formData.rate as any) || 0,
+        net_weight: parseFloat(formData.net_weight as any) || 0,
+        cotton_value: parseFloat(formData.cotton_value as any) || 0,
+        gst_amount: parseFloat(formData.gst_amount as any) || 0,
+        total_bill_amount: parseFloat(formData.total_bill_amount as any) || 0,
+      };
       if (!payload.passing) delete (payload as any).passing; 
 
       if (editingId) {
         await axios.put(`http://127.0.0.1:8000/api/deliveries/${editingId}/`, payload);
-        alert('Delivery Updated!');
+        showToast('Delivery Updated Successfully!');
       } else {
         await axios.post('http://127.0.0.1:8000/api/deliveries/', payload);
-        alert('Delivery Saved!');
+        showToast('Delivery Saved Successfully!');
       }
       setIsFormOpen(false);
       setEditingId(null);
       fetchData();
       setFormData(initialFormState);
       setSearchTerm("");
-      setDisplayInfo({ seller: '', buyer: '' });
-    } catch (error) {
+      setDisplayInfo({ seller: '', buyer: '', station: '', lot_no: '', bargain_no: '' });
+    } catch (error: any) {
       console.error("Error saving:", error);
-      alert('Error saving data.');
+      if (error.response && error.response.data) {
+        alert(`Error: ${JSON.stringify(error.response.data)}`);
+      } else {
+        alert('Error saving data. Please check fields.');
+      }
     }
   };
 
@@ -198,6 +255,13 @@ export default function DeliveryEntryPage() {
   return (
     <div className="max-w-7xl mx-auto neu-fade-in">
       
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#4a7fc4] text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 neu-fade-in font-medium tracking-wide">
+          <CheckCircle size={20} />
+          {toastMessage}
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="neu-page-title text-3xl">Delivery Details</h1>
@@ -266,103 +330,165 @@ export default function DeliveryEntryPage() {
                       value={searchTerm}
                       onChange={(e) => { setSearchTerm(e.target.value); setIsDropdownOpen(true); }}
                       onFocus={() => setIsDropdownOpen(true)}
-                      onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
+                      onBlur={() => {
+                        setTimeout(() => {
+                          setIsDropdownOpen((prev) => (prev ? false : prev));
+                        }, 200);
+                      }}
                       placeholder={isDirectDelivery ? "Search Deal No..." : "Search Passing No..."}
                       className="neu-input cursor-pointer pr-10"
                     />
                     <ChevronDown size={16} className="absolute right-3 top-3 pointer-events-none" style={{ color: "var(--cb-primary)" }}/>
                     {isDropdownOpen && (
                       <ul className="neu-dropdown z-50">
-                        {getFilteredOptions().map((item: any) => (
-                          <li key={item.id || item.deal_no} onMouseDown={() => handleSelection(item)}>
-                            {isDirectDelivery ? (
-                                <span><span className="font-bold" style={{ color: "var(--cb-primary)" }}>{item.smart_deal_id}</span> - {item.seller_name}</span>
-                            ) : (
-                                <span><span className="font-bold" style={{ color: "var(--cb-secondary)" }}>{item.passing_no}</span> (Deal: {item.deal_no})</span>
-                            )}
-                          </li>
-                        ))}
+                        {getFilteredOptions().map((item: any) => {
+                          let bargainDate = "";
+                          if (isDirectDelivery) {
+                             bargainDate = item.bargain_date;
+                          } else {
+                             const matchedBargain = bargains.find(b => b?.id?.toString() === item.bargain?.toString() || b?.deal_no === item.bargain);
+                             if (matchedBargain) bargainDate = matchedBargain.bargain_date;
+                          }
+                          
+                          return (
+                            <li key={item.id || item.deal_no} onMouseDown={() => handleSelection(item)}>
+                              <div className="w-full overflow-hidden">
+                                <div className="flex justify-between items-center w-full">
+                                  {isDirectDelivery ? (
+                                    <span className="font-bold truncate" style={{ color: "var(--cb-primary)" }}>{item.smart_deal_id}</span>
+                                  ) : (
+                                    <span className="font-bold truncate" style={{ color: "var(--cb-secondary)" }}>{item.deal_no}</span>
+                                  )}
+                                  <span className="text-xs whitespace-nowrap pl-2" style={{ color: "var(--cb-text-label)" }}>{formatDate(bargainDate)}</span>
+                                </div>
+                                <span className="text-xs block truncate mt-1" style={{ color: "var(--cb-text-label)" }}>
+                                  {`${item.seller_name} ➔ ${item.buyer_name}`}
+                                </span>
+                              </div>
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
                   </div>
                </div>
-               <div className="col-span-1">
-                 <label className="neu-label" style={{ color: "var(--cb-text-placeholder)" }}>Seller</label>
-                 <div className="font-semibold" style={{ color: "var(--cb-text-heading)" }}>{displayInfo.seller || "-"}</div>
+               
+               {/* Display Info Grid */}
+               <div className="col-span-1 md:col-span-3 grid grid-cols-2 md:grid-cols-5 gap-4 mt-2 p-4 rounded-lg" style={{ background: "rgba(74, 127, 196, 0.05)" }}>
+                 <div>
+                   <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--cb-text-placeholder)" }}>Seller</label>
+                   <div className="text-sm font-semibold truncate" style={{ color: "var(--cb-text-heading)" }}>{displayInfo.seller || "-"}</div>
+                 </div>
+                 <div>
+                   <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--cb-text-placeholder)" }}>Buyer</label>
+                   <div className="text-sm font-semibold truncate" style={{ color: "var(--cb-text-heading)" }}>{displayInfo.buyer || "-"}</div>
+                 </div>
+                 <div>
+                   <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--cb-text-placeholder)" }}>Station</label>
+                   <div className="text-sm font-semibold truncate" style={{ color: "var(--cb-text-heading)" }}>{displayInfo.station || "-"}</div>
+                 </div>
+                 <div>
+                   <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--cb-text-placeholder)" }}>Lot No.</label>
+                   <div className="text-sm font-semibold truncate" style={{ color: "var(--cb-text-heading)" }}>{displayInfo.lot_no || "-"}</div>
+                 </div>
+                 <div>
+                   <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--cb-text-placeholder)" }}>Bargain No.</label>
+                   <div className="text-sm font-semibold truncate" style={{ color: "var(--cb-text-heading)" }}>{displayInfo.bargain_no || "-"}</div>
+                 </div>
                </div>
-               <div className="col-span-1">
-                 <label className="neu-label" style={{ color: "var(--cb-text-placeholder)" }}>Buyer</label>
-                 <div className="font-semibold" style={{ color: "var(--cb-text-heading)" }}>{displayInfo.buyer || "-"}</div>
+            </div>
+
+            {/* --- Order: BILL NO, BILL DATE, BALES, RATE, NET WEIGHT, COTTON VALUE, GST, BILL AMOUNT --- */}
+            <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="col-span-1">
+                 <label className="neu-label">Bill / Invoice No</label>
+                 <input name="bill_no" value={formData.bill_no} onChange={handleChange} className="neu-input" required />
+              </div>
+              
+              <div className="col-span-1">
+                 <CustomDatePicker 
+                    label="Bill Date" 
+                    value={formData.bill_date} 
+                    onChange={(val) => setFormData({...formData, bill_date: val})} 
+                 />
+              </div>
+
+              <div className="col-span-1">
+                 <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Bales</label>
+                 <input type="number" name="quantity_bales" value={formData.quantity_bales} onChange={handleChange} className="neu-input font-mono" />
+              </div>
+
+              <div className="col-span-1">
+                 <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Rate</label>
+                 <input type="number" name="rate" value={formData.rate} onChange={handleChange} className="neu-input font-mono" />
+              </div>
+
+              <div className="col-span-1">
+                 <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Net Weight</label>
+                 <input type="number" name="net_weight" value={formData.net_weight} onChange={handleChange} className="neu-input font-mono" />
+              </div>
+
+              <div className="col-span-1">
+                 <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Cotton Value</label>
+                 <input
+                   value={formData.cotton_value}
+                   readOnly
+                   className="neu-input font-mono bg-gray-50"
+                   style={{ color: "var(--cb-text-body)" }}
+                   disabled
+                 />
+              </div>
+
+              <div className="col-span-1">
+                 <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>GST (5%)</label>
+                 <input
+                   value={formData.gst_amount}
+                   readOnly
+                   className="neu-input font-mono bg-gray-50"
+                   style={{ color: "var(--cb-text-body)" }}
+                   disabled
+                 />
+              </div>
+
+              <div className="col-span-1">
+                 <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Bill Amount</label>
+                 <input
+                   value={formData.total_bill_amount}
+                   readOnly
+                   className="neu-input font-mono font-bold"
+                   style={{ background: "rgba(90, 143, 74, 0.1)", color: "var(--cb-success)", border: "1px solid rgba(90, 143, 74, 0.2)" }}
+                 />
+              </div>
+            </div>
+
+            {/* --- Transportation Details --- */}
+            <div className="md:col-span-4 pt-6 mt-2" style={{ borderTop: "1px solid var(--cb-divider)" }}>
+               <h3 className="neu-section-title mb-4 flex items-center gap-2">
+                 <Truck size={18}/> Transportation Details
+               </h3>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 <div className="col-span-1">
+                    <label className="neu-label">Truck No</label>
+                    <input name="truck_no" value={formData.truck_no} onChange={handleChange} className="neu-input" required />
+                 </div>
+                 <div className="col-span-1">
+                    <label className="neu-label">LR No</label>
+                    <input name="lr_no" value={formData.lr_no} onChange={handleChange} className="neu-input" />
+                 </div>
+                 <div className="col-span-1">
+                    <label className="neu-label">Transport Name</label>
+                    <input name="transport_name" value={formData.transport_name} onChange={handleChange} className="neu-input" />
+                 </div>
                </div>
             </div>
 
-            {/* --- Logistics --- */}
-            <div className="col-span-1">
-               <label className="neu-label">Bill / Invoice No</label>
-               <input name="bill_no" value={formData.bill_no} onChange={handleChange} className="neu-input" required />
-            </div>
-            
-            <div className="col-span-1">
-               {/* CUSTOM CALENDAR */}
-               <CustomDatePicker 
-                  label="Bill Date" 
-                  value={formData.bill_date} 
-                  onChange={(val) => setFormData({...formData, bill_date: val})} 
-               />
+            {/* --- Remarks --- */}
+            <div className="md:col-span-4 pt-6 mt-2" style={{ borderTop: "1px solid var(--cb-divider)" }}>
+              <label className="neu-label">Remarks</label>
+              <textarea name="remarks" value={formData.remarks} onChange={handleChange} className="neu-input" style={{ height: "64px", resize: "none" }} />
             </div>
 
-            <div className="col-span-1">
-               <label className="neu-label">Truck No</label>
-               <input name="truck_no" value={formData.truck_no} onChange={handleChange} className="neu-input" required />
-            </div>
-            <div className="col-span-1">
-               <label className="neu-label">Transport Name</label>
-               <input name="transport_name" value={formData.transport_name} onChange={handleChange} className="neu-input" />
-            </div>
-
-            {/* --- Calculation --- */}
-            <div
-              className="md:col-span-4 grid grid-cols-1 md:grid-cols-5 gap-4 p-5 rounded-xl mt-2"
-              style={{ borderTop: "1px solid var(--cb-divider)", background: "rgba(90, 143, 74, 0.04)", border: "1px solid rgba(90, 143, 74, 0.12)", borderRadius: "var(--cb-radius-lg)" }}
-            >
-                <div className="col-span-1">
-                    <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Bales</label>
-                    <input type="number" name="quantity_bales" value={formData.quantity_bales} onChange={handleChange} className="neu-input font-mono" />
-                </div>
-                <div className="col-span-1">
-                    <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Rate</label>
-                    <input type="number" name="rate" value={formData.rate} onChange={handleChange} className="neu-input font-mono" />
-                </div>
-                 <div className="col-span-1">
-                    <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Cotton Value</label>
-                    <input
-                      value={formData.cotton_value}
-                      readOnly
-                      className="neu-input font-mono font-bold"
-                      style={{ background: "rgba(90, 143, 74, 0.06)" }}
-                    />
-                </div>
-                 <div className="col-span-1">
-                    <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>GST (5%)</label>
-                    <input
-                      value={formData.gst_amount}
-                      readOnly
-                      className="neu-input font-mono"
-                      style={{ background: "rgba(90, 143, 74, 0.06)" }}
-                    />
-                </div>
-                 <div className="col-span-1">
-                    <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Total Bill</label>
-                    <input
-                      value={formData.total_bill_amount}
-                      readOnly
-                      className="neu-input font-mono text-lg font-bold"
-                      style={{ background: "rgba(90, 143, 74, 0.1)", color: "var(--cb-secondary)" }}
-                    />
-                </div>
-            </div>
-
-            <div className="flex justify-end gap-4 pt-6 mt-2" style={{ borderTop: "1px solid var(--cb-divider)" }}>
+            <div className="md:col-span-4 flex justify-end gap-4 pt-6" style={{ borderTop: "1px solid var(--cb-divider)" }}>
               <button type="button" onClick={handleCancel} className="neu-btn">
                 Cancel
               </button>

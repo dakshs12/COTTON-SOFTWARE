@@ -29,6 +29,12 @@ export default function BargainEntryPage() {
   const [buyerSearch, setBuyerSearch] = useState("");
   const [isSellerDropdownOpen, setIsSellerDropdownOpen] = useState(false);
   const [isBuyerDropdownOpen, setIsBuyerDropdownOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   // Smart Dropdown State
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -58,16 +64,17 @@ export default function BargainEntryPage() {
   // --- Learning Lists ---
   const DEFAULT_CASH_DISC = ["15% pa", "18% pa", "NA", "Net Cash"];
   const DEFAULT_QC = ["Length 29mm", "Length 28.5mm", "Rd 75", "Trash 3%"];
-  const DEFAULT_BARGAIN_TYPE = ["Regular", "High Seas", "Mcx"];
+  const DEFAULT_DELIVERY_TERMS = ["Ready", "Forward", "7 Days"];
 
-  const getLearnedOptions = (fieldName: string, defaults: string[]) => {
+  const getLearnedOptions = (fieldName: string, defaults: string[], exclude: string[] = []) => {
     const used = bargains.map((b: any) => b[fieldName]).filter(Boolean);
-    return Array.from(new Set([...defaults, ...used])).sort();
+    return Array.from(new Set([...defaults, ...used])).filter((opt: any) => !exclude.includes(opt)).sort();
   };
 
   const cashDiscOptions = useMemo(() => getLearnedOptions('cash_disc', DEFAULT_CASH_DISC), [bargains]);
-  const qcOptions = useMemo(() => getLearnedOptions('qc_seller', DEFAULT_QC), [bargains]);
-  const bargainTypeOptions = useMemo(() => getLearnedOptions('bargain_type', DEFAULT_BARGAIN_TYPE), [bargains]);
+  const qualityOptions = useMemo(() => getLearnedOptions('quality_condition', DEFAULT_QC), [bargains]);
+  const deliveryTermsOptions = useMemo(() => getLearnedOptions('delivery_terms', DEFAULT_DELIVERY_TERMS), [bargains]);
+  const unitOptions = useMemo(() => getLearnedOptions('unit', ['Budhani'], ['Bales', 'Candy']), [bargains]);
   const certificateOptions = useMemo(() => getLearnedOptions('cotton_certificate', CERTIFICATE_OPTIONS), [bargains]);
   
   const stateOptions = useMemo(() => {
@@ -78,16 +85,13 @@ export default function BargainEntryPage() {
   const initialFormState = {
     bargain_date: new Date().toISOString().split('T')[0],
     seller: '', buyer: '', state: '', station: '',
-    bales: '', rate: '', unit: 'Candy',
+    bales: '', rate: '', unit: 'Budhani',
     payment_condition: '', payment_by: 'Dispatch Date',
-    cash_disc: '', 
-    delivery_terms: '', delivery_type: 'Spot', delivery_from: '',
+    cash_disc: '', weight_terms: 'Mill Weight', delivery_terms: '',
+    delivery_type: 'Spot', delivery_from: '',
     deal_type: 'Pakka Sauda', cotton_certificate: '',
-    weight_terms: 'Mill Weight',
-    advised_by: '', status: 'Pending Passing',
-    qc_seller: '', qc_buyer: '',
-    bargain_type: '', bargain_no_manual: '',
-    remarks: ''
+    quality_condition: '',
+    remarks: '', status: 'Pending Passing'
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -102,7 +106,7 @@ export default function BargainEntryPage() {
         axios.get('http://127.0.0.1:8000/api/bargains/'),
         axios.get('http://127.0.0.1:8000/api/parties/')
       ]);
-      setBargains(bargainRes.data);
+      setBargains(bargainRes.data.reverse());
       setParties(partyRes.data);
       setLoading(false);
     } catch (error) {
@@ -185,10 +189,10 @@ export default function BargainEntryPage() {
     try {
       if (editingId) {
         await axios.put(`http://127.0.0.1:8000/api/bargains/${editingId}/`, payload);
-        alert('Deal Updated Successfully!');
+        showToast('Deal Updated Successfully!');
       } else {
         await axios.post('http://127.0.0.1:8000/api/bargains/', payload);
-        alert('Deal Saved Successfully!');
+        showToast('Deal Saved Successfully!');
       }
       setIsFormOpen(false);
       setEditingId(null);
@@ -209,6 +213,12 @@ export default function BargainEntryPage() {
   };
 
   // --- REUSABLE SMART DROPDOWN ---
+  const handleDropdownBlur = (name: string) => {
+    setTimeout(() => {
+      setActiveDropdown(prev => (prev === name ? null : prev));
+    }, 200);
+  };
+
   const renderSmartDropdown = (label: string, name: string, options: string[], placeholder: string = "Select...") => {
     const filtered = options.filter(opt => opt.toLowerCase().includes((formData as any)[name]?.toLowerCase() || ''));
     
@@ -221,7 +231,7 @@ export default function BargainEntryPage() {
              value={(formData as any)[name]}
              onChange={handleChange}
              onFocus={() => setActiveDropdown(name)}
-             onBlur={() => setTimeout(() => setActiveDropdown(null), 200)}
+             onBlur={() => handleDropdownBlur(name)}
              className="neu-input cursor-pointer pr-10"
              placeholder={placeholder}
              autoComplete="off"
@@ -275,6 +285,14 @@ export default function BargainEntryPage() {
 
   return (
     <div className="max-w-7xl mx-auto neu-fade-in">
+
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#4a7fc4] text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 neu-fade-in font-medium tracking-wide">
+          <Check size={20} />
+          {toastMessage}
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="neu-page-title text-3xl">Bargain Entry</h1>
@@ -385,7 +403,7 @@ export default function BargainEntryPage() {
                    <input type="number" name="rate" value={formData.rate} onChange={handleChange} className="neu-input font-mono" required />
                 </div>
                 <div className="col-span-1">
-                   <label className="neu-label">Payment (Days)</label>
+                   <label className="neu-label">Payment Condition (Days)</label>
                    <input type="number" name="payment_condition" value={formData.payment_condition} onChange={handleChange} className="neu-input" />
                 </div>
 
@@ -394,40 +412,8 @@ export default function BargainEntryPage() {
                    {renderSmartDropdown("Payment By", "payment_by", PAYMENT_BY_OPTIONS)}
                 </div>
                 <div className="col-span-1">
-                  {renderSmartDropdown("Cash Disc", "cash_disc", cashDiscOptions)}
+                  {renderSmartDropdown("Cash Discount", "cash_disc", cashDiscOptions)}
                 </div>
-                <div className="col-span-1">
-                   <label className="neu-label">Delivery Terms</label>
-                   <input name="delivery_terms" value={formData.delivery_terms} onChange={handleChange} className="neu-input" />
-                </div>
-                <div className="col-span-1">
-                   {renderSmartDropdown("Delivery Type", "delivery_type", DELIVERY_TYPE_OPTIONS)}
-                </div>
-
-                {/* Row 4 */}
-                <div className="col-span-1">
-                   {renderSmartDropdown("Deal Type", "deal_type", DEAL_TYPE_OPTIONS)}
-                </div>
-                <div className="col-span-1">
-                   {renderSmartDropdown("Cotton Certificate", "cotton_certificate", certificateOptions)}
-                </div>
-                <div className="col-span-1">
-                   <label className="neu-label">Delivery From</label>
-                   <input name="delivery_from" value={formData.delivery_from} onChange={handleChange} className="neu-input" />
-                </div>
-                 <div className="col-span-1">
-                   {renderSmartDropdown("Status", "status", STATUS_OPTIONS)}
-                </div>
-
-                 {/* Row 5 */}
-                <div className="col-span-1">
-                   {renderSmartDropdown("Unit", "unit", UNIT_OPTIONS)}
-                </div>
-                <div className="col-span-1">
-                   <label className="neu-label">Advised By</label>
-                   <input name="advised_by" value={formData.advised_by} onChange={handleChange} className="neu-input" />
-                </div>
-                
                 {/* Weight Terms */}
                 <div className="col-span-2 flex items-center gap-8 pt-6 pl-2">
                    <label className="neu-label mr-2" style={{ marginBottom: 0, fontSize: "0.8rem" }}>Weight Terms:</label>
@@ -454,24 +440,50 @@ export default function BargainEntryPage() {
                       <span className="text-sm font-medium" style={{ color: "var(--cb-text-body)" }}>Spot Weight</span>
                    </label>
                 </div>
+
+                {/* Row 4 */}
+                <div className="col-span-1">
+                   {renderSmartDropdown("Delivery Terms", "delivery_terms", deliveryTermsOptions)}
+                </div>
+                <div className="col-span-1">
+                   {renderSmartDropdown("Delivery Type", "delivery_type", DELIVERY_TYPE_OPTIONS)}
+                </div>
+                <div className="col-span-1">
+                   {renderSmartDropdown("Deal Type", "deal_type", DEAL_TYPE_OPTIONS)}
+                </div>
+                <div className="col-span-1">
+                   {renderSmartDropdown("Cotton Certificate", "cotton_certificate", certificateOptions)}
+                </div>
+
+                {/* Row 5 */}
+                <div className="col-span-1">
+                   <label className="neu-label">Delivery From</label>
+                   <input name="delivery_from" value={formData.delivery_from} onChange={handleChange} className="neu-input" />
+                </div>
+                <div className="col-span-1">
+                   {renderSmartDropdown("Delivery to (Unit)", "unit", unitOptions)}
+                </div>
+                <div className="col-span-1">
+                   <label className="neu-label">Advised By</label>
+                   <input name="advised_by" value={formData.advised_by} onChange={handleChange} className="neu-input" />
+                </div>
+                
             </div>
 
             {/* --- BOTTOM SECTION --- */}
             <div className="pt-6 mt-2" style={{ borderTop: "1px solid var(--cb-divider)" }}>
                <h3 className="neu-section-title mb-4">Quality Condition & Remarks</h3>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {renderSmartDropdown("QC Seller", "qc_seller", qcOptions)}
-                  {renderSmartDropdown("QC Buyer", "qc_buyer", qcOptions)}
-                  
-                  {renderSmartDropdown("Bargain Type", "bargain_type", bargainTypeOptions)}
-                  <div>
-                    <label className="neu-label">Bargain No. (Manual)</label>
-                    <input name="bargain_no_manual" value={formData.bargain_no_manual} onChange={handleChange} className="neu-input" />
-                  </div>
+                  {renderSmartDropdown("Quality Condition", "quality_condition", qualityOptions)}
                </div>
                <div className="mt-4">
                   <label className="neu-label">Remarks</label>
                   <textarea name="remarks" value={formData.remarks} onChange={handleChange} className="neu-input" style={{ height: "64px", resize: "none" }} />
+               </div>
+               <div className="mt-4 grid grid-cols-1 md:grid-cols-4">
+                  <div className="col-span-1">
+                     {renderSmartDropdown("Status", "status", STATUS_OPTIONS)}
+                  </div>
                </div>
             </div>
 

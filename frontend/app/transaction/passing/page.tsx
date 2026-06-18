@@ -17,6 +17,14 @@ const formatDate = (dateStr: string) => {
   return dateStr;
 };
 
+const addDaysToDate = (dateStr: string, days: number) => {
+  if (!dateStr || !days) return dateStr;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+};
+
 export default function PassingEntryPage() {
   const [passings, setPassings] = useState<any[]>([]);
   const [bargains, setBargains] = useState<any[]>([]);
@@ -29,17 +37,21 @@ export default function PassingEntryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Search State for Deal Selection
   const [dealSearch, setDealSearch] = useState("");
   const [isDealDropdownOpen, setIsDealDropdownOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   // Form State
   const initialFormState = {
     bargain: '', // This stores the ID
-    passing_no: '',
     approval_date: new Date().toISOString().split('T')[0],
-    due_date: '',
-    lot_no: '',
+    pr_no: '',
+    book_bargain_no: '',
     approved_by: '',
     remarks: ''
   };
@@ -50,7 +62,8 @@ export default function PassingEntryPage() {
   const [selectedDealDisplay, setSelectedDealDisplay] = useState({
     seller: '',
     buyer: '',
-    rate: ''
+    rate: '',
+    payment_condition: 0
   });
 
   useEffect(() => {
@@ -63,8 +76,8 @@ export default function PassingEntryPage() {
         axios.get('http://127.0.0.1:8000/api/passings/'),
         axios.get('http://127.0.0.1:8000/api/bargains/')
       ]);
-      setPassings(passingRes.data);
-      setBargains(bargainRes.data);
+      setPassings(passingRes.data.reverse());
+      setBargains(bargainRes.data.reverse());
       setLoading(false);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -77,17 +90,31 @@ export default function PassingEntryPage() {
 
   // Logic: When user selects a Deal
   const handleDealSelect = (deal: any) => {
-    setFormData({ ...formData, bargain: deal.deal_no }); // Store ID
+    const conditionDays = parseInt(deal.payment_condition) || 0;
+    const newDueDate = addDaysToDate(formData.approval_date, conditionDays);
+
+    setFormData({ 
+      ...formData, 
+      bargain: deal.deal_no,
+      due_date: newDueDate 
+    }); // Store ID
     setDealSearch(deal.smart_deal_id); // Show Smart ID
     
     // Auto-fill visual details
     setSelectedDealDisplay({
       seller: deal.seller_name,
       buyer: deal.buyer_name,
-      rate: deal.rate
+      rate: deal.rate,
+      payment_condition: conditionDays
     });
     
     setIsDealDropdownOpen(false);
+  };
+
+  const handleApprovalDateChange = (val: string) => {
+    const days = selectedDealDisplay.payment_condition || 0;
+    const newDueDate = addDaysToDate(val, days);
+    setFormData({ ...formData, approval_date: val, due_date: newDueDate });
   };
 
   const handleEditClick = (pass: any) => {
@@ -105,7 +132,8 @@ export default function PassingEntryPage() {
     setSelectedDealDisplay({
       seller: pass.seller_name || '',
       buyer: pass.buyer_name || '',
-      rate: pass.rate || ''
+      rate: pass.rate || '',
+      payment_condition: pass.payment_condition || 0
     });
     setEditingId(pass.id);
     setIsFormOpen(true);
@@ -116,7 +144,7 @@ export default function PassingEntryPage() {
     setEditingId(null);
     setFormData(initialFormState);
     setDealSearch("");
-    setSelectedDealDisplay({ seller: '', buyer: '', rate: '' });
+    setSelectedDealDisplay({ seller: '', buyer: '', rate: '', payment_condition: 0 });
   };
 
   const handleSubmit = async (e: any) => {
@@ -124,10 +152,10 @@ export default function PassingEntryPage() {
     try {
       if (editingId) {
         await axios.put(`http://127.0.0.1:8000/api/passings/${editingId}/`, formData);
-        alert('Passing Updated Successfully!');
+        showToast('Passing Updated Successfully!');
       } else {
         await axios.post('http://127.0.0.1:8000/api/passings/', formData);
-        alert('Passing Saved Successfully!');
+        showToast('Passing Saved Successfully!');
       }
       setIsFormOpen(false);
       setEditingId(null);
@@ -165,6 +193,13 @@ export default function PassingEntryPage() {
 
   return (
     <div className="max-w-7xl mx-auto neu-fade-in">
+
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#4a7fc4] text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 neu-fade-in font-medium tracking-wide">
+          <CheckCircle size={20} />
+          {toastMessage}
+        </div>
+      )}
       
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
@@ -220,7 +255,11 @@ export default function PassingEntryPage() {
                       value={dealSearch}
                       onChange={(e) => { setDealSearch(e.target.value); setIsDealDropdownOpen(true); }}
                       onFocus={() => setIsDealDropdownOpen(true)}
-                      onBlur={() => setTimeout(() => setIsDealDropdownOpen(false), 200)}
+                      onBlur={() => {
+                        setTimeout(() => {
+                          setIsDealDropdownOpen((prev) => (prev ? false : prev));
+                        }, 200);
+                      }}
                       placeholder="Search Deal..."
                       className="neu-input cursor-pointer pr-10"
                       required
@@ -234,9 +273,12 @@ export default function PassingEntryPage() {
                       <ul className="neu-dropdown">
                         {filteredBargains.map(b => (
                           <li key={b.deal_no} onMouseDown={() => handleDealSelect(b)}>
-                            <div>
-                              <span className="font-bold" style={{ color: "var(--cb-primary)" }}>{b.smart_deal_id}</span>
-                              <span className="text-xs block" style={{ color: "var(--cb-text-label)" }}>
+                            <div className="w-full overflow-hidden">
+                              <div className="flex justify-between items-center w-full">
+                                <span className="font-bold truncate" style={{ color: "var(--cb-primary)" }}>{b.smart_deal_id}</span>
+                                <span className="text-xs whitespace-nowrap pl-2" style={{ color: "var(--cb-text-label)" }}>{formatDate(b.bargain_date)}</span>
+                              </div>
+                              <span className="text-xs block truncate mt-1" style={{ color: "var(--cb-text-label)" }}>
                                 {b.seller_name} ➔ {b.buyer_name}
                               </span>
                             </div>
@@ -263,21 +305,14 @@ export default function PassingEntryPage() {
 
             {/* --- Section 2: Passing Details --- */}
             <div className="col-span-1">
-               <label className="neu-label">Passing No</label>
-               <input name="passing_no" value={formData.passing_no} onChange={handleChange} className="neu-input" required />
-            </div>
-            
-            <div className="col-span-1">
-               {/* CUSTOM CALENDAR 1 */}
                <CustomDatePicker 
-                  label="Approval Date" 
+                  label="Approval / Dispatch Date" 
                   value={formData.approval_date} 
-                  onChange={(val) => setFormData({...formData, approval_date: val})} 
+                  onChange={handleApprovalDateChange} 
                />
             </div>
             
             <div className="col-span-1">
-               {/* CUSTOM CALENDAR 2 */}
                <CustomDatePicker 
                   label="Due Date (Optional)" 
                   value={formData.due_date} 
@@ -290,11 +325,22 @@ export default function PassingEntryPage() {
                <input name="lot_no" value={formData.lot_no} onChange={handleChange} className="neu-input" required />
             </div>
 
-            <div className="md:col-span-2">
+            <div className="col-span-1">
+               <label className="neu-label">PR No</label>
+               <input name="pr_no" value={formData.pr_no} onChange={handleChange} className="neu-input" />
+            </div>
+            
+            <div className="md:col-span-1">
                <label className="neu-label">Approved By</label>
                <input name="approved_by" value={formData.approved_by} onChange={handleChange} className="neu-input" required />
             </div>
-            <div className="md:col-span-2">
+
+            <div className="col-span-1">
+               <label className="neu-label">BARGAIN NO.</label>
+               <input name="book_bargain_no" value={formData.book_bargain_no} onChange={handleChange} className="neu-input" />
+            </div>
+
+            <div className="md:col-span-4">
                <label className="neu-label">Remarks</label>
                <input name="remarks" value={formData.remarks} onChange={handleChange} className="neu-input" />
             </div>
@@ -336,7 +382,7 @@ export default function PassingEntryPage() {
           <table className="neu-table">
             <thead>
               <tr>
-                <th>Passing No</th>
+                <th>PR No</th>
                 <th>Date</th>
                 <th>Deal No</th>
                 <th>Seller</th>
@@ -352,7 +398,7 @@ export default function PassingEntryPage() {
                 <tr><td colSpan={7} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>No passing entries found.</td></tr>
               ) : currentPassings.map((pass) => (
                 <tr key={pass.id}>
-                  <td className="font-medium" style={{ color: "var(--cb-text-heading)" }}>{pass.passing_no}</td>
+                  <td className="font-bold" style={{ color: "var(--cb-secondary)" }}>{pass.pr_no || "-"}</td>
                   <td>{formatDate(pass.approval_date)}</td>
                   <td className="font-mono font-bold" style={{ color: "var(--cb-primary)" }}>{pass.deal_no}</td>
                   <td>{pass.seller_name}</td>

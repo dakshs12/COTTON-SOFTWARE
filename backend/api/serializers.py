@@ -30,6 +30,7 @@ class PassingEntrySerializer(serializers.ModelSerializer):
     deal_no = serializers.ReadOnlyField(source='bargain.smart_deal_id')
     seller_name = serializers.CharField(source='bargain.seller.company_name', read_only=True)
     buyer_name = serializers.CharField(source='bargain.buyer.company_name', read_only=True)
+    payment_condition = serializers.IntegerField(source='bargain.payment_condition', read_only=True)
 
     class Meta:
         model = PassingEntry
@@ -39,7 +40,7 @@ class DeliveryDetailsSerializer(serializers.ModelSerializer):
     deal_display = serializers.CharField(source='bargain.smart_deal_id', read_only=True)
     seller_name = serializers.CharField(source='bargain.seller.company_name', read_only=True)
     buyer_name = serializers.CharField(source='bargain.buyer.company_name', read_only=True)
-    passing_ref = serializers.CharField(source='passing.passing_no', read_only=True, allow_null=True)
+    passing_ref = serializers.CharField(source='passing.pr_no', read_only=True, allow_null=True)
 
     class Meta:
         model = DeliveryDetails
