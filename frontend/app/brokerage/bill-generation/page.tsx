@@ -307,7 +307,7 @@ export default function BillGenerationPage() {
                               onChange={(e) => setUseLetterhead(e.target.checked)} 
                               className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                             />
-                            <label htmlFor="useLetterhead" className="neu-label mb-0 cursor-pointer text-sm font-bold">Use Letterhead</label>
+                            <label htmlFor="useLetterhead" className="neu-label mb-0 cursor-pointer text-[1.1rem] font-bold" style={{ marginTop: '2px' }}>Use Letterhead</label>
                         </div>
                     </div>
                 </div>
@@ -394,7 +394,7 @@ export default function BillGenerationPage() {
                                 <th>Date</th>
                                 <th>Truck No</th>
                                 <th>Deal No</th>
-                                <th>Role</th>
+                                <th>Counter Party</th>
                                 <th className="text-right">Bales</th>
                             </tr>
                         </thead>
@@ -421,8 +421,8 @@ export default function BillGenerationPage() {
                                     <td>{item.date}</td>
                                     <td className="font-mono font-medium" style={{ color: "var(--cb-text-heading)" }}>{item.truck_no}</td>
                                     <td className="font-bold" style={{ color: "var(--cb-primary)" }}>{item.deal_no}</td>
-                                    <td>
-                                      <span className="text-xs uppercase font-bold" style={{ color: "var(--cb-text-placeholder)" }}>{item.role}</span>
+                                    <td className="truncate max-w-[150px]">
+                                      <span className="font-bold" style={{ color: "var(--cb-text-body)" }}>{item.counter_party}</span>
                                     </td>
                                     <td className="text-right font-mono font-bold">{item.bales}</td>
                                 </tr>

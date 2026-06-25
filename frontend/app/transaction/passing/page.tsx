@@ -39,11 +39,11 @@ export default function PassingEntryPage() {
 
   const [dealSearch, setDealSearch] = useState("");
   const [isDealDropdownOpen, setIsDealDropdownOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{msg: string, type: 'success' | 'error'} | null>(null);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
   };
 
   // Form State
@@ -57,13 +57,15 @@ export default function PassingEntryPage() {
   };
 
   const [formData, setFormData] = useState(initialFormState);
+  const [splits, setSplits] = useState<{id?: number, bales: string}[]>([]);
 
   // Display State
   const [selectedDealDisplay, setSelectedDealDisplay] = useState({
     seller: '',
     buyer: '',
     rate: '',
-    payment_condition: 0
+    payment_condition: 0,
+    bales: 0
   });
 
   useEffect(() => {
@@ -105,8 +107,10 @@ export default function PassingEntryPage() {
       seller: deal.seller_name,
       buyer: deal.buyer_name,
       rate: deal.rate,
-      payment_condition: conditionDays
+      payment_condition: conditionDays,
+      bales: deal.bales
     });
+    setSplits([]); // Reset splits when new deal selected
     
     setIsDealDropdownOpen(false);
   };
@@ -133,8 +137,16 @@ export default function PassingEntryPage() {
       seller: pass.seller_name || '',
       buyer: pass.buyer_name || '',
       rate: pass.rate || '',
-      payment_condition: pass.payment_condition || 0
+      payment_condition: pass.payment_condition || 0,
+      bales: pass.bargain_bales || 0
     });
+    setSplits(pass.splits ? pass.splits.map((s:any) => ({ id: s.id, bales: s.bales.toString() })) : []);
+    
+    // Attempt to fetch bargain bales if missing
+    if (!pass.bargain_bales) {
+      const b = bargains.find(x => x.deal_no === pass.bargain || x.id === pass.bargain);
+      if (b) setSelectedDealDisplay(prev => ({...prev, bales: b.bales}));
+    }
     setEditingId(pass.id);
     setIsFormOpen(true);
   };
@@ -144,17 +156,33 @@ export default function PassingEntryPage() {
     setEditingId(null);
     setFormData(initialFormState);
     setDealSearch("");
-    setSelectedDealDisplay({ seller: '', buyer: '', rate: '', payment_condition: 0 });
+    setSelectedDealDisplay({ seller: '', buyer: '', rate: '', payment_condition: 0, bales: 0 });
+    setSplits([]);
   };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+
+    // Validation: If splits are defined, they must equal the total bargain bales
+    const validSplits = splits.filter(s => s.bales).map(s => ({ id: s.id, bales: parseInt(s.bales) }));
+    if (validSplits.length > 0) {
+      const splitSum = validSplits.reduce((sum, s) => sum + s.bales, 0);
+      if (splitSum !== selectedDealDisplay.bales) {
+        showToast(`Split Bales sum (${splitSum}) must equal the total Deal Bales (${selectedDealDisplay.bales}). Please add the remaining ${selectedDealDisplay.bales - splitSum} bales.`, 'error');
+        return;
+      }
+    }
+
     try {
+      const payload = {
+        ...formData,
+        splits: validSplits
+      };
       if (editingId) {
-        await axios.put(`http://127.0.0.1:8000/api/passings/${editingId}/`, formData);
+        await axios.put(`http://127.0.0.1:8000/api/passings/${editingId}/`, payload);
         showToast('Passing Updated Successfully!');
       } else {
-        await axios.post('http://127.0.0.1:8000/api/passings/', formData);
+        await axios.post('http://127.0.0.1:8000/api/passings/', payload);
         showToast('Passing Saved Successfully!');
       }
       setIsFormOpen(false);
@@ -163,7 +191,8 @@ export default function PassingEntryPage() {
       // Reset
       setFormData(initialFormState);
       setDealSearch("");
-      setSelectedDealDisplay({ seller: '', buyer: '', rate: '' });
+      setSelectedDealDisplay({ seller: '', buyer: '', rate: '', payment_condition: 0, bales: 0 });
+      setSplits([]);
     } catch (error) {
       console.error("Error saving passing:", error);
       alert('Error saving data.');
@@ -194,10 +223,10 @@ export default function PassingEntryPage() {
   return (
     <div className="max-w-7xl mx-auto neu-fade-in">
 
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#4a7fc4] text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 neu-fade-in font-medium tracking-wide">
-          <CheckCircle size={20} />
-          {toastMessage}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 neu-fade-in font-medium tracking-wide ${toast.type === 'error' ? 'bg-[#ef4444]' : 'bg-[#4a7fc4]'}`}>
+          {toast.type === 'error' ? <X size={22} className="bg-white/20 rounded-full p-0.5" /> : <CheckCircle size={22} className="bg-white/20 rounded-full p-0.5" />}
+          {toast.msg}
         </div>
       )}
       
@@ -343,6 +372,56 @@ export default function PassingEntryPage() {
             <div className="md:col-span-4">
                <label className="neu-label">Remarks</label>
                <input name="remarks" value={formData.remarks} onChange={handleChange} className="neu-input" />
+            </div>
+
+            {/* Bales Split Section */}
+            <div className="md:col-span-4 p-5 rounded-xl border border-dashed mt-2" style={{ borderColor: "var(--cb-divider)" }}>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-bold text-sm" style={{ color: "var(--cb-text-heading)" }}>Bales Split (Optional)</h3>
+                  {selectedDealDisplay.bales > 0 && (
+                    <span className="text-xs font-semibold" style={{ color: "var(--cb-text-label)" }}>
+                      Total Deal: <span style={{ color: "var(--cb-primary)" }}>{selectedDealDisplay.bales}</span> | 
+                      Allocated: <span style={{ color: "var(--cb-secondary)" }}>{splits.reduce((sum, s) => sum + (parseInt(s.bales)||0), 0)}</span>
+                    </span>
+                  )}
+                </div>
+                
+                {splits.map((split, idx) => (
+                  <div key={idx} className="flex gap-4 items-end mb-3">
+                    <div className="flex-1 relative">
+                      <label className="neu-label text-xs">Split {idx + 1} Bales</label>
+                      <input 
+                        type="number" 
+                        value={split.bales} 
+                        onChange={(e) => {
+                          const newSplits = [...splits];
+                          newSplits[idx].bales = e.target.value;
+                          setSplits(newSplits);
+                        }}
+                        className="neu-input font-mono" 
+                        placeholder="e.g. 200"
+                      />
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setSplits(splits.filter((_, i) => i !== idx))}
+                      className="mb-2 p-2 rounded-lg transition-colors" 
+                      style={{ color: "var(--cb-danger)", backgroundColor: "rgba(220, 53, 69, 0.1)" }}
+                      title="Remove Split"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+                
+                <button
+                  type="button"
+                  onClick={() => setSplits([...splits, { bales: '' }])}
+                  className="text-sm font-bold flex items-center gap-1 mt-2 p-2 -ml-2 rounded-lg transition-colors hover:bg-gray-50"
+                  style={{ color: "var(--cb-primary)" }}
+                >
+                  <Plus size={16} /> Add Split
+                </button>
             </div>
 
             {/* Footer */}
