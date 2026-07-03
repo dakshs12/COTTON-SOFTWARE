@@ -11,24 +11,49 @@ from .serializers import (
 )
 
 class PartyMasterViewSet(viewsets.ModelViewSet):
-    queryset = PartyMaster.objects.all()
     serializer_class = PartyMasterSerializer
 
+    def get_queryset(self):
+        return PartyMaster.objects.filter(tenant=self.request.user.tenant)
+
+    def perform_create(self, serializer):
+        serializer.save(tenant=self.request.user.tenant)
+
 class FirmMasterViewSet(viewsets.ModelViewSet):
-    queryset = FirmMaster.objects.all()
     serializer_class = FirmMasterSerializer
 
+    def get_queryset(self):
+        return FirmMaster.objects.filter(tenant=self.request.user.tenant)
+
+    def perform_create(self, serializer):
+        serializer.save(tenant=self.request.user.tenant)
+
 class BargainEntryViewSet(viewsets.ModelViewSet):
-    queryset = BargainEntry.objects.all()
     serializer_class = BargainEntrySerializer
 
+    def get_queryset(self):
+        return BargainEntry.objects.filter(tenant=self.request.user.tenant)
+
+    def perform_create(self, serializer):
+        serializer.save(tenant=self.request.user.tenant)
+
 class PassingEntryViewSet(viewsets.ModelViewSet):
-    queryset = PassingEntry.objects.all()
     serializer_class = PassingEntrySerializer
 
+    def get_queryset(self):
+        return PassingEntry.objects.filter(tenant=self.request.user.tenant)
+
+    def perform_create(self, serializer):
+        serializer.save(tenant=self.request.user.tenant)
+
 class DeliveryDetailsViewSet(viewsets.ModelViewSet):
-    queryset = DeliveryDetails.objects.all()
     serializer_class = DeliveryDetailsSerializer
+
+    def get_queryset(self):
+        return DeliveryDetails.objects.filter(tenant=self.request.user.tenant)
+
+    def perform_create(self, serializer):
+        serializer.save(tenant=self.request.user.tenant)
 
 # --- BROKERAGE LOGIC ---
 
@@ -49,7 +74,7 @@ def get_pending_deliveries(request):
         deliveries = DeliveryDetails.objects.filter(
             Q(bargain__seller=party, seller_billed=False) | 
             Q(bargain__buyer=party, buyer_billed=False)
-        )
+        ).filter(tenant=request.user.tenant)
         
         data = []
         for d in deliveries:
@@ -97,7 +122,8 @@ def generate_brokerage_bill(request):
             sgst_amount=data.get('sgst_amount', 0),
             igst_amount=data.get('igst_amount', 0),
             net_amount=data['net_amount'],
-            amount_in_words=data.get('amount_in_words', '')
+            amount_in_words=data.get('amount_in_words', ''),
+            tenant=request.user.tenant
         )
         
         # 2. Link Deliveries & Mark them as Billed
@@ -124,62 +150,109 @@ from django.db.models.functions import TruncMonth
 def get_dashboard_analytics(request):
     try:
         # 1. KPI Metrics
-        total_deals = BargainEntry.objects.count()
+        total_deals = BargainEntry.objects.filter(tenant=request.user.tenant).count()
         
         # Calculate Total Bales (from BargainEntry)
-        total_bales_agg = BargainEntry.objects.aggregate(Sum('bales'))
+        total_bales_agg = BargainEntry.objects.filter(tenant=request.user.tenant).aggregate(Sum('bales'))
         total_bales = total_bales_agg['bales__sum'] or 0
         
-        # Calculate Pending Bales (Deliveries not yet billed)
-        # Using DeliveryDetails because it represents actual dispatched bales
-        # We check seller_billed or buyer_billed
-        pending_deliveries = DeliveryDetails.objects.filter(seller_billed=False) | DeliveryDetails.objects.filter(buyer_billed=False)
-        # Simple pending calculation (if either isn't billed)
-        total_pending_bales = pending_deliveries.distinct().aggregate(Sum('quantity_bales'))['quantity_bales__sum'] or 0
+        # Calculate Pending Dispatches (Bargains with 0 Deliveries)
+        pending_dispatches = BargainEntry.objects.filter(tenant=request.user.tenant).annotate(del_count=Count('deliverydetails')).filter(del_count=0).count()
 
-        # Total Brokerage Revenue (Gross Amount from BrokerageBills)
-        total_brokerage_agg = BrokerageBill.objects.aggregate(Sum('gross_amount'))
-        total_brokerage = total_brokerage_agg['gross_amount__sum'] or 0
+        # Unbilled Deliveries Logic (Older than 6 months or oldest)
+        from datetime import date, timedelta
+        six_months_ago = date.today() - timedelta(days=180)
         
+        unbilled_deliveries_qs = DeliveryDetails.objects.filter(
+            tenant=request.user.tenant, 
+            seller_billed=False, 
+            buyer_billed=False
+        ).order_by('bill_date')
+        
+        oldest_unbilled_count = unbilled_deliveries_qs.filter(bill_date__lt=six_months_ago).count()
+        oldest_unbilled_date = None
+        if oldest_unbilled_count > 0:
+            oldest_unbilled_date = unbilled_deliveries_qs.filter(bill_date__lt=six_months_ago).first().bill_date.strftime('%d-%m-%Y')
+        elif unbilled_deliveries_qs.exists():
+            oldest_unbilled_date = unbilled_deliveries_qs.first().bill_date.strftime('%d-%m-%Y')
+            
+        unbilled_info = {
+            "count": oldest_unbilled_count if oldest_unbilled_count > 0 else 1 if unbilled_deliveries_qs.exists() else 0,
+            "oldest_date": oldest_unbilled_date,
+            "is_6_months_plus": oldest_unbilled_count > 0
+        }
+
+        # Fulfillment Progress (% of dispatched this month)
+        current_month = date.today().month
+        current_year = date.today().year
+        
+        booked_this_month = BargainEntry.objects.filter(
+            tenant=request.user.tenant, 
+            bargain_date__month=current_month, 
+            bargain_date__year=current_year
+        ).aggregate(Sum('bales'))['bales__sum'] or 0
+        
+        dispatched_this_month = DeliveryDetails.objects.filter(
+            tenant=request.user.tenant,
+            bill_date__month=current_month,
+            bill_date__year=current_year
+        ).aggregate(Sum('quantity_bales'))['quantity_bales__sum'] or 0
+        
+        fulfillment_progress = 0
+        if booked_this_month > 0:
+            fulfillment_progress = round((dispatched_this_month / booked_this_month) * 100, 1)
+
         # 2. Top 5 Buyers by Volume
-        top_buyers = list(BargainEntry.objects.values('buyer__company_name')
+        top_buyers = list(BargainEntry.objects.filter(tenant=request.user.tenant).values('buyer__company_name')
                           .annotate(total_bales=Sum('bales'))
                           .order_by('-total_bales')[:5])
                           
         # 3. Top 5 Sellers by Volume
-        top_sellers = list(BargainEntry.objects.values('seller__company_name')
+        top_sellers = list(BargainEntry.objects.filter(tenant=request.user.tenant).values('seller__company_name')
                            .annotate(total_bales=Sum('bales'))
                            .order_by('-total_bales')[:5])
                            
-        # 4. Revenue Month-over-Month (BrokerageBill)
-        # Group by Month of bill_date
-        revenue_trends_query = (
-            BrokerageBill.objects
-            .annotate(month=TruncMonth('bill_date'))
+        # 4. Bales Volume Trend (Month-over-Month)
+        bales_trends_query = (
+            BargainEntry.objects.filter(tenant=request.user.tenant)
+            .annotate(month=TruncMonth('bargain_date'))
             .values('month')
-            .annotate(revenue=Sum('gross_amount'))
+            .annotate(volume=Sum('bales'))
             .order_by('month')
         )
         
-        # Format dates for frontend
-        revenue_trends = [
+        bales_trends = [
             {
-                "month": rt['month'].strftime('%b %Y') if rt['month'] else 'Unknown',
-                "revenue": float(rt['revenue'])
+                "month": bt['month'].strftime('%b %Y') if bt['month'] else 'Unknown',
+                "volume": float(bt['volume'])
             }
-            for rt in revenue_trends_query
+            for bt in bales_trends_query
         ]
-
+        
+        # 5. Recent Bargains (Last 4)
+        recent_bargains_qs = BargainEntry.objects.filter(tenant=request.user.tenant).order_by('-created_at')[:4]
+        recent_bargains = [
+            {
+                "date": b.bargain_date.strftime('%d %b, %Y'),
+                "buyer": b.buyer.company_name,
+                "seller": b.seller.company_name,
+                "bales": b.bales
+            } for b in recent_bargains_qs
+        ]
+        
         return Response({
             "kpi": {
                 "total_deals": total_deals,
                 "total_bales": total_bales,
-                "total_pending_bales": total_pending_bales,
-                "total_brokerage": float(total_brokerage),
+                "pending_dispatches": pending_dispatches,
+                "unbilled_info": unbilled_info,
+                "fulfillment_progress": fulfillment_progress,
+                "current_month_name": date.today().strftime('%B')
             },
             "top_buyers": top_buyers,
             "top_sellers": top_sellers,
-            "revenue_trends": revenue_trends
+            "bales_trends": bales_trends,
+            "recent_bargains": recent_bargains
         })
     except Exception as e:
         return Response({"error": str(e)}, status=500)
@@ -193,7 +266,7 @@ def get_party_dues(request):
     along with their total due amount and number of unpaid bills.
     """
     # Filter bills that are not fully paid
-    unpaid_bills = BrokerageBill.objects.filter(is_paid=False)
+    unpaid_bills = BrokerageBill.objects.filter(tenant=request.user.tenant, is_paid=False)
     
     # Aggregate dues grouped by Party
     from django.db.models import Sum, F, Count
@@ -224,7 +297,7 @@ def get_party_due_bills(request, party_id):
     """
     Returns the list of specific unpaid bills for a single party.
     """
-    bills = BrokerageBill.objects.filter(party_id=party_id, is_paid=False).order_by('bill_date')
+    bills = BrokerageBill.objects.filter(tenant=request.user.tenant, party_id=party_id, is_paid=False).order_by('bill_date')
     serializer = BrokerageBillSerializer(bills, many=True)
     return Response(serializer.data)
 
@@ -260,6 +333,7 @@ def receive_party_payment(request):
             
             # 1. Create the Receipt
             receipt = PartyPaymentReceipt.objects.create(
+                tenant=request.user.tenant,
                 party=party,
                 receipt_date=data.get('receipt_date'),
                 amount=amount,
@@ -281,6 +355,7 @@ def receive_party_payment(request):
                 
                 # Create allocation record
                 PaymentAllocation.objects.create(
+                    tenant=request.user.tenant,
                     receipt=receipt,
                     bill=bill,
                     allocated_amount=alloc_amount
@@ -315,8 +390,8 @@ def get_party_statement(request, party_id):
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
 
-        bills_query = BrokerageBill.objects.filter(party=party)
-        payments_query = PartyPaymentReceipt.objects.filter(party=party)
+        bills_query = BrokerageBill.objects.filter(tenant=request.user.tenant, party=party)
+        payments_query = PartyPaymentReceipt.objects.filter(tenant=request.user.tenant, party=party)
 
         if start_date:
             bills_query = bills_query.filter(bill_date__gte=start_date)
@@ -350,13 +425,14 @@ def get_party_statement(request, party_id):
             })
 
         # Sort chronologically
-        transactions.sort(key=lambda x: x['date'])
+        transactions.sort(key=lambda x: datetime.strptime(x["date"], "%Y-%m-%d"))
 
         # Calculate Running Balance
         running_balance = 0.0
-        for tx in transactions:
-            running_balance += tx['debit'] - tx['credit']
-            tx['balance'] = running_balance
+        for txn in transactions:
+            running_balance += txn["debit"]
+            running_balance -= txn["credit"]
+            txn["balance"] = running_balance
 
         return Response({
             "party": {
@@ -366,6 +442,47 @@ def get_party_statement(request, party_id):
             },
             "transactions": transactions,
             "closing_balance": running_balance
+        })
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import permission_classes
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def register_skeleton_account(request):
+    try:
+        data = request.data
+        username = data.get('username')
+        password = data.get('password')
+        email = data.get('email')
+        company_name = data.get('company_name')
+
+        if not all([username, password, company_name]):
+            return Response({"error": "Missing required fields"}, status=400)
+
+        if CustomUser.objects.filter(username=username).exists():
+            return Response({"error": "Username already taken"}, status=400)
+
+        with transaction.atomic():
+            # Create Skeleton Tenant
+            tenant = Tenant.objects.create(
+                company_name=company_name,
+                subscription_status='pending'
+            )
+            
+            # Create User
+            user = CustomUser.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                tenant=tenant
+            )
+
+        return Response({
+            "message": "Skeleton account created successfully. Proceed to payment.",
+            "tenant_id": tenant.id
         })
     except Exception as e:
         return Response({"error": str(e)}, status=500)

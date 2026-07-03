@@ -48,8 +48,11 @@ const menuItems = [
   }
 ];
 
+import { useAuth } from './AuthProvider';
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   return (
     <div
@@ -171,6 +174,7 @@ export default function Sidebar() {
         style={{ borderTop: "1px solid var(--cb-divider)" }}
       >
         <button
+          onClick={logout}
           className="flex items-center gap-3 px-3 py-2.5 w-full transition-all duration-200 text-sm font-medium cursor-pointer"
           style={{
             borderRadius: "var(--cb-radius-sm)",

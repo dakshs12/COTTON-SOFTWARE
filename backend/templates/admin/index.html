@@ -1,0 +1,66 @@
+{% extends "admin/index.html" %}
+{% load admin_kpis %}
+
+{% block content_title %}
+    {{ block.super }}
+{% endblock %}
+
+{% block content %}
+    {% get_admin_kpis as kpis %}
+    <div class="row mb-4">
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h3>{{ kpis.total_tenants }}</h3>
+                    <p>Total Registered Brokers</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <a href="/admin/api/tenant/" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h3>{{ kpis.active_subs }}</h3>
+                    <p>Active Subscriptions</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <a href="/admin/api/tenant/?subscription_status__exact=active" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>{{ kpis.suspended_subs }}</h3>
+                    <p>Suspended/Past Due</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <a href="/admin/api/tenant/" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h3>{{ kpis.total_users }}</h3>
+                    <p>Total Users Platform-wide</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <a href="/admin/api/customuser/" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Render the default Jazzmin Dashboard below -->
+    {{ block.super }}
+{% endblock %}

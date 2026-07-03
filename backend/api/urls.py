@@ -3,11 +3,11 @@ from rest_framework.routers import DefaultRouter
 from . import views  # <--- THIS IS THE FIX (Importing the whole file)
 
 router = DefaultRouter()
-router.register(r'parties', views.PartyMasterViewSet)
-router.register(r'firms', views.FirmMasterViewSet)
-router.register(r'bargains', views.BargainEntryViewSet)
-router.register(r'passings', views.PassingEntryViewSet)
-router.register(r'deliveries', views.DeliveryDetailsViewSet)
+router.register(r'parties', views.PartyMasterViewSet, basename='partymaster')
+router.register(r'firms', views.FirmMasterViewSet, basename='firmmaster')
+router.register(r'bargains', views.BargainEntryViewSet, basename='bargainentry')
+router.register(r'passings', views.PassingEntryViewSet, basename='passingentry')
+router.register(r'deliveries', views.DeliveryDetailsViewSet, basename='deliverydetails')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -26,4 +26,7 @@ urlpatterns = [
     
     # Reports
     path('statement/<int:party_id>/', views.get_party_statement),
+    
+    # SaaS Auth
+    path('auth/register/', views.register_skeleton_account),
 ]

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display, DM_Sans, Quicksand } from "next/font/google";
 import "./globals.css";
-import Sidebar from "./components/Sidebar";
 
 const playfairDisplay = Playfair_Display({
   variable: "--font-playfair-display",
@@ -24,28 +23,27 @@ export const metadata: Metadata = {
 };
 
 import { Agentation } from "agentation";
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { AuthProvider } from "./components/AuthProvider";
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+  
   return (
     <html lang="en">
       <body
-        className={`${playfairDisplay.variable} ${dmSans.variable} ${quicksand.variable} min-h-screen flex`}
+        className={`${playfairDisplay.variable} ${dmSans.variable} ${quicksand.variable} min-h-screen flex text-gray-800 bg-cb-bg`}
         suppressHydrationWarning
       >
-        {/* Sidebar — fixed left, light neumorphic */}
-        <Sidebar />
-
-        {/* Main content area — offset by sidebar width */}
-        <main
-          className="flex-1 p-8 print:m-0 print:p-0"
-          style={{ marginLeft: "var(--cb-sidebar-width)" }}
-        >
-          {children}
-        </main>
+        <GoogleOAuthProvider clientId={googleClientId}>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </GoogleOAuthProvider>
 
         {/* Agentation visual feedback tool (development only) */}
         <div className="print:hidden">

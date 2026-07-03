@@ -7,7 +7,8 @@ from decimal import Decimal
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 django.setup()
 
-from api.models import PartyMaster, FirmMaster, BargainEntry, PassingEntry, DeliveryDetails, BrokerageBill
+from api.models import Tenant, CustomUser, PartyMaster, FirmMaster, BargainEntry, PassingEntry, DeliveryDetails, BrokerageBill
+from django.contrib.auth import get_user_model
 
 def run():
     print("Clearing old data...")
@@ -17,9 +18,25 @@ def run():
     BargainEntry.objects.all().delete()
     PartyMaster.objects.all().delete()
     FirmMaster.objects.all().delete()
+    Tenant.objects.all().delete()
+    CustomUser.objects.exclude(username='admin').delete()
+
+    print("Creating Tenant and User...")
+    tenant1 = Tenant.objects.create(
+        company_name="Daksh Cotton Enterprises",
+        subscription_status='active',
+        dodo_customer_id='cus_12345'
+    )
+    user = get_user_model().objects.create_user(
+        username='broker1',
+        email='broker1@example.com',
+        password='password123',
+        tenant=tenant1
+    )
 
     print("Creating Firms...")
     firm1 = FirmMaster.objects.create(
+        tenant=tenant1,
         firm_name="Daksh Cotton Brokers",
         address="123 Broker Lane", city="Indore", state="Madhya Pradesh",
         mobile="9876543210"
@@ -27,12 +44,12 @@ def run():
 
     print("Creating Parties (Buyers/Mills & Sellers/Ginners)...")
     buyers = [
-        PartyMaster.objects.create(party_code=f"B{i}", company_name=f"Mill Corporation {i}", station=random.choice(["Indore", "Mumbai", "Ahmedabad"]), address="Mill Area", state=random.choice(["Madhya Pradesh", "Maharashtra", "Gujarat"]), party_type="Mill", mobile="9999999999")
+        PartyMaster.objects.create(tenant=tenant1, party_code=f"B{i}", company_name=f"Mill Corporation {i}", station=random.choice(["Indore", "Mumbai", "Ahmedabad"]), address="Mill Area", state=random.choice(["Madhya Pradesh", "Maharashtra", "Gujarat"]), party_type="Mill", mobile="9999999999")
         for i in range(1, 6)
     ]
     
     sellers = [
-        PartyMaster.objects.create(party_code=f"S{i}", company_name=f"Ginner Industries {i}", station=random.choice(["Khandwa", "Rajkot", "Jalgaon"]), address="Ginning Area", state=random.choice(["Madhya Pradesh", "Gujarat", "Maharashtra"]), party_type="Ginner", mobile="8888888888")
+        PartyMaster.objects.create(tenant=tenant1, party_code=f"S{i}", company_name=f"Ginner Industries {i}", station=random.choice(["Khandwa", "Rajkot", "Jalgaon"]), address="Ginning Area", state=random.choice(["Madhya Pradesh", "Gujarat", "Maharashtra"]), party_type="Ginner", mobile="8888888888")
         for i in range(1, 6)
     ]
 
@@ -53,6 +70,7 @@ def run():
             rate = Decimal(random.randint(55000, 65000))
             
             bargain = BargainEntry.objects.create(
+                tenant=tenant1,
                 bargain_date=deal_date,
                 seller=seller, buyer=buyer,
                 station=seller.station, state=seller.state,
@@ -63,7 +81,8 @@ def run():
             
             # Create a passing
             passing = PassingEntry.objects.create(
-                bargain=bargain, passing_no=f"PASS-{bargain.deal_no}",
+                tenant=tenant1,
+                bargain=bargain,
                 approval_date=deal_date + timedelta(days=2),
                 lot_no=f"LOT-{random.randint(100, 999)}",
                 approved_by="Inspector"
@@ -76,6 +95,7 @@ def run():
                 delivery_date = passing.approval_date + timedelta(days=t)
                 cotton_val = Decimal(100) * rate # Approximation
                 deliv = DeliveryDetails.objects.create(
+                    tenant=tenant1,
                     bargain=bargain, passing=passing,
                     bill_no=f"INV-{bargain.deal_no}-{t}",
                     bill_date=delivery_date,
@@ -93,6 +113,7 @@ def run():
             # Create Brokerage Bill for this deal (simplified: 1 bill per deal for the buyer)
             gross = Decimal(bales * 60) # 60 rs per bale brokerage
             bill = BrokerageBill.objects.create(
+                tenant=tenant1,
                 bill_no=f"BB-{bill_counter}", bill_date=deliveries[-1].bill_date + timedelta(days=5),
                 party=buyer, firm=firm1, total_bales=bales, rate=Decimal('60'),
                 gross_amount=gross, gst_percent=Decimal('18'),

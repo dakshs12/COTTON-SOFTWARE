@@ -1,0 +1,23 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+<div style="display: flex; gap: 20px; margin-bottom: 20px;">
+    <div style="background: #17a2b8; color: white; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
+        <h3 style="margin: 0; font-size: 24px;">{{ custom_kpis.total_brokers }}</h3>
+        <p style="margin: 5px 0 0; text-transform: uppercase; font-size: 12px; font-weight: bold;">Total Registered Brokers</p>
+    </div>
+    <div style="background: #28a745; color: white; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
+        <h3 style="margin: 0; font-size: 24px;">{{ custom_kpis.active_subs }}</h3>
+        <p style="margin: 5px 0 0; text-transform: uppercase; font-size: 12px; font-weight: bold;">Active Subscriptions</p>
+    </div>
+    <div style="background: #dc3545; color: white; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
+        <h3 style="margin: 0; font-size: 24px;">{{ custom_kpis.suspended_subs }}</h3>
+        <p style="margin: 5px 0 0; text-transform: uppercase; font-size: 12px; font-weight: bold;">Suspended / Past Due</p>
+    </div>
+    <div style="background: #ffc107; color: black; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
+        <h3 style="margin: 0; font-size: 24px;">{{ custom_kpis.total_bales }}</h3>
+        <p style="margin: 5px 0 0; text-transform: uppercase; font-size: 12px; font-weight: bold;">Total Bales (Platform)</p>
+    </div>
+</div>
+{{ block.super }}
+{% endblock %}

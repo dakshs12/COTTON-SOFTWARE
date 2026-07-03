@@ -1,7 +1,31 @@
 import datetime
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+from .core_models import BaseModel
 
-class PartyMaster(models.Model):
+class Tenant(models.Model):
+    SUBSCRIPTION_STATUS = [
+        ('pending', 'Pending'),
+        ('active', 'Active'),
+        ('past_due', 'Past Due'),
+        ('suspended', 'Suspended'),
+        ('cancelled', 'Cancelled'),
+    ]
+    company_name = models.CharField(max_length=255)
+    subscription_status = models.CharField(max_length=50, choices=SUBSCRIPTION_STATUS, default='pending')
+    dodo_customer_id = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.company_name
+
+class CustomUser(AbstractUser):
+    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT, null=True, blank=True)
+    failed_login_attempts = models.IntegerField(default=0)
+    lockout_until = models.DateTimeField(null=True, blank=True)
+
+class PartyMaster(BaseModel):
+    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
     PARTY_TYPES = [
         ('Mill', 'Mill'),
         ('Trader', 'Trader'),
@@ -37,7 +61,8 @@ class PartyMaster(models.Model):
     def __str__(self):
         return self.company_name
 
-class FirmMaster(models.Model):
+class FirmMaster(BaseModel):
+    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
     firm_name = models.CharField(max_length=255)
     title = models.CharField(max_length=50, blank=True, null=True)
     firm_no = models.CharField(max_length=50, blank=True, null=True)
@@ -67,7 +92,8 @@ class FirmMaster(models.Model):
     def __str__(self):
         return self.firm_name
 
-class BargainEntry(models.Model):
+class BargainEntry(BaseModel):
+    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
     # Field Options based on your screenshots
     STATUS_CHOICES = [
         ('Pending Passing', 'Pending Passing'),
@@ -79,8 +105,8 @@ class BargainEntry(models.Model):
     deal_no = models.AutoField(primary_key=True)
     bargain_date = models.DateField()
     
-    seller = models.ForeignKey(PartyMaster, on_delete=models.CASCADE, related_name='sales')
-    buyer = models.ForeignKey(PartyMaster, on_delete=models.CASCADE, related_name='purchases')
+    seller = models.ForeignKey(PartyMaster, on_delete=models.PROTECT, related_name='sales')
+    buyer = models.ForeignKey(PartyMaster, on_delete=models.PROTECT, related_name='purchases')
     
     station = models.CharField(max_length=100)
     state = models.CharField(max_length=100, blank=True, null=True) # Added State
@@ -126,8 +152,9 @@ class BargainEntry(models.Model):
     def __str__(self):
         return self.smart_deal_id
 
-class PassingEntry(models.Model):
-    bargain = models.ForeignKey(BargainEntry, on_delete=models.CASCADE)
+class PassingEntry(BaseModel):
+    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
+    bargain = models.ForeignKey(BargainEntry, on_delete=models.PROTECT)
     approval_date = models.DateField()
     due_date = models.DateField(blank=True, null=True)
     lot_no = models.CharField(max_length=50)
@@ -136,15 +163,17 @@ class PassingEntry(models.Model):
     approved_by = models.CharField(max_length=100)
     remarks = models.TextField(blank=True, null=True)
 
-class PassingSplit(models.Model):
-    passing = models.ForeignKey(PassingEntry, related_name='splits', on_delete=models.CASCADE)
+class PassingSplit(BaseModel):
+    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
+    passing = models.ForeignKey(PassingEntry, related_name='splits', on_delete=models.PROTECT)
     bales = models.IntegerField()
     
     def __str__(self):
         return f"Split: {self.bales} Bales (Pass #{self.passing.id})"
 
-class DeliveryDetails(models.Model):
-    bargain = models.ForeignKey(BargainEntry, on_delete=models.CASCADE)
+class DeliveryDetails(BaseModel):
+    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
+    bargain = models.ForeignKey(BargainEntry, on_delete=models.PROTECT)
     passing = models.ForeignKey(PassingEntry, on_delete=models.SET_NULL, null=True, blank=True)
     passing_split = models.ForeignKey(PassingSplit, on_delete=models.SET_NULL, null=True, blank=True)
     bill_no = models.CharField(max_length=50)
@@ -169,13 +198,14 @@ class DeliveryDetails(models.Model):
     def __str__(self):
         return f"Bill #{self.bill_no}"
 
-class BrokerageBill(models.Model):
-    bill_no = models.CharField(max_length=50, unique=True)
+class BrokerageBill(BaseModel):
+    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
+    bill_no = models.CharField(max_length=50) # Removed unique=True to allow different tenants to have same bill_no
     bill_date = models.DateField()
     
     # Who are we billing?
-    party = models.ForeignKey(PartyMaster, on_delete=models.CASCADE)
-    firm = models.ForeignKey(FirmMaster, on_delete=models.CASCADE) # The Broker Firm issuing the bill
+    party = models.ForeignKey(PartyMaster, on_delete=models.PROTECT)
+    firm = models.ForeignKey(FirmMaster, on_delete=models.PROTECT) # The Broker Firm issuing the bill
     
     # The list of truck deliveries included in this bill
     deliveries = models.ManyToManyField(DeliveryDetails)
@@ -201,8 +231,9 @@ class BrokerageBill(models.Model):
     def __str__(self):
         return f"Brokerage Bill #{self.bill_no}"
 
-class PartyPaymentReceipt(models.Model):
-    party = models.ForeignKey(PartyMaster, on_delete=models.CASCADE, related_name='payments')
+class PartyPaymentReceipt(BaseModel):
+    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
+    party = models.ForeignKey(PartyMaster, on_delete=models.PROTECT, related_name='payments')
     receipt_date = models.DateField()
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     payment_mode = models.CharField(max_length=50) # Cash, NEFT, Cheque, RTGS, UPI
@@ -213,9 +244,10 @@ class PartyPaymentReceipt(models.Model):
     def __str__(self):
         return f"Receipt {self.id} - {self.party.company_name} - {self.amount}"
 
-class PaymentAllocation(models.Model):
-    receipt = models.ForeignKey(PartyPaymentReceipt, on_delete=models.CASCADE, related_name='allocations')
-    bill = models.ForeignKey(BrokerageBill, on_delete=models.CASCADE, related_name='allocations')
+class PaymentAllocation(BaseModel):
+    tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
+    receipt = models.ForeignKey(PartyPaymentReceipt, on_delete=models.PROTECT, related_name='allocations')
+    bill = models.ForeignKey(BrokerageBill, on_delete=models.PROTECT, related_name='allocations')
     allocated_amount = models.DecimalField(max_digits=12, decimal_places=2)
 
     def __str__(self):
