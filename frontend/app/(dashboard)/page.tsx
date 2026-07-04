@@ -119,7 +119,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Top Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* KPI 1: Total Deals */}
         <div className="neu-card p-6 flex flex-col justify-between" style={{ borderRadius: "16px" }}>
           <div className="flex justify-between items-start mb-4">
@@ -174,37 +174,6 @@ export default function DashboardPage() {
               {data.kpi.pending_dispatches}
             </h3>
             <p className="text-xs mt-1" style={{ color: "var(--cb-text-label)" }}>Bargains waiting for trucks</p>
-          </div>
-        </div>
-
-        {/* KPI 4: Unbilled Deliveries */}
-        <div className="neu-card p-6 flex flex-col justify-between" style={{ borderRadius: "16px" }}>
-          <div className="flex justify-between items-start mb-4">
-            <span className="text-sm font-bold tracking-wider uppercase" style={{ color: "var(--cb-text-label)", fontFamily: "var(--font-quicksand)" }}>
-              Unbilled Deliveries
-            </span>
-            <div className="p-2 rounded-full" style={{ background: "var(--cb-bg)", boxShadow: "var(--cb-shadow-sm)" }}>
-              <AlertCircle size={20} style={{ color: "var(--cb-danger)" }} />
-            </div>
-          </div>
-          <div>
-            {data.kpi.unbilled_info.count > 0 ? (
-              <>
-                <h3 className="text-3xl font-bold text-red-600 font-playfair">
-                  {data.kpi.unbilled_info.count}
-                </h3>
-                <p className="text-xs mt-1" style={{ color: "var(--cb-text-label)" }}>
-                  {data.kpi.unbilled_info.is_6_months_plus ? "Records older than 6 months" : `Oldest: ${data.kpi.unbilled_info.oldest_date}`}
-                </p>
-              </>
-            ) : (
-              <>
-                <h3 className="text-3xl font-bold text-green-600 font-playfair">
-                  0
-                </h3>
-                <p className="text-xs mt-1" style={{ color: "var(--cb-text-label)" }}>All deliveries billed!</p>
-              </>
-            )}
           </div>
         </div>
       </div>

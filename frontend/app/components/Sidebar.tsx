@@ -189,7 +189,7 @@ export default function Sidebar() {
           }}
         >
           <LogOut size={18} strokeWidth={1.8} />
-          Exit Software
+          Log out
         </button>
       </div>
     </div>
