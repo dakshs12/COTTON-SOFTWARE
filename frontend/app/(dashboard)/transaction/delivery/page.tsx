@@ -1,4 +1,5 @@
 "use client";
+import { Toast } from '@/app/components/Toast';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { Save, Plus, Truck, X, ChevronDown, Search, Edit2, CheckCircle } from 'lucide-react';
@@ -259,9 +260,9 @@ export default function DeliveryEntryPage() {
     } catch (error: any) {
       console.error("Error saving:", error);
       if (error.response && error.response.data) {
-        alert(`Error: ${JSON.stringify(error.response.data)}`);
+        showToast(`Error: ${JSON.stringify(error.response.data, 'error')}`);
       } else {
-        alert('Error saving data. Please check fields.');
+        showToast('Error saving data. Please check fields.', 'error');
       }
     }
   };
@@ -671,6 +672,7 @@ export default function DeliveryEntryPage() {
           </div>
         )}
       </div>
+      <Toast message={toastMessage} />
     </div>
   );
 }

@@ -1,9 +1,16 @@
 "use client";
+import { Toast } from '@/app/components/Toast';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { X, IndianRupee } from 'lucide-react';
 
 export default function PaymentModal({ party, bills, onClose, onSuccess }: any) {
+  const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToastMessage({text: msg, type});
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   const [amount, setAmount] = useState<string>('');
   const [paymentMode, setPaymentMode] = useState('NEFT');
   const [receiptDate, setReceiptDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -53,11 +60,11 @@ export default function PaymentModal({ party, bills, onClose, onSuccess }: any) 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!amount || parseFloat(amount) <= 0) {
-      alert("Please enter a valid amount.");
+      showToast("Please enter a valid amount.", 'error');
       return;
     }
     if (isOverAllocated) {
-      alert("Allocated amount exceeds receipt amount!");
+      showToast("Allocated amount exceeds receipt amount!", 'error');
       return;
     }
     
@@ -76,7 +83,7 @@ export default function PaymentModal({ party, bills, onClose, onSuccess }: any) 
       onSuccess();
     } catch (error) {
       console.error(error);
-      alert("Error processing payment.");
+      showToast("Error processing payment.", 'error');
     }
   };
 
@@ -247,6 +254,7 @@ export default function PaymentModal({ party, bills, onClose, onSuccess }: any) 
         </div>
 
       </div>
+      <Toast message={toastMessage} />
     </div>
   );
 }

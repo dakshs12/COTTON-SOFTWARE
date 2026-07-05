@@ -1,4 +1,5 @@
 "use client";
+import { Toast } from '@/app/components/Toast';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { Save, Printer, FileText, Check, ChevronDown } from 'lucide-react';
@@ -35,6 +36,12 @@ const formatDate = (dateStr: string) => {
 };
 
 export default function BillGenerationPage() {
+  const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToastMessage({text: msg, type});
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   const [loading, setLoading] = useState(true);
   
   // Master Data
@@ -181,8 +188,8 @@ export default function BillGenerationPage() {
   }, [selectedIds, totals.rate, totals.gst_percent, formData.party_id, formData.firm_id]);
 
   const handleGenerate = async () => {
-    if (selectedIds.length === 0) return alert("Please select deliveries.");
-    if (!formData.bill_no) return alert("Enter Bill No.");
+    if (selectedIds.length === 0) return showToast("Please select deliveries.", 'error');
+    if (!formData.bill_no) return showToast("Enter Bill No.", 'error');
 
     // FIX 400 ERROR: Clean Payload
     const payload = {
@@ -201,13 +208,13 @@ export default function BillGenerationPage() {
       
     try {
       await api.post('brokerage/generate/', payload);
-      alert("Bill Generated Successfully!");
+      showToast("Bill Generated Successfully!", 'success');
       fetchPendingDeliveries(formData.party_id);
       setFormData(prev => ({ ...prev, bill_no: '' }));
       // Optionally trigger print here automatically
     } catch (error: any) {
       console.error("Generation failed:", error);
-      alert("Error: " + JSON.stringify(error.response?.data || error.message));
+      showToast("Error: " + JSON.stringify(error.response?.data || error.message, 'error'));
     }
   };
 
@@ -588,6 +595,7 @@ export default function BillGenerationPage() {
               </div>
           </div>
       </div>
+      <Toast message={toastMessage} />
     </div>
   );
 }

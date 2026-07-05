@@ -1,4 +1,5 @@
 "use client";
+import { Toast } from '@/app/components/Toast';
 import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
 import { Search, Printer, Download, ChevronDown, Check, FileText } from 'lucide-react';
@@ -6,6 +7,12 @@ import CustomDatePicker from '@/app/components/CustomDatePicker';
 import * as XLSX from 'xlsx';
 
 export default function BillsStatementPage() {
+  const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToastMessage({text: msg, type});
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   const [parties, setParties] = useState<any[]>([]);
   const [firms, setFirms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +77,7 @@ export default function BillsStatementPage() {
 
   const fetchStatement = async () => {
     if (!selectedPartyId) {
-      alert("Please select a Party first.");
+      showToast("Please select a Party first.", 'error');
       return;
     }
     
@@ -99,7 +106,7 @@ export default function BillsStatementPage() {
       setStatementData(res.data);
     } catch (error) {
       console.error("Error fetching statement:", error);
-      alert("Error fetching statement data.");
+      showToast("Error fetching statement data.", 'error');
     } finally {
       setFetchingStatement(false);
     }
@@ -425,6 +432,7 @@ export default function BillsStatementPage() {
         </div>
       )}
 
+      <Toast message={toastMessage} />
     </div>
   );
 }

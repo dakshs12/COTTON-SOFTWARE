@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
-import { Save, Building2, Plus, Edit2, X, ChevronDown, Check } from 'lucide-react';
+import { Save, Building2, Plus, Edit2, X, ChevronDown, Check, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function FirmMasterPage() {
   const [firms, setFirms] = useState<any[]>([]);
@@ -10,6 +10,7 @@ export default function FirmMasterPage() {
   
   // State Dropdown Logic
   const [isStateDropdownOpen, setIsStateDropdownOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
 
   const DEFAULT_STATES = [
     "AP", "Chhattisgarh", "Delhi", "Gujarat", "Haryana", "Himachal", 
@@ -71,12 +72,14 @@ export default function FirmMasterPage() {
         await api.put(`firms/${editId}/`, data, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        alert('Firm Updated Successfully!');
+        setToastMessage({text: 'Firm Updated Successfully!', type: 'success'});
+        setTimeout(() => setToastMessage(null), 3000);
       } else {
         await api.post('firms/', data, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        alert('Firm Saved Successfully!');
+        setToastMessage({text: 'Firm Saved Successfully!', type: 'success'});
+        setTimeout(() => setToastMessage(null), 3000);
       }
       setIsFormOpen(false);
       setEditId(null);
@@ -92,7 +95,8 @@ export default function FirmMasterPage() {
       setLetterheadFile(null);
     } catch (error) {
       console.error("Error saving firm:", error);
-      alert('Error saving data.');
+      setToastMessage({text: 'Error saving data.', type: 'error'});
+      setTimeout(() => setToastMessage(null), 3000);
     }
   };
 
@@ -353,6 +357,20 @@ export default function FirmMasterPage() {
           </table>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-10 right-10 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className="neu-card px-6 py-4 flex items-center gap-3" style={{ borderRadius: "12px", borderLeft: `4px solid ${toastMessage.type === 'success' ? '#10b981' : '#ef4444'}` }}>
+            {toastMessage.type === 'success' ? (
+              <CheckCircle size={20} className="text-green-500" />
+            ) : (
+              <AlertCircle size={20} className="text-red-500" />
+            )}
+            <span className="font-semibold text-gray-700">{toastMessage.text}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

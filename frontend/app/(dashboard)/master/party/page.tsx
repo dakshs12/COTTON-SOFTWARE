@@ -1,9 +1,16 @@
 "use client";
+import { Toast } from '@/app/components/Toast';
 import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
 import { Save, Search, Plus, Edit2, X, Trash2, ChevronDown, Check } from 'lucide-react';
 
 export default function PartyMasterPage() {
+  const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToastMessage({text: msg, type});
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   const [parties, setParties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -78,10 +85,10 @@ export default function PartyMasterPage() {
     try {
       if (editId) {
         await api.put(`parties/${editId}/`, formData);
-        alert('Party Updated Successfully!');
+        showToast('Party Updated Successfully!', 'success');
       } else {
         await api.post('parties/', formData);
-        alert('Party Saved Successfully!');
+        showToast('Party Saved Successfully!', 'success');
       }
       setIsFormOpen(false);
       setEditId(null);
@@ -96,7 +103,7 @@ export default function PartyMasterPage() {
       });
     } catch (error) {
       console.error("Error saving party:", error);
-      alert('Error saving data.');
+      showToast('Error saving data.', 'error');
     }
   };
 
@@ -455,6 +462,7 @@ export default function PartyMasterPage() {
           </div>
         )}
       </div>
+      <Toast message={toastMessage} />
     </div>
   );
 }

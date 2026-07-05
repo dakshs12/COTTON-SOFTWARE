@@ -9,11 +9,13 @@ class PartyMasterSerializer(serializers.ModelSerializer):
     class Meta:
         model = PartyMaster
         fields = '__all__'
+        read_only_fields = ('tenant',)
 
 class FirmMasterSerializer(serializers.ModelSerializer):
     class Meta:
         model = FirmMaster
         fields = '__all__'
+        read_only_fields = ('tenant',)
 
 class BargainEntrySerializer(serializers.ModelSerializer):
     seller_name = serializers.CharField(source='seller.company_name', read_only=True)
@@ -26,6 +28,7 @@ class BargainEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = BargainEntry
         fields = '__all__'
+        read_only_fields = ('tenant',)
 
     def get_remaining_bales(self, obj):
         delivered = obj.deliverydetails_set.aggregate(total=models.Sum('quantity_bales'))['total'] or 0
@@ -48,6 +51,7 @@ class PassingEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = PassingEntry
         fields = '__all__'
+        read_only_fields = ('tenant',)
 
     def create(self, validated_data):
         splits_data = validated_data.pop('splits', [])
@@ -74,6 +78,7 @@ class DeliveryDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryDetails
         fields = '__all__'
+        read_only_fields = ('tenant',)
 
 class BrokerageBillSerializer(serializers.ModelSerializer):
     party_name = serializers.CharField(source='party.company_name', read_only=True)
@@ -83,6 +88,7 @@ class BrokerageBillSerializer(serializers.ModelSerializer):
     class Meta:
         model = BrokerageBill
         fields = '__all__'
+        read_only_fields = ('tenant',)
 
     def get_balance_due(self, obj):
         return obj.net_amount - obj.amount_paid
@@ -93,8 +99,10 @@ class PartyPaymentReceiptSerializer(serializers.ModelSerializer):
     class Meta:
         model = PartyPaymentReceipt
         fields = '__all__'
+        read_only_fields = ('tenant',)
 
 class PaymentAllocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentAllocation
         fields = '__all__'
+        read_only_fields = ('tenant',)

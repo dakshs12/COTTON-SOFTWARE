@@ -1,4 +1,5 @@
 "use client";
+import { Toast } from '@/app/components/Toast';
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -26,6 +27,12 @@ const companySchema = z.object({
 type CompanyFormValues = z.infer<typeof companySchema>;
 
 export default function RegisterPage() {
+  const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToastMessage({text: msg, type});
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -61,7 +68,7 @@ export default function RegisterPage() {
 
     try {
       await api.post("auth/register/", data);
-      alert("Registration successful! Please login.");
+      showToast("Registration successful! Please login.", 'success');
       router.push("/login");
     } catch (err: any) {
       setError(err.response?.data?.error || err.response?.data?.detail || "Registration failed. Try again.");
@@ -268,6 +275,7 @@ export default function RegisterPage() {
           </form>
         </div>
       )}
+      <Toast message={toastMessage} />
     </div>
   );
 }

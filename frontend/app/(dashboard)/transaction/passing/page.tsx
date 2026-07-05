@@ -1,4 +1,5 @@
 "use client";
+import { Toast } from '@/app/components/Toast';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { Save, Plus, CheckCircle, X, ChevronDown, FileCheck, Search, Edit2 } from 'lucide-react';
@@ -26,6 +27,12 @@ const addDaysToDate = (dateStr: string, days: number) => {
 };
 
 export default function PassingEntryPage() {
+  const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToastMessage({text: msg, type});
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   const [passings, setPassings] = useState<any[]>([]);
   const [bargains, setBargains] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,12 +46,7 @@ export default function PassingEntryPage() {
 
   const [dealSearch, setDealSearch] = useState("");
   const [isDealDropdownOpen, setIsDealDropdownOpen] = useState(false);
-  const [toast, setToast] = useState<{msg: string, type: 'success' | 'error'} | null>(null);
 
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 4000);
-  };
 
   // Form State
   const initialFormState = {
@@ -195,7 +197,7 @@ export default function PassingEntryPage() {
       setSplits([]);
     } catch (error) {
       console.error("Error saving passing:", error);
-      alert('Error saving data.');
+      showToast('Error saving data.', 'error');
     }
   };
 
@@ -223,12 +225,7 @@ export default function PassingEntryPage() {
   return (
     <div className="max-w-7xl mx-auto neu-fade-in">
 
-      {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 neu-fade-in font-medium tracking-wide ${toast.type === 'error' ? 'bg-[#ef4444]' : 'bg-[#4a7fc4]'}`}>
-          {toast.type === 'error' ? <X size={22} className="bg-white/20 rounded-full p-0.5" /> : <CheckCircle size={22} className="bg-white/20 rounded-full p-0.5" />}
-          {toast.msg}
-        </div>
-      )}
+
       
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
@@ -528,6 +525,7 @@ export default function PassingEntryPage() {
           </div>
         )}
       </div>
+      <Toast message={toastMessage} />
     </div>
   );
 }

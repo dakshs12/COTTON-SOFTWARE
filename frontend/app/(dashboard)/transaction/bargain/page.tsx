@@ -1,4 +1,5 @@
 "use client";
+import { Toast } from '@/app/components/Toast';
 import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
 import { Save, Plus, FileText, X, Search, ChevronDown, Check, Edit2 } from 'lucide-react';
@@ -174,7 +175,7 @@ export default function BargainEntryPage() {
 
     // 1. Validation: Ensure Seller and Buyer are selected
     if (!formData.seller || !formData.buyer) {
-      alert("Please select both a Seller and a Buyer.");
+      showToast("Please select both a Seller and a Buyer.", 'error');
       return;
     }
 
@@ -205,9 +206,9 @@ export default function BargainEntryPage() {
       console.error("Error saving deal:", error);
       // Show the specific error message from the backend if available
       if (error.response && error.response.data) {
-        alert(`Error: ${JSON.stringify(error.response.data)}`);
+        showToast(`Error: ${JSON.stringify(error.response.data, 'error')}`);
       } else {
-        alert('Error saving deal. Please check all fields.');
+        showToast('Error saving deal. Please check all fields.', 'error');
       }
     }
   };
@@ -620,6 +621,7 @@ export default function BargainEntryPage() {
           </div>
         )}
       </div>
+      <Toast message={toastMessage} />
     </div>
   );
 }

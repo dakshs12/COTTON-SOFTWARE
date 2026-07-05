@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+const isBrowser = typeof window !== 'undefined';
+const baseURL = isBrowser 
+  ? `http://${window.location.hostname}:8000/api/` 
+  : 'http://localhost:8000/api/';
+
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api/',
+  baseURL,
   withCredentials: true,
 });
 
@@ -23,7 +28,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
-        await axios.post('http://localhost:8000/api/token/refresh/', {}, {
+        await axios.post(`${baseURL}token/refresh/`, {}, {
           withCredentials: true
         });
         

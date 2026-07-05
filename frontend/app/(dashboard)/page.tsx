@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid } from 'recharts';
-import { Briefcase, Package, Truck, AlertCircle, Edit3 } from 'lucide-react';
+import { Briefcase, Package, Truck, AlertCircle, Edit3, Clock } from 'lucide-react';
 import Link from 'next/link';
 
 interface DashboardData {
@@ -40,8 +40,13 @@ export default function DashboardPage() {
   const [todos, setTodos] = useState<{id: string, text: string, done: boolean}[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [activeTab, setActiveTab] = useState<'notepad' | 'checklist'>('checklist');
+  const [time, setTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    // Start Clock
+    setTime(new Date());
+    const timer = setInterval(() => setTime(new Date()), 1000);
+
     const fetchData = async () => {
       try {
         const [dashRes, duesRes] = await Promise.all([
@@ -65,6 +70,8 @@ export default function DashboardPage() {
       }
     };
     fetchData();
+
+    return () => clearInterval(timer);
   }, []);
 
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -114,8 +121,25 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-playfair font-bold text-gray-800 tracking-tight">Dashboard</h1>
-          <p className="text-gray-500 font-sans mt-1">Operational snapshot & dispatch logistics.</p>
+          <p className="text-gray-500 font-sans mt-1">Track your recent deals, bales, and daily dispatches.</p>
         </div>
+        
+        {/* Live Clock Widget */}
+        {time && (
+          <div className="neu-card px-5 py-3 flex items-center gap-4" style={{ borderRadius: "16px" }}>
+            <div className="p-2 rounded-full" style={{ background: "var(--cb-bg)", boxShadow: "var(--cb-shadow-sm)" }}>
+              <Clock size={24} style={{ color: "var(--cb-secondary)" }} />
+            </div>
+            <div className="text-right">
+              <h2 className="text-2xl font-bold tracking-tight" style={{ color: "var(--cb-text-heading)", fontFamily: "var(--font-quicksand)" }}>
+                {time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+              </h2>
+              <p className="text-[13px] font-bold text-gray-500 uppercase tracking-widest mt-0.5" style={{ fontFamily: "var(--font-quicksand)" }}>
+                {time.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' })}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Top Metric Cards */}
