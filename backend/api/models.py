@@ -44,6 +44,7 @@ class PartyMaster(BaseModel):
     party_type = models.CharField(max_length=20, choices=PARTY_TYPES)
     
     contact_person = models.CharField(max_length=100)
+    contact_person_designation = models.CharField(max_length=100, blank=True, null=True)
     mobile = models.CharField(max_length=15)
     whatsapp_no = models.CharField(max_length=15, blank=True, null=True)
     email1 = models.EmailField(blank=True, null=True)
@@ -68,6 +69,7 @@ class FirmMaster(BaseModel):
     firm_no = models.CharField(max_length=50, blank=True, null=True)
     
     address = models.TextField()
+    branch_address = models.TextField(blank=True, null=True)
     city = models.CharField(max_length=100)
     pincode = models.CharField(max_length=10, blank=True, null=True)
     state = models.CharField(max_length=100)
@@ -77,6 +79,7 @@ class FirmMaster(BaseModel):
     email = models.EmailField(blank=True, null=True)
     website = models.CharField(max_length=100, blank=True, null=True)
     contact_person = models.CharField(max_length=100, blank=True, null=True)
+    contact_person_designation = models.CharField(max_length=100, blank=True, null=True)
     
     cin_no = models.CharField(max_length=30, blank=True, null=True)
     pan_no = models.CharField(max_length=20, blank=True, null=True)
@@ -252,3 +255,12 @@ class PaymentAllocation(BaseModel):
 
     def __str__(self):
         return f"Allocation {self.id}: {self.allocated_amount} to Bill #{self.bill.bill_no}"
+
+class OTPVerification(models.Model):
+    email = models.EmailField(unique=True)
+    otp_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    def __str__(self):
+        return f"OTP for {self.email}"

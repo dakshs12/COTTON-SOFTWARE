@@ -37,9 +37,8 @@ export default function PartyMasterPage() {
   const [formData, setFormData] = useState({
     party_code: '', company_name: '', station: '', 
     address: '', state: '', pincode: '', party_type: 'Mill',
-    contact_person: '', mobile: '', whatsapp_no: '', 
-    email1: '', email2: '',
-    gst_no: '', pan_no: '', ho_unit: '',
+    contact_person: '', contact_person_designation: '', mobile: '', whatsapp_no: '', 
+    email1: '', email2: '', pan_no: '', gst_no: '', ho_unit: '',
     bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
   });
   const [editId, setEditId] = useState<number | null>(null);
@@ -96,9 +95,8 @@ export default function PartyMasterPage() {
       setFormData({
         party_code: '', company_name: '', station: '', 
         address: '', state: '', pincode: '', party_type: 'Mill',
-        contact_person: '', mobile: '', whatsapp_no: '', 
-        email1: '', email2: '',
-        gst_no: '', pan_no: '', ho_unit: '',
+        contact_person: '', contact_person_designation: '', mobile: '', whatsapp_no: '', 
+        email1: '', email2: '', pan_no: '', gst_no: '', ho_unit: '',
         bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
       });
     } catch (error) {
@@ -111,9 +109,8 @@ export default function PartyMasterPage() {
     setFormData({
         party_code: party.party_code || '', company_name: party.company_name || '', station: party.station || '', 
         address: party.address || '', state: party.state || '', pincode: party.pincode || '', party_type: party.party_type || 'Mill',
-        contact_person: party.contact_person || '', mobile: party.mobile || '', whatsapp_no: party.whatsapp_no || '', 
-        email1: party.email1 || '', email2: party.email2 || '',
-        gst_no: party.gst_no || '', pan_no: party.pan_no || '', ho_unit: party.ho_unit || '',
+        contact_person: party.contact_person || '', contact_person_designation: party.contact_person_designation || '', mobile: party.mobile || '', whatsapp_no: party.whatsapp_no || '', 
+        email1: party.email1 || '', email2: party.email2 || '', pan_no: party.pan_no || '', gst_no: party.gst_no || '', ho_unit: party.ho_unit || '',
         bank_name: party.bank_name || '', branch: party.branch || '', bank_ac_no: party.bank_ac_no || '', ifsc_code: party.ifsc_code || ''
     });
     setEditId(party.id);
@@ -197,21 +194,22 @@ export default function PartyMasterPage() {
                   <label className="neu-label">Party Code</label>
                   <input name="party_code" value={formData.party_code} onChange={handleChange} className="neu-input" required />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-3">
                   <label className="neu-label">Company Name</label>
                   <input name="company_name" value={formData.company_name} onChange={handleChange} className="neu-input" required />
-                </div>
-                <div className="col-span-1">
-                   <label className="neu-label">Station / City</label>
-                   <input name="station" value={formData.station} onChange={handleChange} className="neu-input" required />
                 </div>
               </div>
 
               {/* --- Section 2: Address & Dropdowns --- */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                 <div className="col-span-2">
                   <label className="neu-label">Address</label>
-                  <textarea name="address" value={formData.address} onChange={handleChange} className="neu-input" style={{ height: "48px", resize: "none", overflow: "hidden" }} />
+                  <textarea name="address" value={formData.address} onChange={handleChange} className="neu-input" style={{ height: "42px", resize: "none", overflow: "hidden" }} />
+                </div>
+                
+                <div className="col-span-1">
+                   <label className="neu-label">Station / City</label>
+                   <input name="station" value={formData.station} onChange={handleChange} className="neu-input" required />
                 </div>
                 
                 {/* CUSTOM STATE DROPDOWN */}
@@ -301,6 +299,10 @@ export default function PartyMasterPage() {
                     <input name="contact_person" value={formData.contact_person} onChange={handleChange} className="neu-input" />
                   </div>
                   <div className="col-span-1">
+                    <label className="neu-label">Designation</label>
+                    <input name="contact_person_designation" value={formData.contact_person_designation} onChange={handleChange} className="neu-input" />
+                  </div>
+                  <div className="col-span-1">
                     <label className="neu-label">Mobile</label>
                     <input name="mobile" placeholder="Mobile" value={formData.mobile} onChange={handleChange} className="neu-input" required />
                   </div>
@@ -344,9 +346,8 @@ export default function PartyMasterPage() {
                     setFormData({
                       party_code: '', company_name: '', station: '', 
                       address: '', state: '', pincode: '', party_type: 'Mill',
-                      contact_person: '', mobile: '', whatsapp_no: '', 
-                      email1: '', email2: '',
-                      gst_no: '', pan_no: '', ho_unit: '',
+                      contact_person: '', contact_person_designation: '', mobile: '', whatsapp_no: '', 
+                      email1: '', email2: '', pan_no: '', gst_no: '', ho_unit: '',
                       bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
                     });
                   }}

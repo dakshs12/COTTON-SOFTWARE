@@ -216,3 +216,276 @@ class LogoutView(APIView):
         response.delete_cookie('refresh_token')
         
         return response
+
+import resend
+import random
+from datetime import timedelta
+from django.db import transaction
+from .models import OTPVerification
+
+class RequestOTPView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
+
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email is required'}, status=400)
+            
+        if CustomUser.objects.filter(email=email).exists():
+            return Response({'error': 'An account with this email already exists.'}, status=400)
+
+        # Generate OTP
+        otp = str(random.randint(100000, 999999))
+        
+        # Save OTP
+        OTPVerification.objects.update_or_create(
+            email=email,
+            defaults={
+                'otp_code': otp,
+                'expires_at': timezone.now() + timedelta(minutes=10)
+            }
+        )
+        
+        # Send Email via Resend
+        resend.api_key = os.environ.get("RESEND_API_KEY")
+        try:
+            r = resend.Emails.send({
+                "from": "noreply@cottbook.com",
+                "to": email,
+                "subject": "Your Verification Code - Cottbook",
+                "html": f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; }}
+                        .container {{ max-width: 500px; margin: 20px auto; padding: 30px; background-color: #ffffff; border: 1px solid #eaeaea; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }}
+                        h2 {{ color: #1a1a1a; font-size: 24px; margin-top: 0; }}
+                        p {{ color: #4a4a4a; font-size: 16px; line-height: 1.5; margin-bottom: 10px; }}
+                        .otp-box {{ background: #f4f7f6; padding: 20px; border-radius: 10px; text-align: center; margin: 25px 0; border: 1px solid #e1e8e5; }}
+                        .otp-code {{ font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #0f172a; margin: 0; }}
+                        .warning {{ color: #dc2626; font-weight: 600; font-size: 14px; margin-top: 15px; margin-bottom: 0; }}
+                        .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #eaeaea; font-size: 13px; color: #6b7280; line-height: 1.6; }}
+                        .footer p {{ font-size: 13px; color: #6b7280; }}
+                        .footer a {{ color: #2563eb; text-decoration: none; }}
+                        @media screen and (max-width: 600px) {{
+                            .container {{ margin: 10px; padding: 20px; }}
+                            .otp-code {{ font-size: 28px; letter-spacing: 5px; }}
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h2>Verify Your Email</h2>
+                        <p>Please use the following 6-digit code to complete your registration:</p>
+                        
+                        <div class="otp-box">
+                            <p class="otp-code">{otp}</p>
+                            <p class="warning">⚠️ Never share this code with anyone.</p>
+                        </div>
+                        
+                        <p style="font-size: 14px;">This code will expire in <strong>10 minutes</strong>.</p>
+                        
+                        <div class="footer">
+                            <p><strong>Didn't request this?</strong><br/>If you didn't initiate this request, please safely ignore this email. No action is required.</p>
+                            <p><strong>Need help?</strong><br/>Please do not reply to this automated email. For any queries or support, reach out to us at <a href="mailto:cottbook2026@gmail.com">cottbook2026@gmail.com</a>.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+            })
+            return Response({"message": "OTP sent successfully"})
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+class VerifyAndRegisterView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        email = request.data.get('email')
+        otp_code = request.data.get('otp_code')
+        company_name = request.data.get('company_name')
+        username = request.data.get('username')
+        password = request.data.get('password')
+        
+        if not all([email, otp_code, company_name, username, password]):
+            return Response({"error": "Missing required fields"}, status=400)
+            
+        try:
+            otp_record = OTPVerification.objects.get(email=email, otp_code=otp_code)
+        except OTPVerification.DoesNotExist:
+            return Response({"error": "Invalid OTP code."}, status=400)
+            
+        if otp_record.expires_at < timezone.now():
+            return Response({"error": "OTP has expired. Please request a new one."}, status=400)
+            
+        if CustomUser.objects.filter(username=username).exists():
+            return Response({"error": "Username already taken"}, status=400)
+            
+        try:
+            with transaction.atomic():
+                tenant = Tenant.objects.create(
+                    company_name=company_name,
+                    subscription_status='active'
+                )
+                
+                user = CustomUser.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    tenant=tenant
+                )
+                
+                otp_record.delete()
+                
+                return Response({
+                    "message": "Account created successfully. Please login.",
+                    "tenant_id": tenant.id
+                })
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+from django.db.models import Q
+
+class ForgotPasswordRequestOTPView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
+
+    def post(self, request):
+        identifier = request.data.get('identifier')
+        if not identifier:
+            return Response({'error': 'Username or Email is required'}, status=400)
+            
+        user = CustomUser.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
+        if not user:
+            return Response({'error': 'Account not found with that username or email.'}, status=400)
+            
+        email = user.email
+        otp = str(random.randint(100000, 999999))
+        
+        OTPVerification.objects.update_or_create(
+            email=email,
+            defaults={
+                'otp_code': otp,
+                'expires_at': timezone.now() + timedelta(minutes=10)
+            }
+        )
+        
+        resend.api_key = os.environ.get("RESEND_API_KEY")
+        try:
+            r = resend.Emails.send({
+                "from": "noreply@cottbook.com",
+                "to": email,
+                "subject": "Password Reset Code - Cottbook",
+                "html": f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; }}
+                        .container {{ max-width: 500px; margin: 20px auto; padding: 30px; background-color: #ffffff; border: 1px solid #eaeaea; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }}
+                        h2 {{ color: #1a1a1a; font-size: 24px; margin-top: 0; }}
+                        p {{ color: #4a4a4a; font-size: 16px; line-height: 1.5; margin-bottom: 10px; }}
+                        .otp-box {{ background: #f4f7f6; padding: 20px; border-radius: 10px; text-align: center; margin: 25px 0; border: 1px solid #e1e8e5; }}
+                        .otp-code {{ font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #0f172a; margin: 0; }}
+                        .warning {{ color: #dc2626; font-weight: 600; font-size: 14px; margin-top: 15px; margin-bottom: 0; }}
+                        .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #eaeaea; font-size: 13px; color: #6b7280; line-height: 1.6; }}
+                        .footer p {{ font-size: 13px; color: #6b7280; }}
+                        .footer a {{ color: #2563eb; text-decoration: none; }}
+                        @media screen and (max-width: 600px) {{
+                            .container {{ margin: 10px; padding: 20px; }}
+                            .otp-code {{ font-size: 28px; letter-spacing: 5px; }}
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h2>Reset Your Password</h2>
+                        <p>We received a request to reset your password. Please use the following 6-digit code:</p>
+                        
+                        <div class="otp-box">
+                            <p class="otp-code">{otp}</p>
+                            <p class="warning">⚠️ Never share this code with anyone.</p>
+                        </div>
+                        
+                        <p style="font-size: 14px;">This code will expire in <strong>10 minutes</strong>.</p>
+                        
+                        <div class="footer">
+                            <p><strong>Didn't request this?</strong><br/>If you didn't initiate this request, please safely ignore this email. No action is required and your password will remain the same.</p>
+                            <p><strong>Need help?</strong><br/>Please do not reply to this automated email. For any queries or support, reach out to us at <a href="mailto:cottbook2026@gmail.com">cottbook2026@gmail.com</a>.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+            })
+            parts = email.split("@")
+            if len(parts) == 2 and len(parts[0]) > 2:
+                obfuscated_email = f"{parts[0][:2]}***@{parts[1]}"
+            else:
+                obfuscated_email = "***@***"
+                
+            return Response({
+                "message": "OTP sent successfully",
+                "email": email,
+                "obfuscated_email": obfuscated_email
+            })
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+class ForgotPasswordVerifyOTPView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        email = request.data.get('email')
+        otp_code = request.data.get('otp_code')
+        
+        if not all([email, otp_code]):
+            return Response({"error": "Missing required fields"}, status=400)
+            
+        try:
+            otp_record = OTPVerification.objects.get(email=email, otp_code=otp_code)
+        except OTPVerification.DoesNotExist:
+            return Response({"error": "Invalid OTP code."}, status=400)
+            
+        if otp_record.expires_at < timezone.now():
+            return Response({"error": "OTP has expired. Please request a new one."}, status=400)
+            
+        return Response({"message": "OTP is valid."})
+
+class ForgotPasswordResetView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        email = request.data.get('email')
+        otp_code = request.data.get('otp_code')
+        new_password = request.data.get('new_password')
+        
+        if not all([email, otp_code, new_password]):
+            return Response({"error": "Missing required fields"}, status=400)
+            
+        try:
+            otp_record = OTPVerification.objects.get(email=email, otp_code=otp_code)
+        except OTPVerification.DoesNotExist:
+            return Response({"error": "Invalid or expired OTP code."}, status=400)
+            
+        if otp_record.expires_at < timezone.now():
+            return Response({"error": "OTP has expired. Please request a new one."}, status=400)
+            
+        user = CustomUser.objects.filter(email=email).first()
+        if not user:
+            return Response({"error": "User not found."}, status=400)
+            
+        try:
+            user.set_password(new_password)
+            user.save()
+            otp_record.delete()
+            return Response({"message": "Password reset successfully."})
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)

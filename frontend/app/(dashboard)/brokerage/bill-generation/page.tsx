@@ -214,7 +214,7 @@ export default function BillGenerationPage() {
       // Optionally trigger print here automatically
     } catch (error: any) {
       console.error("Generation failed:", error);
-      showToast("Error: " + JSON.stringify(error.response?.data || error.message, 'error'));
+      showToast("Error: " + JSON.stringify(error.response?.data || error.message), 'error');
     }
   };
 

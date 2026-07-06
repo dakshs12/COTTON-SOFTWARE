@@ -178,6 +178,12 @@ export default function LoginPage() {
             >
               {loading ? "Authenticating..." : "Login"}
             </button>
+            
+            <div className="text-center mt-3">
+              <Link href="/forgot-password" className="text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors">
+                Forgot Password?
+              </Link>
+            </div>
           </form>
 
           <div className="mt-6 flex items-center justify-center gap-2">

@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const hasChecked = useRef(false);
 
-  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
+  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register") || pathname.startsWith("/forgot-password");
 
   const checkAuth = async (): Promise<boolean> => {
     try {

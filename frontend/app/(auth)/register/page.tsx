@@ -39,6 +39,38 @@ export default function RegisterPage() {
   const router = useRouter();
   const { checkAuth } = useAuth();
 
+  // OTP State
+  const [step, setStep] = useState<1 | 2>(1);
+  const [registrationData, setRegistrationData] = useState<RegisterFormValues | null>(null);
+  const [otp, setOtp] = useState<string[]>(['', '', '', '', '', '']);
+  const [countdown, setCountdown] = useState(60);
+
+  useEffect(() => {
+    let timer: any;
+    if (step === 2 && countdown > 0) {
+      timer = setInterval(() => setCountdown(c => c - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [step, countdown]);
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      nextInput?.focus();
+    }
+  };
+  
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      prevInput?.focus();
+    }
+  };
+
   // Google Registration State
   const [needsCompany, setNeedsCompany] = useState(false);
   const [googleUserData, setGoogleUserData] = useState<any>(null);
@@ -67,11 +99,58 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await api.post("auth/register/", data);
-      showToast("Registration successful! Please login.", 'success');
-      router.push("/login");
+      await api.post("auth/request-otp/", { email: data.email });
+      setRegistrationData(data);
+      setStep(2);
+      setCountdown(60);
+      showToast("Verification code sent to your email!", 'success');
     } catch (err: any) {
       setError(err.response?.data?.error || err.response?.data?.detail || "Registration failed. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (countdown > 0 || !registrationData) return;
+    setLoading(true);
+    setError("");
+    try {
+      await api.post("auth/request-otp/", { email: registrationData.email });
+      setCountdown(60);
+      showToast("OTP resent successfully!", 'success');
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to resend OTP.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const otpCode = otp.join("");
+    if (otpCode.length < 6) {
+      setError("Please enter the complete 6-digit code.");
+      return;
+    }
+    if (!registrationData) return;
+    
+    setError("");
+    setLoading(true);
+    try {
+      await api.post("auth/verify-and-register/", {
+        email: registrationData.email,
+        otp_code: otpCode,
+        company_name: registrationData.company_name,
+        username: registrationData.username,
+        password: registrationData.password
+      });
+      showToast("Registration successful! Please login.", 'success');
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Invalid or expired verification code.");
     } finally {
       setLoading(false);
     }
@@ -135,7 +214,7 @@ export default function RegisterPage() {
         <p className="text-sm text-gray-500 font-sans mt-2">Start managing your brokerage today.</p>
       </div>
 
-      {!needsCompany ? (
+      {step === 1 && !needsCompany && (
         <>
           <form onSubmit={handleSubmit(onRegister)} className="space-y-5" autoComplete="off">
             <div>
@@ -234,7 +313,70 @@ export default function RegisterPage() {
             </Link>
           </div>
         </>
-      ) : (
+      )}
+
+      {step === 2 && !needsCompany && (
+        <div className="animate-in slide-in-from-right-4 duration-300">
+          <div className="text-center mb-6">
+            <h3 className="font-bold text-gray-800 text-xl font-playfair mb-2">Check your email</h3>
+            <p className="text-sm text-gray-500">
+              We've sent a 6-digit verification code to <br />
+              <span className="font-bold text-gray-700">{registrationData?.email}</span>
+            </p>
+          </div>
+
+          <form onSubmit={handleVerifyOTP} className="space-y-6 flex flex-col items-center">
+            <div className="flex gap-3 justify-center mb-4">
+              {otp.map((digit, index) => (
+                <input
+                  key={index}
+                  id={`otp-${index}`}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(index, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                  className="neu-input w-12 h-14 text-center text-2xl font-bold rounded-xl text-gray-700"
+                />
+              ))}
+            </div>
+
+            {error && (
+              <div className="text-red-500 text-sm px-2 font-medium text-center w-full">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || otp.join('').length < 6}
+              className="w-full neu-btn neu-btn-primary disabled:opacity-50"
+            >
+              {loading ? "Verifying..." : "Verify & Register"}
+            </button>
+            
+            <div className="text-center mt-4">
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={countdown > 0 || loading}
+                className={`text-sm font-bold ${countdown > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:underline'}`}
+              >
+                {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend Verification Code'}
+              </button>
+            </div>
+          </form>
+          
+          <div className="mt-6 text-center text-sm text-gray-500">
+            <button type="button" onClick={() => {setStep(1); setError('');}} className="hover:underline">
+              Back to Registration
+            </button>
+          </div>
+        </div>
+      )}
+
+      {needsCompany && (
         <div className="animate-in slide-in-from-right-4 duration-300">
           <div className="mb-6 p-4 rounded-xl bg-blue-50/50 border border-blue-100 flex items-start gap-3">
             <Building2 className="text-blue-500 shrink-0 mt-1" size={20} />

@@ -150,7 +150,23 @@ from django.db.models.functions import TruncMonth
 def get_dashboard_analytics(request):
     try:
         # 1. KPI Metrics
-        total_deals = BargainEntry.objects.filter(tenant=request.user.tenant).count()
+        import datetime
+        from django.utils import timezone
+        
+        now = timezone.now().date()
+        if now.month >= 4:
+            fy_start_date = datetime.date(now.year, 4, 1)
+            fy_end_year = now.year + 1
+        else:
+            fy_start_date = datetime.date(now.year - 1, 4, 1)
+            fy_end_year = now.year
+
+        fy_label = f"Apr '{str(fy_start_date.year)[-2:]} - Mar '{str(fy_end_year)[-2:]}"
+
+        total_deals = BargainEntry.objects.filter(
+            tenant=request.user.tenant,
+            bargain_date__gte=fy_start_date
+        ).count()
         
         # Calculate Total Bales (from BargainEntry)
         total_bales_agg = BargainEntry.objects.filter(tenant=request.user.tenant).aggregate(Sum('bales'))
@@ -243,6 +259,7 @@ def get_dashboard_analytics(request):
         return Response({
             "kpi": {
                 "total_deals": total_deals,
+                "total_deals_label": fy_label,
                 "total_bales": total_bales,
                 "pending_dispatches": pending_dispatches,
                 "unbilled_info": unbilled_info,

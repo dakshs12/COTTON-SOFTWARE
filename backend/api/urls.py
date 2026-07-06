@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views  # <--- THIS IS THE FIX (Importing the whole file)
+from . import auth_views
 
 router = DefaultRouter()
 router.register(r'parties', views.PartyMasterViewSet, basename='partymaster')
@@ -28,5 +29,9 @@ urlpatterns = [
     path('statement/<int:party_id>/', views.get_party_statement),
     
     # SaaS Auth
-    path('auth/register/', views.register_skeleton_account),
+    path('auth/request-otp/', auth_views.RequestOTPView.as_view()),
+    path('auth/verify-and-register/', auth_views.VerifyAndRegisterView.as_view()),
+    path('auth/forgot-password/request-otp/', auth_views.ForgotPasswordRequestOTPView.as_view()),
+    path('auth/forgot-password/verify-otp/', auth_views.ForgotPasswordVerifyOTPView.as_view()),
+    path('auth/forgot-password/reset/', auth_views.ForgotPasswordResetView.as_view()),
 ]

@@ -26,8 +26,8 @@ export default function FirmMasterPage() {
 
   const [formData, setFormData] = useState({
     firm_name: '', title: '', firm_no: '',
-    address: '', city: '', pincode: '', state: '',
-    tele_o: '', mobile: '', email: '', website: '', contact_person: '',
+    address: '', branch_address: '', city: '', pincode: '', state: '',
+    tele_o: '', mobile: '', email: '', website: '', contact_person: '', contact_person_designation: '',
     cin_no: '', pan_no: '', gst_no: '', tan_no: '',
     bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
   });
@@ -87,8 +87,8 @@ export default function FirmMasterPage() {
       // Reset
       setFormData({
         firm_name: '', title: '', firm_no: '',
-        address: '', city: '', pincode: '', state: '',
-        tele_o: '', mobile: '', email: '', website: '', contact_person: '',
+        address: '', branch_address: '', city: '', pincode: '', state: '',
+        tele_o: '', mobile: '', email: '', website: '', contact_person: '', contact_person_designation: '',
         cin_no: '', pan_no: '', gst_no: '', tan_no: '',
         bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
       });
@@ -103,8 +103,8 @@ export default function FirmMasterPage() {
   const handleEdit = (firm: any) => {
     setFormData({
       firm_name: firm.firm_name || '', title: firm.title || '', firm_no: firm.firm_no || '',
-      address: firm.address || '', city: firm.city || '', pincode: firm.pincode || '', state: firm.state || '',
-      tele_o: firm.tele_o || '', mobile: firm.mobile || '', email: firm.email || '', website: firm.website || '', contact_person: firm.contact_person || '',
+      address: firm.address || '', branch_address: firm.branch_address || '', city: firm.city || '', pincode: firm.pincode || '', state: firm.state || '',
+      tele_o: firm.tele_o || '', mobile: firm.mobile || '', email: firm.email || '', website: firm.website || '', contact_person: firm.contact_person || '', contact_person_designation: firm.contact_person_designation || '',
       cin_no: firm.cin_no || '', pan_no: firm.pan_no || '', gst_no: firm.gst_no || '', tan_no: firm.tan_no || '',
       bank_name: firm.bank_name || '', branch: firm.branch || '', bank_ac_no: firm.bank_ac_no || '', ifsc_code: firm.ifsc_code || ''
     });
@@ -150,8 +150,8 @@ export default function FirmMasterPage() {
               setEditId(null);
               setFormData({
                 firm_name: '', title: '', firm_no: '',
-                address: '', city: '', pincode: '', state: '',
-                tele_o: '', mobile: '', email: '', website: '', contact_person: '',
+                address: '', branch_address: '', city: '', pincode: '', state: '',
+                tele_o: '', mobile: '', email: '', website: '', contact_person: '', contact_person_designation: '',
                 cin_no: '', pan_no: '', gst_no: '', tan_no: '',
                 bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
               });
@@ -199,11 +199,18 @@ export default function FirmMasterPage() {
             </div>
 
             {/* --- Section 2: Address --- */}
-            <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-5 gap-6">
-              <div className="col-span-2">
-                <label className="neu-label">Address</label>
+            <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="col-span-1">
+                <label className="neu-label">Registered Address</label>
                 <textarea name="address" value={formData.address} onChange={handleChange} className="neu-input" style={{ height: "42px", resize: "none", overflow: "hidden" }} required />
               </div>
+              <div className="col-span-1">
+                <label className="neu-label">Branch Office Address</label>
+                <textarea name="branch_address" value={formData.branch_address} onChange={handleChange} className="neu-input" style={{ height: "42px", resize: "none", overflow: "hidden" }} />
+              </div>
+            </div>
+            
+            <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
               <div className="col-span-1">
                  <label className="neu-label">City</label>
                  <input name="city" value={formData.city} onChange={handleChange} className="neu-input" required />
@@ -258,8 +265,9 @@ export default function FirmMasterPage() {
             {/* --- Section 3: Contact & Web --- */}
             <div className="md:col-span-4 pt-5 mt-2" style={{ borderTop: "1px solid var(--cb-divider)" }}>
               <h3 className="neu-section-title mb-4">Contact & Web</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                 <input name="contact_person" placeholder="Contact Person" value={formData.contact_person} onChange={handleChange} className="neu-input" />
+                <input name="contact_person_designation" placeholder="Designation" value={formData.contact_person_designation} onChange={handleChange} className="neu-input" />
                 <input name="mobile" placeholder="Mobile" value={formData.mobile} onChange={handleChange} className="neu-input" required />
                 <input name="tele_o" placeholder="Office Tele" value={formData.tele_o} onChange={handleChange} className="neu-input" />
                 <input name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="neu-input" />
@@ -294,8 +302,8 @@ export default function FirmMasterPage() {
                 setEditId(null);
                 setFormData({
                   firm_name: '', title: '', firm_no: '',
-                  address: '', city: '', pincode: '', state: '',
-                  tele_o: '', mobile: '', email: '', website: '', contact_person: '',
+                  address: '', branch_address: '', city: '', pincode: '', state: '',
+                  tele_o: '', mobile: '', email: '', website: '', contact_person: '', contact_person_designation: '',
                   cin_no: '', pan_no: '', gst_no: '', tan_no: '',
                   bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
                 });

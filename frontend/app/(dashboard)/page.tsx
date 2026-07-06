@@ -9,6 +9,7 @@ import Link from 'next/link';
 interface DashboardData {
   kpi: {
     total_deals: number;
+    total_deals_label: string;
     total_bales: number;
     pending_dispatches: number;
     unbilled_info: {
@@ -147,7 +148,9 @@ export default function DashboardPage() {
         {/* KPI 1: Total Deals */}
         <div className="neu-card p-6 flex flex-col justify-between" style={{ borderRadius: "16px" }}>
           <div className="flex justify-between items-start mb-4">
-            <span className="text-sm font-bold tracking-wider uppercase" style={{ color: "var(--cb-text-label)", fontFamily: "var(--font-quicksand)" }}>Total Deals</span>
+            <span className="text-sm font-bold tracking-wider uppercase" style={{ color: "var(--cb-text-label)", fontFamily: "var(--font-quicksand)" }}>
+              Total Deals <span className="lowercase normal-case font-medium text-xs ml-1 opacity-70">({data.kpi.total_deals_label})</span>
+            </span>
             <div className="p-2 rounded-full" style={{ background: "var(--cb-bg)", boxShadow: "var(--cb-shadow-sm)" }}>
               <Briefcase size={20} style={{ color: "var(--cb-primary)" }} />
             </div>
