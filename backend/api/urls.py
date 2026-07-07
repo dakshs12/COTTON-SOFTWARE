@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views  # <--- THIS IS THE FIX (Importing the whole file)
 from . import auth_views
+from . import billing_views
 
 router = DefaultRouter()
 router.register(r'parties', views.PartyMasterViewSet, basename='partymaster')
@@ -29,9 +30,16 @@ urlpatterns = [
     path('statement/<int:party_id>/', views.get_party_statement),
     
     # SaaS Auth
+    path('auth/me/', auth_views.CurrentUserView.as_view()),
+    path('auth/profile/update/', auth_views.UpdateProfileView.as_view()),
+    path('auth/profile/request-email-otp/', auth_views.RequestEmailChangeOTPView.as_view()),
+    path('auth/profile/verify-email-otp/', auth_views.VerifyEmailChangeOTPView.as_view()),
     path('auth/request-otp/', auth_views.RequestOTPView.as_view()),
     path('auth/verify-and-register/', auth_views.VerifyAndRegisterView.as_view()),
     path('auth/forgot-password/request-otp/', auth_views.ForgotPasswordRequestOTPView.as_view()),
     path('auth/forgot-password/verify-otp/', auth_views.ForgotPasswordVerifyOTPView.as_view()),
     path('auth/forgot-password/reset/', auth_views.ForgotPasswordResetView.as_view()),
+    
+    # Billing Webhook
+    path('payments/webhook/', billing_views.dodo_webhook),
 ]

@@ -13,6 +13,8 @@ import * as z from "zod";
 import { Eye, EyeOff, Building2 } from "lucide-react";
 
 const registerSchema = z.object({
+  first_name: z.string().min(1, "First name is required"),
+  last_name: z.string().min(1, "Last name is required"),
   company_name: z.string().min(2, "Company name must be at least 2 characters"),
   username: z.string().min(3, "Username must be at least 3 characters").refine(s => !s.includes(' '), 'Username cannot contain spaces'),
   email: z.string().email("Invalid email address"),
@@ -78,6 +80,8 @@ export default function RegisterPage() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
+      first_name: "",
+      last_name: "",
       company_name: "",
       username: "",
       email: "",
@@ -91,7 +95,7 @@ export default function RegisterPage() {
 
   // Explicitly clear inputs on mount
   useEffect(() => {
-    reset({ company_name: "", username: "", email: "", password: "" });
+    reset({ first_name: "", last_name: "", company_name: "", username: "", email: "", password: "" });
   }, [reset]);
 
   const onRegister = async (data: RegisterFormValues) => {
@@ -143,7 +147,9 @@ export default function RegisterPage() {
         otp_code: otpCode,
         company_name: registrationData.company_name,
         username: registrationData.username,
-        password: registrationData.password
+        password: registrationData.password,
+        first_name: registrationData.first_name,
+        last_name: registrationData.last_name
       });
       showToast("Registration successful! Please login.", 'success');
       setTimeout(() => {
@@ -217,6 +223,31 @@ export default function RegisterPage() {
       {step === 1 && !needsCompany && (
         <>
           <form onSubmit={handleSubmit(onRegister)} className="space-y-5" autoComplete="off">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 px-2">First Name</label>
+                <input
+                  {...register("first_name")}
+                  type="text"
+                  autoComplete="off"
+                  className="neu-input"
+                  placeholder="John"
+                />
+                {errors.first_name && <p className="text-red-500 text-xs px-2 mt-1">{errors.first_name.message}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 px-2">Last Name</label>
+                <input
+                  {...register("last_name")}
+                  type="text"
+                  autoComplete="off"
+                  className="neu-input"
+                  placeholder="Doe"
+                />
+                {errors.last_name && <p className="text-red-500 text-xs px-2 mt-1">{errors.last_name.message}</p>}
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 px-2">Firm / Company Name</label>
               <input

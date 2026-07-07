@@ -12,7 +12,9 @@ import {
   LogOut,
   ReceiptIndianRupee,
   Clock,
-  ClipboardList
+  ClipboardList,
+  User,
+  CreditCard
 } from 'lucide-react';
 
 const menuItems = [
@@ -170,9 +172,55 @@ export default function Sidebar() {
 
       {/* ── Footer ── */}
       <div
-        className="px-4 py-4"
+        className="px-4 py-4 space-y-1"
         style={{ borderTop: "1px solid var(--cb-divider)" }}
       >
+        <Link
+          href="/profile"
+          className="flex items-center gap-3 px-3 py-2.5 w-full transition-all duration-200 text-sm cursor-pointer"
+          style={{
+            borderRadius: "var(--cb-radius-sm)",
+            color: pathname === "/profile" ? "var(--cb-primary)" : "var(--cb-text-secondary)",
+            background: "var(--cb-bg)",
+            boxShadow: pathname === "/profile" ? "var(--cb-pressed-sm)" : "none",
+            fontWeight: pathname === "/profile" ? 700 : 500,
+          }}
+          onMouseEnter={(e) => {
+            if (pathname !== "/profile") {
+              (e.currentTarget as HTMLElement).style.backgroundColor = "#dde3eb";
+            }
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.backgroundColor = "var(--cb-bg)";
+          }}
+        >
+          <User size={18} strokeWidth={pathname === "/profile" ? 2.5 : 1.8} />
+          My Profile
+        </Link>
+
+        <Link
+          href="/subscription"
+          className="flex items-center gap-3 px-3 py-2.5 w-full transition-all duration-200 text-sm cursor-pointer"
+          style={{
+            borderRadius: "var(--cb-radius-sm)",
+            color: pathname === "/subscription" ? "var(--cb-primary)" : "var(--cb-text-secondary)",
+            background: "var(--cb-bg)",
+            boxShadow: pathname === "/subscription" ? "var(--cb-pressed-sm)" : "none",
+            fontWeight: pathname === "/subscription" ? 700 : 500,
+          }}
+          onMouseEnter={(e) => {
+            if (pathname !== "/subscription") {
+              (e.currentTarget as HTMLElement).style.backgroundColor = "#dde3eb";
+            }
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.backgroundColor = "var(--cb-bg)";
+          }}
+        >
+          <CreditCard size={18} strokeWidth={pathname === "/subscription" ? 2.5 : 1.8} />
+          Billing & Plans
+        </Link>
+        
         <button
           onClick={logout}
           className="flex items-center gap-3 px-3 py-2.5 w-full transition-all duration-200 text-sm font-medium cursor-pointer"

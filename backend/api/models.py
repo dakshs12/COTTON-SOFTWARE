@@ -19,10 +19,64 @@ class Tenant(models.Model):
     def __str__(self):
         return self.company_name
 
+class TenantSubscription(models.Model):
+    PLAN_CHOICES = [
+        ('1_YEAR', '1 Year Plan'),
+        ('3_YEAR', '3 Year Plan'),
+        ('5_YEAR', '5 Year Plan'),
+    ]
+    tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name='subscription')
+    plan_type = models.CharField(max_length=50, choices=PLAN_CHOICES, default='1_YEAR')
+    start_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    
+    @property
+    def days_remaining(self):
+        from django.utils import timezone
+        if not self.end_date:
+            return 0
+        delta = self.end_date - timezone.now()
+        return delta.days
+        
+    @property
+    def subscription_status(self):
+        if not self.is_active:
+            return 'LOCKED_OUT'
+            
+        days = self.days_remaining
+        if days > 15:
+            return 'ACTIVE'
+        elif 0 <= days <= 15:
+            return 'EXPIRING_WARNING'
+        elif -7 <= days < 0:
+            return 'READ_ONLY_GRACE'
+        else:
+            return 'LOCKED_OUT'
+            
+    def __str__(self):
+        return f"{self.tenant.company_name} - {self.subscription_status}"
+
 class CustomUser(AbstractUser):
     tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT, null=True, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
     failed_login_attempts = models.IntegerField(default=0)
     lockout_until = models.DateTimeField(null=True, blank=True)
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
+from datetime import timedelta
+
+@receiver(post_save, sender=Tenant)
+def create_tenant_subscription(sender, instance, created, **kwargs):
+    if created:
+        TenantSubscription.objects.create(
+            tenant=instance,
+            plan_type='1_YEAR',
+            end_date=timezone.now() + timedelta(days=365),
+            is_active=True
+        )
 
 class PartyMaster(BaseModel):
     tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)

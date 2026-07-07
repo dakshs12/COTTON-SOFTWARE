@@ -4,8 +4,16 @@ import React, { createContext, useContext, useState, useEffect, useRef } from "r
 import api from "../../lib/api";
 import { useRouter, usePathname } from "next/navigation";
 
+interface SubscriptionInfo {
+  plan_type: string;
+  days_remaining: number;
+  status: string;
+  end_date: string;
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
+  subscription: SubscriptionInfo | null;
   checkAuth: () => Promise<boolean>;
   logout: () => Promise<void>;
 }
@@ -14,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -23,11 +32,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async (): Promise<boolean> => {
     try {
-      await api.get("firms/");
+      const res = await api.get("auth/me/");
       setIsAuthenticated(true);
+      if (res.data.subscription) {
+        setSubscription(res.data.subscription);
+      }
       return true;
     } catch (error) {
       setIsAuthenticated(false);
+      setSubscription(null);
       return false;
     }
   };
@@ -115,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, checkAuth, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, subscription, checkAuth, logout }}>
       {children}
       
       {sessionExpired && (

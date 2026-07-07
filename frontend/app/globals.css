@@ -48,6 +48,9 @@
 @theme inline {
   --color-background: var(--cb-bg);
   --color-foreground: var(--cb-text-body);
+  --color-cb-primary: var(--cb-primary);
+  --color-cb-secondary: var(--cb-secondary);
+  --color-cb-bg: var(--cb-bg);
   --font-playfair: var(--font-playfair-display);
   --font-dmsans: var(--font-dm-sans);
   --font-quicksand: var(--font-quicksand);

@@ -12,6 +12,35 @@ from google.auth.transport import requests
 from rest_framework_simplejwt.tokens import RefreshToken
 import os
 
+class CurrentUserView(APIView):
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return Response({"detail": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        user = request.user
+        tenant = user.tenant
+        
+        data = {
+            "id": user.id,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "username": user.username,
+            "phone_number": user.phone_number,
+            "tenant_id": tenant.id if tenant else None,
+            "company_name": tenant.company_name if tenant else None,
+        }
+        
+        if tenant and hasattr(tenant, 'subscription'):
+            data["subscription"] = {
+                "plan_type": tenant.subscription.plan_type,
+                "days_remaining": tenant.subscription.days_remaining,
+                "status": tenant.subscription.subscription_status,
+                "end_date": tenant.subscription.end_date
+            }
+            
+        return Response(data)
+
 class CookieTokenObtainPairView(TokenObtainPairView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'login'
@@ -311,8 +340,10 @@ class VerifyAndRegisterView(APIView):
         company_name = request.data.get('company_name')
         username = request.data.get('username')
         password = request.data.get('password')
+        first_name = request.data.get('first_name', '')
+        last_name = request.data.get('last_name', '')
         
-        if not all([email, otp_code, company_name, username, password]):
+        if not all([email, otp_code, company_name, username, password, first_name, last_name]):
             return Response({"error": "Missing required fields"}, status=400)
             
         try:
@@ -337,6 +368,8 @@ class VerifyAndRegisterView(APIView):
                     username=username,
                     email=email,
                     password=password,
+                    first_name=first_name,
+                    last_name=last_name,
                     tenant=tenant
                 )
                 
@@ -489,3 +522,84 @@ class ForgotPasswordResetView(APIView):
             return Response({"message": "Password reset successfully."})
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+class UpdateProfileView(APIView):
+    def post(self, request):
+        user = request.user
+        data = request.data
+        
+        user.first_name = data.get('first_name', user.first_name)
+        user.last_name = data.get('last_name', user.last_name)
+        user.username = data.get('username', user.username)
+        user.phone_number = data.get('phone_number', user.phone_number)
+        
+        try:
+            user.save()
+            return Response({"message": "Profile updated successfully"})
+        except Exception as e:
+            return Response({"error": "Failed to update profile. Username might be taken."}, status=400)
+
+class RequestEmailChangeOTPView(APIView):
+    def post(self, request):
+        new_email = request.data.get('new_email')
+        if not new_email:
+            return Response({"error": "New email is required"}, status=400)
+            
+        if CustomUser.objects.filter(email=new_email).exists():
+            return Response({"error": "This email is already in use by another account."}, status=400)
+            
+        resend.api_key = os.environ.get('RESEND_API_KEY')
+        otp_code = str(random.randint(100000, 999999))
+        
+        # We can reuse OTPVerification model
+        OTPVerification.objects.filter(email=new_email).delete()
+        OTPVerification.objects.create(
+            email=new_email,
+            otp_code=otp_code,
+            expires_at=timezone.now() + timedelta(minutes=10)
+        )
+        
+        html_content = f"""
+        <div style="font-family: sans-serif; max-w-md; margin: auto; padding: 20px; text-align: center;">
+            <h2>Confirm Your New Email Address</h2>
+            <p>You requested to change your CottBook account email to this address.</p>
+            <h1 style="background: #f4f4f4; padding: 15px; letter-spacing: 5px;">{otp_code}</h1>
+            <p style="color: #666; font-size: 12px;">This code expires in 10 minutes. If you did not request this, please ignore this email.</p>
+        </div>
+        """
+        
+        try:
+            resend.Emails.send({
+                "from": "noreply@cottbook.com",
+                "to": new_email,
+                "subject": "CottBook Email Change Verification Code",
+                "html": html_content
+            })
+            return Response({"message": "Verification code sent to new email."})
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+class VerifyEmailChangeOTPView(APIView):
+    def post(self, request):
+        new_email = request.data.get('new_email')
+        otp_code = request.data.get('otp_code')
+        user = request.user
+        
+        if not all([new_email, otp_code]):
+            return Response({"error": "Missing fields"}, status=400)
+            
+        try:
+            otp_record = OTPVerification.objects.get(email=new_email, otp_code=otp_code)
+        except OTPVerification.DoesNotExist:
+            return Response({"error": "Invalid verification code."}, status=400)
+            
+        if otp_record.expires_at < timezone.now():
+            return Response({"error": "Code has expired."}, status=400)
+            
+        try:
+            user.email = new_email
+            user.save()
+            otp_record.delete()
+            return Response({"message": "Email updated successfully."})
+        except Exception as e:
+            return Response({"error": "Failed to update email."}, status=500)

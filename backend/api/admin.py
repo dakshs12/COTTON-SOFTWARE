@@ -4,7 +4,8 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import (
     Tenant, CustomUser, PartyMaster, FirmMaster, BargainEntry, 
-    PassingEntry, DeliveryDetails, BrokerageBill, PartyPaymentReceipt, PaymentAllocation
+    PassingEntry, DeliveryDetails, BrokerageBill, PartyPaymentReceipt, PaymentAllocation,
+    TenantSubscription
 )
 
 # --- Custom Filters ---
@@ -97,3 +98,9 @@ admin.site.register(DeliveryDetails)
 admin.site.register(BrokerageBill)
 admin.site.register(PartyPaymentReceipt)
 admin.site.register(PaymentAllocation)
+
+@admin.register(TenantSubscription)
+class TenantSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('tenant', 'plan_type', 'end_date', 'subscription_status', 'is_active')
+    list_filter = ('plan_type', 'is_active')
+    search_fields = ('tenant__company_name',)

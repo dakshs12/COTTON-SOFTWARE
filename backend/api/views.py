@@ -65,7 +65,7 @@ def get_pending_deliveries(request):
         return Response({"error": "Party ID is required"}, status=400)
 
     try:
-        party = PartyMaster.objects.get(id=party_id)
+        party = PartyMaster.objects.get(id=party_id, tenant=request.user.tenant)
         
         # LOGIC: 
         # 1. Find deliveries where this party is the SELLER, and 'seller_billed' is False
@@ -104,8 +104,8 @@ def generate_brokerage_bill(request):
     data = request.data
     
     try:
-        party = PartyMaster.objects.get(id=data['party_id'])
-        firm = FirmMaster.objects.get(id=data['firm_id'])
+        party = PartyMaster.objects.get(id=data['party_id'], tenant=request.user.tenant)
+        firm = FirmMaster.objects.get(id=data['firm_id'], tenant=request.user.tenant)
         delivery_ids = data['delivery_ids'] # List of IDs [1, 5, 8]
         
         # 1. Create the Bill
@@ -128,7 +128,7 @@ def generate_brokerage_bill(request):
         
         # 2. Link Deliveries & Mark them as Billed
         for delivery_id in delivery_ids:
-            d = DeliveryDetails.objects.get(id=delivery_id)
+            d = DeliveryDetails.objects.get(id=delivery_id, tenant=request.user.tenant)
             bill.deliveries.add(d)
             
             # Check role again to mark the correct flag
@@ -346,7 +346,7 @@ def receive_party_payment(request):
     
     try:
         with transaction.atomic():
-            party = PartyMaster.objects.get(id=party_id)
+            party = PartyMaster.objects.get(id=party_id, tenant=request.user.tenant)
             
             # 1. Create the Receipt
             receipt = PartyPaymentReceipt.objects.create(
@@ -368,7 +368,7 @@ def receive_party_payment(request):
                 if alloc_amount <= 0:
                     continue
                     
-                bill = BrokerageBill.objects.select_for_update().get(id=bill_id, party=party)
+                bill = BrokerageBill.objects.select_for_update().get(id=bill_id, party=party, tenant=request.user.tenant)
                 
                 # Create allocation record
                 PaymentAllocation.objects.create(
@@ -403,7 +403,7 @@ def receive_party_payment(request):
 def get_party_statement(request, party_id):
     try:
         from datetime import datetime
-        party = PartyMaster.objects.get(id=party_id)
+        party = PartyMaster.objects.get(id=party_id, tenant=request.user.tenant)
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
 
