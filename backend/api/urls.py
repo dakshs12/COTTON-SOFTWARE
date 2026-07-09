@@ -40,6 +40,7 @@ urlpatterns = [
     path('auth/forgot-password/verify-otp/', auth_views.ForgotPasswordVerifyOTPView.as_view()),
     path('auth/forgot-password/reset/', auth_views.ForgotPasswordResetView.as_view()),
     
-    # Billing Webhook
-    path('payments/webhook/', billing_views.dodo_webhook),
+    # Billing Webhooks & Subscriptions
+    path('payments/create-subscription/', billing_views.create_razorpay_subscription),
+    path('payments/webhook/', billing_views.razorpay_webhook),
 ]

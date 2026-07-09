@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useAuth } from "../../components/AuthProvider";
 import { Shield, Zap, TrendingUp, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import Script from "next/script";
+import api from "@/lib/api";
 
 export default function SubscriptionPage() {
   const { subscription } = useAuth();
@@ -19,20 +20,41 @@ export default function SubscriptionPage() {
       })()
     : "N/A";
 
-  // Dummy Dodo Payments invocation
-  const handleCheckout = async (planId: string) => {
-    if (!planId) {
-      alert("Plan ID is missing. Please set NEXT_PUBLIC_DODO_PLAN_ID variables.");
-      return;
-    }
+  // Razorpay Checkout
+  const handleCheckout = async (planDuration: string) => {
+    setLoadingPlan(planDuration);
     
-    setLoadingPlan(planId);
-    
-    // Simulate SDK load/network request
-    setTimeout(() => {
-      alert(`Dodo Payments Checkout Triggered for Plan ID: ${planId}`);
+    try {
+      // 1. Create Subscription on Backend
+      const res = await api.post('/payments/create-subscription/', { plan_duration: planDuration });
+      const { subscription_id } = res.data;
+
+      // 2. Open Razorpay Checkout Modal
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, 
+        subscription_id: subscription_id,
+        name: 'CottBook',
+        description: `${planDuration.replace('_', ' ')} Subscription`,
+        handler: function (response: any) {
+          alert(`Subscription Successful! Thank you for subscribing.`);
+          window.location.reload();
+        },
+        theme: {
+          color: '#2563EB'
+        }
+      };
+      
+      const rzp1 = new (window as any).Razorpay(options);
+      rzp1.on('payment.failed', function (response: any){
+        alert(`Payment Failed: ${response.error.description}`);
+      });
+      rzp1.open();
+
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Failed to initiate checkout");
+    } finally {
       setLoadingPlan(null);
-    }, 1200);
+    }
   };
 
   const getStatusColor = () => {
@@ -44,8 +66,8 @@ export default function SubscriptionPage() {
 
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-500 pb-12">
-      {/* Optional: Load Dodo SDK if needed */}
-      <Script src="https://js.dodopayments.com/v1" strategy="lazyOnload" />
+      {/* Load Razorpay SDK */}
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -117,11 +139,11 @@ export default function SubscriptionPage() {
             </li>
           </ul>
           <button
-            onClick={() => handleCheckout(process.env.NEXT_PUBLIC_DODO_PLAN_1_YEAR_ID || '')}
+            onClick={() => handleCheckout('1_YEAR')}
             disabled={loadingPlan !== null}
             className="w-full py-4 bg-cb-bg rounded-xl shadow-neu text-gray-600 font-bold hover:shadow-neu-pressed active:shadow-neu-pressed transition-all duration-200"
           >
-            {loadingPlan === process.env.NEXT_PUBLIC_DODO_PLAN_1_YEAR_ID ? "Processing..." : "Select 1 Year"}
+            {loadingPlan === '1_YEAR' ? "Processing..." : "Select 1 Year"}
           </button>
         </div>
 
@@ -151,11 +173,11 @@ export default function SubscriptionPage() {
             </li>
           </ul>
           <button
-            onClick={() => handleCheckout(process.env.NEXT_PUBLIC_DODO_PLAN_3_YEAR_ID || '')}
+            onClick={() => handleCheckout('3_YEAR')}
             disabled={loadingPlan !== null}
             className="w-full py-4 bg-cb-primary rounded-xl shadow-md text-white font-bold hover:bg-blue-700 active:scale-[0.98] transition-all duration-200"
           >
-            {loadingPlan === process.env.NEXT_PUBLIC_DODO_PLAN_3_YEAR_ID ? "Processing..." : "Select 3 Years"}
+            {loadingPlan === '3_YEAR' ? "Processing..." : "Select 3 Years"}
           </button>
         </div>
 
@@ -188,11 +210,11 @@ export default function SubscriptionPage() {
             </li>
           </ul>
           <button
-            onClick={() => handleCheckout(process.env.NEXT_PUBLIC_DODO_PLAN_5_YEAR_ID || '')}
+            onClick={() => handleCheckout('5_YEAR')}
             disabled={loadingPlan !== null}
             className="w-full py-4 bg-cb-bg rounded-xl shadow-neu text-gray-600 font-bold hover:shadow-neu-pressed active:shadow-neu-pressed transition-all duration-200"
           >
-            {loadingPlan === process.env.NEXT_PUBLIC_DODO_PLAN_5_YEAR_ID ? "Processing..." : "Select 5 Years"}
+            {loadingPlan === '5_YEAR' ? "Processing..." : "Select 5 Years"}
           </button>
         </div>
 

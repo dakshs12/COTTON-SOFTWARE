@@ -46,10 +46,21 @@ class CookieTokenObtainPairView(TokenObtainPairView):
     throttle_scope = 'login'
 
     def post(self, request, *args, **kwargs):
-        username = request.data.get('username')
+        identifier = request.data.get('username')
         user = None
-        if username:
-            user = CustomUser.objects.filter(username=username).first()
+        
+        if identifier:
+            from django.db.models import Q
+            user = CustomUser.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
+            
+            # SimpleJWT's default serializer expects the actual `username` field for validation.
+            # If the user logged in with an email, we need to swap the identifier in request data
+            # to the correct username so SimpleJWT doesn't fail.
+            if user:
+                # We have to copy the QueryDict to make it mutable
+                if hasattr(request.data, '_mutable'):
+                    request.data._mutable = True
+                request.data['username'] = user.username
         
         if user:
             if user.lockout_until and user.lockout_until > timezone.now():

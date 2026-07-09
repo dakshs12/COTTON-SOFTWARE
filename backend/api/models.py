@@ -21,6 +21,7 @@ class Tenant(models.Model):
 
 class TenantSubscription(models.Model):
     PLAN_CHOICES = [
+        ('TRIAL', '14-Day Free Trial'),
         ('1_YEAR', '1 Year Plan'),
         ('3_YEAR', '3 Year Plan'),
         ('5_YEAR', '5 Year Plan'),
@@ -30,6 +31,7 @@ class TenantSubscription(models.Model):
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField()
     is_active = models.BooleanField(default=True)
+    base_firm_limit = models.IntegerField(default=2)
     
     @property
     def days_remaining(self):
@@ -50,6 +52,9 @@ class TenantSubscription(models.Model):
         elif 0 <= days <= 15:
             return 'EXPIRING_WARNING'
         elif -7 <= days < 0:
+            # Trials do not get the 7-day grace period
+            if self.plan_type == 'TRIAL':
+                return 'LOCKED_OUT'
             return 'READ_ONLY_GRACE'
         else:
             return 'LOCKED_OUT'
@@ -73,9 +78,10 @@ def create_tenant_subscription(sender, instance, created, **kwargs):
     if created:
         TenantSubscription.objects.create(
             tenant=instance,
-            plan_type='1_YEAR',
-            end_date=timezone.now() + timedelta(days=365),
-            is_active=True
+            plan_type='TRIAL',
+            end_date=timezone.now() + timedelta(days=14),
+            is_active=True,
+            base_firm_limit=2
         )
 
 class PartyMaster(BaseModel):

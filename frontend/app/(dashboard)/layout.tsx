@@ -15,6 +15,7 @@ export default function DashboardLayout({
 
   const status = subscription?.status || 'ACTIVE';
   const daysRemaining = subscription?.days_remaining || 0;
+  const planType = subscription?.plan_type || '1_YEAR';
 
   if (status === 'LOCKED_OUT') {
     return (
@@ -25,7 +26,9 @@ export default function DashboardLayout({
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4 font-playfair">Access Paused</h2>
           <p className="text-gray-600 mb-8">
-            Your subscription has expired. Please select a renewal plan below to resume operations.
+            {planType === 'TRIAL' 
+              ? "Your 14-day free trial has ended. Please select a plan to unlock your workspace."
+              : "Your subscription has expired. Please select a renewal plan below to resume operations."}
           </p>
           <button
             onClick={() => router.push('/subscription')}
@@ -49,7 +52,7 @@ export default function DashboardLayout({
           <span className="font-medium">
             Your subscription has ended. CottBook is in read-only mode for {7 + daysRemaining} more days before total lockout.
           </span>
-          <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline">Renew Now</button>
+          <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline cursor-pointer">Renew Now</button>
         </div>
       )}
       
@@ -59,9 +62,13 @@ export default function DashboardLayout({
           style={{ left: "var(--cb-sidebar-width)", width: "calc(100% - var(--cb-sidebar-width))" }}
         >
           <span className="font-medium">
-            Your subscription expires in {daysRemaining} days. Renew your license early to secure seamless billing.
+            {planType === 'TRIAL'
+              ? `Your free trial ends in ${daysRemaining} days. Upgrade your plan to prevent service interruption.`
+              : `Your subscription expires in ${daysRemaining} days. Renew your license early to secure seamless billing.`}
           </span>
-          <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline">Renew</button>
+          <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline cursor-pointer">
+            {planType === 'TRIAL' ? 'Upgrade' : 'Renew'}
+          </button>
         </div>
       )}
 
