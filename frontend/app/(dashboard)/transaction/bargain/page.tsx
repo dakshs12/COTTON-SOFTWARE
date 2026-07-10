@@ -2,7 +2,7 @@
 import { Toast } from '@/app/components/Toast';
 import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
-import { Save, Plus, FileText, X, Search, ChevronDown, Check, Edit2 } from 'lucide-react';
+import { Save, Plus, FileText, X, Search, ChevronDown, Check, Edit2, Trash2 } from 'lucide-react';
 // Import the new Calendar from your existing folder
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 
@@ -24,6 +24,10 @@ export default function BargainEntryPage() {
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  
+  // Delete Modal States
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState<{id: number, displayId: string} | null>(null);
 
   // Search States
   const [sellerSearch, setSellerSearch] = useState("");
@@ -180,12 +184,16 @@ export default function BargainEntryPage() {
     }
 
     // 2. Data Cleaning: Convert strings to numbers
-    const payload = {
+    const payload: any = {
       ...formData,
       bales: formData.bales ? parseInt(formData.bales) : 0,
       rate: formData.rate ? parseFloat(formData.rate) : 0,
       payment_condition: formData.payment_condition ? parseInt(formData.payment_condition) : 0,
     };
+    
+    delete payload.created_at;
+    delete payload.updated_at;
+    delete payload.deleted_at;
 
     try {
       if (editingId) {
@@ -210,6 +218,25 @@ export default function BargainEntryPage() {
       } else {
         showToast('Error saving deal. Please check all fields.', 'error');
       }
+    }
+  };
+
+  const triggerDelete = (id: number, displayId: string) => {
+    setRecordToDelete({ id, displayId });
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!recordToDelete) return;
+    try {
+      await api.delete(`bargains/${recordToDelete.id}/`);
+      showToast('Deal Deleted Successfully!');
+      fetchData();
+      setDeleteModalOpen(false);
+      setRecordToDelete(null);
+    } catch (error) {
+      console.error("Error deleting deal:", error);
+      showToast('Error deleting deal.', 'error');
     }
   };
 
@@ -589,6 +616,13 @@ export default function BargainEntryPage() {
                     >
                       <Edit2 size={16} />
                     </button>
+                    <button 
+                      onClick={() => triggerDelete(deal.id, deal.smart_deal_id || deal.deal_no || String(deal.id))}
+                      className="p-1.5 rounded-md transition-colors cursor-pointer hover:bg-gray-100 text-gray-500 hover:text-red-500 ml-1"
+                      title="Delete Deal"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -622,6 +656,32 @@ export default function BargainEntryPage() {
         )}
       </div>
       <Toast message={toastMessage} />
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && recordToDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 animate-in fade-in duration-200">
+          <div className="bg-cb-bg p-8 rounded-[30px] shadow-neu max-w-md w-full mx-4 animate-in zoom-in-95 duration-300">
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Confirm Deletion</h3>
+            <p className="text-gray-600 mb-8">
+              Are you sure you want to delete <span className="font-bold text-gray-800">{recordToDelete.displayId}</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-4 justify-end">
+              <button 
+                onClick={() => setDeleteModalOpen(false)}
+                className="neu-btn px-6 py-2 text-gray-600 hover:text-gray-800 font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="px-6 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 font-bold shadow-md transition-colors cursor-pointer"
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

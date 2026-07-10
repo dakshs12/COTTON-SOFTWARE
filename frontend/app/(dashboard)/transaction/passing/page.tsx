@@ -2,7 +2,7 @@
 import { Toast } from '@/app/components/Toast';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Save, Plus, CheckCircle, X, ChevronDown, FileCheck, Search, Edit2 } from 'lucide-react';
+import { Save, Plus, CheckCircle, X, ChevronDown, FileCheck, Search, Edit2, Trash2 } from 'lucide-react';
 // Import the Custom Calendar
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 
@@ -38,6 +38,10 @@ export default function PassingEntryPage() {
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  // Delete Modal States
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState<{id: number, displayId: string} | null>(null);
 
   // Pagination & Search State
   const [searchTerm, setSearchTerm] = useState('');
@@ -176,10 +180,14 @@ export default function PassingEntryPage() {
     }
 
     try {
-      const payload = {
+      const payload: any = {
         ...formData,
         splits: validSplits
       };
+      
+      delete payload.created_at;
+      delete payload.updated_at;
+      delete payload.deleted_at;
       if (editingId) {
         await api.put(`passings/${editingId}/`, payload);
         showToast('Passing Updated Successfully!');
@@ -198,6 +206,25 @@ export default function PassingEntryPage() {
     } catch (error) {
       console.error("Error saving passing:", error);
       showToast('Error saving data.', 'error');
+    }
+  };
+
+  const triggerDelete = (id: number, displayId: string) => {
+    setRecordToDelete({ id, displayId });
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!recordToDelete) return;
+    try {
+      await api.delete(`passings/${recordToDelete.id}/`);
+      showToast('Passing Deleted Successfully!');
+      fetchData();
+      setDeleteModalOpen(false);
+      setRecordToDelete(null);
+    } catch (error) {
+      console.error("Error deleting passing:", error);
+      showToast('Error deleting passing.', 'error');
     }
   };
 
@@ -482,15 +509,19 @@ export default function PassingEntryPage() {
                   <td className="font-mono">{pass.lot_no}</td>
                   <td className="text-right">
                     <div className="flex justify-end items-center gap-3">
-                      <span style={{ color: "var(--cb-secondary)" }} title="Passed">
-                        <FileCheck size={18}/>
-                      </span>
                       <button 
                         onClick={() => handleEditClick(pass)}
                         className="p-1.5 rounded-md transition-colors cursor-pointer hover:bg-gray-100 text-gray-500 hover:text-[#4a7fc4]"
                         title="Edit Passing"
                       >
                         <Edit2 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => triggerDelete(pass.id, pass.pr_no || pass.deal_no || String(pass.id))}
+                        className="p-1.5 rounded-md transition-colors cursor-pointer hover:bg-gray-100 text-gray-500 hover:text-red-500 ml-1"
+                        title="Delete Passing"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -526,6 +557,32 @@ export default function PassingEntryPage() {
         )}
       </div>
       <Toast message={toastMessage} />
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && recordToDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 animate-in fade-in duration-200">
+          <div className="bg-cb-bg p-8 rounded-[30px] shadow-neu max-w-md w-full mx-4 animate-in zoom-in-95 duration-300">
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Confirm Deletion</h3>
+            <p className="text-gray-600 mb-8">
+              Are you sure you want to delete <span className="font-bold text-gray-800">{recordToDelete.displayId}</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-4 justify-end">
+              <button 
+                onClick={() => setDeleteModalOpen(false)}
+                className="neu-btn px-6 py-2 text-gray-600 hover:text-gray-800 font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="px-6 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 font-bold shadow-md transition-colors cursor-pointer"
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

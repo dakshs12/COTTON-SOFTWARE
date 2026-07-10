@@ -2,7 +2,7 @@
 import { Toast } from '@/app/components/Toast';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Save, Plus, Truck, X, ChevronDown, Search, Edit2, CheckCircle } from 'lucide-react';
+import { Save, Plus, Truck, X, ChevronDown, Search, Edit2, CheckCircle, Trash2 } from 'lucide-react';
 // Import the Custom Calendar
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 
@@ -25,6 +25,10 @@ export default function DeliveryEntryPage() {
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  // Delete Modal States
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState<{id: number, displayId: string} | null>(null);
 
   const [isDirectDelivery, setIsDirectDelivery] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -229,7 +233,7 @@ export default function DeliveryEntryPage() {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     try {
-      const payload = { 
+      const payload: any = { 
         ...formData,
         quantity_bales: parseInt(formData.quantity_bales as any) || 0,
         rate: parseFloat(formData.rate as any) || 0,
@@ -239,7 +243,12 @@ export default function DeliveryEntryPage() {
         total_bill_amount: parseFloat(formData.total_bill_amount as any) || 0,
         passing_split: selectedSplit
       };
-      if (!payload.passing) delete (payload as any).passing; 
+      
+      delete payload.created_at;
+      delete payload.updated_at;
+      delete payload.deleted_at;
+
+      if (!payload.passing) delete payload.passing; 
 
       if (editingId) {
         await api.put(`deliveries/${editingId}/`, payload);
@@ -278,6 +287,25 @@ export default function DeliveryEntryPage() {
       (p.passing_no && p.passing_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (p.deal_no && p.deal_no.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+  };
+
+  const triggerDelete = (id: number, displayId: string) => {
+    setRecordToDelete({ id, displayId });
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!recordToDelete) return;
+    try {
+      await api.delete(`deliveries/${recordToDelete.id}/`);
+      showToast('Delivery Deleted Successfully!');
+      fetchData();
+      setDeleteModalOpen(false);
+      setRecordToDelete(null);
+    } catch (error) {
+      console.error("Error deleting delivery:", error);
+      showToast('Error deleting delivery.', 'error');
+    }
   };
 
   // --- Filter & Pagination Logic ---
@@ -640,6 +668,13 @@ export default function DeliveryEntryPage() {
                     >
                       <Edit2 size={16} />
                     </button>
+                    <button 
+                      onClick={() => triggerDelete(del.id, del.bill_no || del.deal_display || String(del.id))}
+                      className="p-1.5 rounded-md transition-colors cursor-pointer hover:bg-gray-100 text-gray-500 hover:text-red-500 ml-1"
+                      title="Delete Delivery"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -673,6 +708,32 @@ export default function DeliveryEntryPage() {
         )}
       </div>
       <Toast message={toastMessage} />
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && recordToDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 animate-in fade-in duration-200">
+          <div className="bg-cb-bg p-8 rounded-[30px] shadow-neu max-w-md w-full mx-4 animate-in zoom-in-95 duration-300">
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Confirm Deletion</h3>
+            <p className="text-gray-600 mb-8">
+              Are you sure you want to delete <span className="font-bold text-gray-800">{recordToDelete.displayId}</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-4 justify-end">
+              <button 
+                onClick={() => setDeleteModalOpen(false)}
+                className="neu-btn px-6 py-2 text-gray-600 hover:text-gray-800 font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="px-6 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 font-bold shadow-md transition-colors cursor-pointer"
+              >
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
