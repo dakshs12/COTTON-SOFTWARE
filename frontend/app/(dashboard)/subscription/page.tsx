@@ -9,6 +9,7 @@ import api from "@/lib/api";
 export default function SubscriptionPage() {
   const { subscription } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [hoveredPlan, setHoveredPlan] = useState('3_YEAR');
 
   const status = subscription?.status || "PENDING";
   const daysRemaining = subscription?.days_remaining || 0;
@@ -115,15 +116,27 @@ export default function SubscriptionPage() {
       </div>
 
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold font-playfair text-gray-800">Select a Renewal Plan</h2>
+        <h2 className="text-2xl font-bold font-playfair text-gray-800">
+          {currentPlanType === 'TRIAL' ? "Select a Subscription Plan" : "Select a Renewal Plan"}
+        </h2>
         <p className="text-gray-500 mt-2">All plans include full access to the Brokerage Management Suite.</p>
       </div>
 
       {/* Pricing Tier Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div 
+        className="grid grid-cols-1 md:grid-cols-3 gap-8"
+        onMouseLeave={() => setHoveredPlan('3_YEAR')}
+      >
         
         {/* 1-Year Plan */}
-        <div className="bg-cb-bg rounded-[30px] shadow-neu p-8 flex flex-col hover:-translate-y-1 transition-transform duration-300">
+        <div 
+          className={`rounded-[30px] p-8 flex flex-col transition-all duration-300 ${
+            hoveredPlan === '1_YEAR' 
+              ? 'border-2 border-blue-500 bg-white shadow-lg -translate-y-1' 
+              : 'border-2 border-slate-200 bg-white/50'
+          }`}
+          onMouseEnter={() => setHoveredPlan('1_YEAR')}
+        >
           <div className="mb-6">
             <h3 className="text-xl font-bold text-gray-800 mb-2">1-Year Plan</h3>
             <p className="text-gray-500 text-sm">Standard core baseline.</p>
@@ -141,14 +154,25 @@ export default function SubscriptionPage() {
           <button
             onClick={() => handleCheckout('1_YEAR')}
             disabled={loadingPlan !== null}
-            className="w-full py-4 bg-cb-bg rounded-xl shadow-neu text-gray-600 font-bold hover:shadow-neu-pressed active:shadow-neu-pressed transition-all duration-200"
+            className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${
+              hoveredPlan === '1_YEAR'
+                ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
+                : 'bg-transparent text-blue-600 border-2 border-blue-500'
+            }`}
           >
             {loadingPlan === '1_YEAR' ? "Processing..." : "Select 1 Year"}
           </button>
         </div>
 
         {/* 3-Year Plan */}
-        <div className="bg-cb-bg rounded-[30px] shadow-neu p-8 flex flex-col relative transform md:-translate-y-4 border-2 border-cb-primary">
+        <div 
+          className={`rounded-[30px] p-8 flex flex-col relative transition-all duration-300 ${
+            hoveredPlan === '3_YEAR' 
+              ? 'border-2 border-blue-500 bg-white shadow-lg -translate-y-1' 
+              : 'border-2 border-slate-200 bg-white/50'
+          }`}
+          onMouseEnter={() => setHoveredPlan('3_YEAR')}
+        >
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-cb-primary text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md flex items-center gap-1">
             <Zap className="w-3.5 h-3.5" /> Save 20%
           </div>
@@ -175,15 +199,26 @@ export default function SubscriptionPage() {
           <button
             onClick={() => handleCheckout('3_YEAR')}
             disabled={loadingPlan !== null}
-            className="w-full py-4 bg-cb-primary rounded-xl shadow-md text-white font-bold hover:bg-blue-700 active:scale-[0.98] transition-all duration-200"
+            className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${
+              hoveredPlan === '3_YEAR'
+                ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
+                : 'bg-transparent text-blue-600 border-2 border-blue-500'
+            }`}
           >
             {loadingPlan === '3_YEAR' ? "Processing..." : "Select 3 Years"}
           </button>
         </div>
 
         {/* 5-Year Plan */}
-        <div className="bg-cb-bg rounded-[30px] shadow-neu p-8 flex flex-col hover:-translate-y-1 transition-transform duration-300 relative">
-          <div className="absolute -top-4 right-8 bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-md flex items-center gap-1">
+        <div 
+          className={`rounded-[30px] p-8 flex flex-col relative transition-all duration-300 ${
+            hoveredPlan === '5_YEAR' 
+              ? 'border-2 border-blue-500 bg-white shadow-lg -translate-y-1' 
+              : 'border-2 border-slate-200 bg-white/50'
+          }`}
+          onMouseEnter={() => setHoveredPlan('5_YEAR')}
+        >
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-500 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md flex items-center gap-1">
             <TrendingUp className="w-3.5 h-3.5" /> Save 28%
           </div>
           <div className="mb-6 mt-2">
@@ -212,7 +247,11 @@ export default function SubscriptionPage() {
           <button
             onClick={() => handleCheckout('5_YEAR')}
             disabled={loadingPlan !== null}
-            className="w-full py-4 bg-cb-bg rounded-xl shadow-neu text-gray-600 font-bold hover:shadow-neu-pressed active:shadow-neu-pressed transition-all duration-200"
+            className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${
+              hoveredPlan === '5_YEAR'
+                ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
+                : 'bg-transparent text-blue-600 border-2 border-blue-500'
+            }`}
           >
             {loadingPlan === '5_YEAR' ? "Processing..." : "Select 5 Years"}
           </button>

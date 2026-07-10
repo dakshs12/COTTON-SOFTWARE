@@ -343,6 +343,17 @@ export default function RegisterPage() {
               Login here
             </Link>
           </div>
+
+          <div className="mt-6 text-center text-xs text-slate-500">
+            By signing up, you agree to our{" "}
+            <Link href="/terms" className="font-medium text-slate-600 hover:text-slate-900 transition-colors underline-offset-2 hover:underline">
+              Terms & Conditions
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="font-medium text-slate-600 hover:text-slate-900 transition-colors underline-offset-2 hover:underline">
+              Privacy Policy
+            </Link>.
+          </div>
         </>
       )}
 
