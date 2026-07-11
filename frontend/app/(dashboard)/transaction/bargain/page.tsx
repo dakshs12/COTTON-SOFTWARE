@@ -5,6 +5,65 @@ import api from '@/lib/api';
 import { Save, Plus, FileText, X, Search, ChevronDown, Check, Edit2, Trash2 } from 'lucide-react';
 // Import the new Calendar from your existing folder
 import CustomDatePicker from '@/app/components/CustomDatePicker';
+import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
+
+const SmartDropdown = ({ label, name, options, placeholder = "Select...", formData, setFormData, activeDropdown, setActiveDropdown }: any) => {
+  const filtered = options.filter((opt: string) => opt.toLowerCase().includes((formData as any)[name]?.toLowerCase() || ''));
+  const isOpen = activeDropdown === name;
+  const setIsOpen = (open: boolean) => setActiveDropdown(open ? name : null);
+
+  const handleSelect = (opt: string) => {
+    setFormData({ ...formData, [name]: opt });
+    setActiveDropdown(null);
+  };
+
+  const { highlightedIndex, handleKeyDown, listRef } = useDropdownKeyboardNav(filtered, isOpen, setIsOpen, handleSelect);
+
+  return (
+      <div className="relative">
+        <label className="neu-label">{label}</label>
+        <div className="relative">
+           <input 
+             name={name}
+             value={(formData as any)[name]}
+             onChange={(e) => setFormData({ ...formData, [name]: e.target.value })}
+             onFocus={() => setIsOpen(true)}
+             onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+             onKeyDown={handleKeyDown}
+             className="neu-input cursor-pointer pr-10"
+             placeholder={placeholder}
+             autoComplete="off"
+           />
+           <ChevronDown
+             size={16}
+             className={`absolute right-3 top-3 pointer-events-none transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+             style={{ color: "var(--cb-text-label)" }}
+           />
+           
+           {isOpen && (
+             <ul className="neu-dropdown" ref={listRef as React.RefObject<HTMLUListElement>}>
+               {filtered.map((opt: string, idx: number) => (
+                 <li 
+                   key={opt} 
+                   onMouseDown={() => handleSelect(opt)}
+                   style={highlightedIndex === idx ? { backgroundColor: '#dde3eb' } : {}}
+                 >
+                   {opt}
+                   {(formData as any)[name] === opt && <Check size={14} style={{ color: "var(--cb-primary)" }}/>}
+                 </li>
+               ))}
+               {filtered.length === 0 && (
+                 <li className="italic" style={{ color: "var(--cb-text-placeholder)", fontSize: "0.75rem", cursor: "default" }}>
+                   Type to add new...
+                 </li>
+               )}
+             </ul>
+           )}
+        </div>
+      </div>
+  );
+};
+
 
 // Helper to format date as DD-MM-YYYY
 const formatDate = (dateStr: string) => {
@@ -24,6 +83,7 @@ export default function BargainEntryPage() {
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [splits, setSplits] = useState<any[]>([]);
   
   // Delete Modal States
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -162,7 +222,8 @@ export default function BargainEntryPage() {
     });
     setSellerSearch(deal.seller_name || '');
     setBuyerSearch(deal.buyer_name || '');
-    setEditingId(deal.id);
+    setEditingId(deal.deal_no);
+    setSplits(deal.splits || []);
     setIsFormOpen(true);
   };
 
@@ -172,6 +233,7 @@ export default function BargainEntryPage() {
     setFormData(initialFormState);
     setSellerSearch("");
     setBuyerSearch("");
+    setSplits([]);
   };
 
   const handleSubmit = async (e: any) => {
@@ -190,6 +252,17 @@ export default function BargainEntryPage() {
       rate: formData.rate ? parseFloat(formData.rate) : 0,
       payment_condition: formData.payment_condition ? parseInt(formData.payment_condition) : 0,
     };
+    
+    if (splits.length > 0) {
+      const totalSplits = splits.reduce((sum, s) => sum + (parseInt(s.bales) || 0), 0);
+      if (totalSplits !== payload.bales) {
+        showToast("Total split bales must equal the total deal bales.", 'error');
+        return;
+      }
+      payload.splits = splits;
+    } else {
+      payload.splits = [];
+    }
     
     delete payload.created_at;
     delete payload.updated_at;
@@ -210,6 +283,7 @@ export default function BargainEntryPage() {
       setFormData(initialFormState);
       setSellerSearch("");
       setBuyerSearch("");
+      setSplits([]);
     } catch (error: any) {
       console.error("Error saving deal:", error);
       // Show the specific error message from the backend if available
@@ -240,58 +314,24 @@ export default function BargainEntryPage() {
     }
   };
 
-  // --- REUSABLE SMART DROPDOWN ---
-  const handleDropdownBlur = (name: string) => {
-    setTimeout(() => {
-      setActiveDropdown(prev => (prev === name ? null : prev));
-    }, 200);
-  };
-
   const renderSmartDropdown = (label: string, name: string, options: string[], placeholder: string = "Select...") => {
-    const filtered = options.filter(opt => opt.toLowerCase().includes((formData as any)[name]?.toLowerCase() || ''));
-    
-    return (
-      <div className="relative">
-        <label className="neu-label">{label}</label>
-        <div className="relative">
-           <input 
-             name={name}
-             value={(formData as any)[name]}
-             onChange={handleChange}
-             onFocus={() => setActiveDropdown(name)}
-             onBlur={() => handleDropdownBlur(name)}
-             className="neu-input cursor-pointer pr-10"
-             placeholder={placeholder}
-             autoComplete="off"
-           />
-           <ChevronDown
-             size={16}
-             className={`absolute right-3 top-3 pointer-events-none transition-transform duration-200 ${activeDropdown === name ? 'rotate-180' : ''}`}
-             style={{ color: "var(--cb-text-label)" }}
-           />
-           
-           {activeDropdown === name && (
-             <ul className="neu-dropdown">
-               {filtered.map(opt => (
-                 <li key={opt} onMouseDown={() => handleAutoSelect(name, opt)}>
-                   {opt}
-                   {(formData as any)[name] === opt && <Check size={14} style={{ color: "var(--cb-primary)" }}/>}
-                 </li>
-               ))}
-               {filtered.length === 0 && (
-                 <li className="italic" style={{ color: "var(--cb-text-placeholder)", fontSize: "0.75rem", cursor: "default" }}>
-                   Type to add new...
-                 </li>
-               )}
-             </ul>
-           )}
-        </div>
-      </div>
-    );
+    return <SmartDropdown label={label} name={name} options={options} placeholder={placeholder} formData={formData} setFormData={setFormData} activeDropdown={activeDropdown} setActiveDropdown={setActiveDropdown} />;
   };
 
-  const filteredSellers = parties.filter(p => p.company_name.toLowerCase().includes(sellerSearch.toLowerCase()));
-  const filteredBuyers = parties.filter(p => p.company_name.toLowerCase().includes(buyerSearch.toLowerCase()));
+  const allowedSellerTypes = ["Seller", "Ginner", "Trader"];
+  const allowedBuyerTypes = ["Buyer", "Mill", "Trader"];
+
+  const filteredSellers = parties.filter(p => 
+    allowedSellerTypes.includes(p.party_type) && 
+    p.company_name.toLowerCase().includes(sellerSearch.toLowerCase()) &&
+    String(p.id) !== String(formData.buyer)
+  );
+  
+  const filteredBuyers = parties.filter(p => 
+    allowedBuyerTypes.includes(p.party_type) && 
+    p.company_name.toLowerCase().includes(buyerSearch.toLowerCase()) &&
+    String(p.id) !== String(formData.seller)
+  );
 
   // --- Filter & Pagination Logic ---
   const filteredBargains = bargains.filter(deal => {
@@ -305,10 +345,38 @@ export default function BargainEntryPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const totalPages = Math.ceil(filteredBargains.length / itemsPerPage);
-  const currentBargains = filteredBargains.slice(
+  const flattenedBargains = useMemo(() => {
+    const flat: any[] = [];
+    filteredBargains.forEach(deal => {
+      if (deal.splits && deal.splits.length > 0) {
+        deal.splits.forEach((split: any) => {
+          flat.push({ ...deal, bales: split.bales, status: split.status, is_split: true, split_id: split.id });
+        });
+      } else {
+        flat.push(deal);
+      }
+    });
+    return flat;
+  }, [filteredBargains]);
+
+  const totalPages = Math.ceil(flattenedBargains.length / itemsPerPage);
+  const currentBargains = flattenedBargains.slice(
     (currentPage - 1) * itemsPerPage, 
     currentPage * itemsPerPage
+  );
+
+  const { highlightedIndex: sellerHighlightedIndex, handleKeyDown: handleSellerKeyDown, listRef: sellerListRef } = useDropdownKeyboardNav(
+    filteredSellers,
+    isSellerDropdownOpen,
+    setIsSellerDropdownOpen,
+    (p: any) => handlePartySelect('seller', p.id, p.company_name, p.station, p.state)
+  );
+
+  const { highlightedIndex: buyerHighlightedIndex, handleKeyDown: handleBuyerKeyDown, listRef: buyerListRef } = useDropdownKeyboardNav(
+    filteredBuyers,
+    isBuyerDropdownOpen,
+    setIsBuyerDropdownOpen,
+    (p: any) => handlePartySelect('buyer', p.id, p.company_name, '', '')
   );
 
   return (
@@ -375,14 +443,19 @@ export default function BargainEntryPage() {
                       onChange={(e) => { setSellerSearch(e.target.value); setIsSellerDropdownOpen(true); }}
                       onFocus={() => setIsSellerDropdownOpen(true)}
                       onBlur={() => setTimeout(() => setIsSellerDropdownOpen(false), 200)}
+                      onKeyDown={handleSellerKeyDown}
                       placeholder="Search..."
                       className="neu-input cursor-pointer"
                       required
                     />
                     {isSellerDropdownOpen && (
-                      <ul className="neu-dropdown">
-                        {filteredSellers.map(p => (
-                          <li key={p.id} onMouseDown={() => handlePartySelect('seller', p.id, p.company_name, p.station, p.state)}>
+                      <ul className="neu-dropdown" ref={sellerListRef as React.RefObject<HTMLUListElement>}>
+                        {filteredSellers.map((p, idx) => (
+                          <li 
+                            key={p.id} 
+                            onMouseDown={() => handlePartySelect('seller', p.id, p.company_name, p.station, p.state)}
+                            style={sellerHighlightedIndex === idx ? { backgroundColor: '#dde3eb' } : {}}
+                          >
                             {p.company_name}
                           </li>
                         ))}
@@ -398,14 +471,19 @@ export default function BargainEntryPage() {
                       onChange={(e) => { setBuyerSearch(e.target.value); setIsBuyerDropdownOpen(true); }}
                       onFocus={() => setIsBuyerDropdownOpen(true)}
                       onBlur={() => setTimeout(() => setIsBuyerDropdownOpen(false), 200)}
+                      onKeyDown={handleBuyerKeyDown}
                       placeholder="Search..."
                       className="neu-input cursor-pointer"
                       required
                     />
                     {isBuyerDropdownOpen && (
-                      <ul className="neu-dropdown">
-                        {filteredBuyers.map(p => (
-                          <li key={p.id} onMouseDown={() => handlePartySelect('buyer', p.id, p.company_name, '', '')}>
+                      <ul className="neu-dropdown" ref={buyerListRef as React.RefObject<HTMLUListElement>}>
+                        {filteredBuyers.map((p, idx) => (
+                          <li 
+                            key={p.id} 
+                            onMouseDown={() => handlePartySelect('buyer', p.id, p.company_name, '', '')}
+                            style={buyerHighlightedIndex === idx ? { backgroundColor: '#dde3eb' } : {}}
+                          >
                             {p.company_name}
                           </li>
                         ))}
@@ -508,10 +586,125 @@ export default function BargainEntryPage() {
                   <label className="neu-label">Remarks</label>
                   <textarea name="remarks" value={formData.remarks} onChange={handleChange} className="neu-input" style={{ height: "64px", resize: "none" }} />
                </div>
-               <div className="mt-4 grid grid-cols-1 md:grid-cols-4">
-                  <div className="col-span-1">
-                     {renderSmartDropdown("Status", "status", STATUS_OPTIONS)}
+               
+               {splits.length === 0 && (
+                 <div className="mt-4 grid grid-cols-1 md:grid-cols-4">
+                    <div className="col-span-1">
+                       {renderSmartDropdown("Overall Status", "status", STATUS_OPTIONS)}
+                    </div>
+                 </div>
+               )}
+
+               {/* Bales Split Section */}
+               <div className="mt-6 p-5 rounded-xl border border-dashed" style={{ borderColor: "var(--cb-divider)" }}>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-sm" style={{ color: "var(--cb-text-heading)" }}>Bales Split</h3>
+                    {formData.bales && parseInt(formData.bales) > 0 && (
+                      <span className="text-xs font-semibold" style={{ color: "var(--cb-text-label)" }}>
+                        Total Deal: <span style={{ color: "var(--cb-primary)" }}>{formData.bales}</span> | 
+                        Allocated: <span style={{ color: "var(--cb-secondary)" }}>{splits.reduce((sum, s) => sum + (parseInt(s.bales)||0), 0)}</span>
+                      </span>
+                    )}
                   </div>
+                  
+                  {splits.map((split, idx) => (
+                    <div key={idx} className="flex gap-4 items-end mb-3">
+                      <div className="flex-1 relative">
+                        <label className="neu-label text-xs">Split {idx + 1} Bales</label>
+                        <input 
+                          type="number" 
+                          value={split.bales} 
+                          onChange={(e) => {
+                            const newSplits = [...splits];
+                            newSplits[idx].bales = e.target.value;
+                            setSplits(newSplits);
+                          }}
+                          className="neu-input font-mono" 
+                          placeholder="e.g. 200"
+                        />
+                      </div>
+                      <div className="flex-1 relative">
+                        <label className="neu-label text-xs">Status</label>
+                        <div className="relative">
+                           <div 
+                             className="neu-input cursor-pointer flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+                             tabIndex={0}
+                             onKeyDown={(e) => {
+                               const isOpen = activeDropdown === `split-status-${idx}`;
+                               if (!isOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ')) {
+                                 e.preventDefault();
+                                 setActiveDropdown(`split-status-${idx}`);
+                                 return;
+                               }
+                               if (isOpen) {
+                                 const currentIndex = STATUS_OPTIONS.indexOf(split.status || 'Pending Passing');
+                                 if (e.key === 'ArrowDown') {
+                                   e.preventDefault();
+                                   const next = Math.min(currentIndex + 1, STATUS_OPTIONS.length - 1);
+                                   const newSplits = [...splits];
+                                   newSplits[idx].status = STATUS_OPTIONS[next];
+                                   setSplits(newSplits);
+                                 } else if (e.key === 'ArrowUp') {
+                                   e.preventDefault();
+                                   const prev = Math.max(currentIndex - 1, 0);
+                                   const newSplits = [...splits];
+                                   newSplits[idx].status = STATUS_OPTIONS[prev];
+                                   setSplits(newSplits);
+                                 } else if (e.key === 'Enter') {
+                                   e.preventDefault();
+                                   setActiveDropdown(null);
+                                 } else if (e.key === 'Escape') {
+                                   setActiveDropdown(null);
+                                 }
+                               }
+                             }}
+                             onClick={() => setActiveDropdown(activeDropdown === `split-status-${idx}` ? null : `split-status-${idx}`)}
+                           >
+                             <span>{split.status || 'Select Status'}</span>
+                             <ChevronDown size={14} style={{ color: "var(--cb-primary)" }}/>
+                           </div>
+                           {activeDropdown === `split-status-${idx}` && (
+                             <ul className="neu-dropdown z-50">
+                               {STATUS_OPTIONS.map(opt => (
+                                 <li 
+                                   key={opt}
+                                   className="flex justify-between items-center p-2 cursor-pointer transition-colors hover:bg-[#dde3eb]"
+                                   style={{ backgroundColor: split.status === opt ? '#dde3eb' : 'transparent' }}
+                                   onMouseDown={() => {
+                                      const newSplits = [...splits];
+                                      newSplits[idx].status = opt;
+                                      setSplits(newSplits);
+                                      setActiveDropdown(null);
+                                   }}
+                                 >
+                                   {opt}
+                                   {split.status === opt && <Check size={14} style={{ color: "var(--cb-primary)" }}/>}
+                                 </li>
+                               ))}
+                             </ul>
+                           )}
+                        </div>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setSplits(splits.filter((_, i) => i !== idx))}
+                        className="mb-2 p-2 rounded-lg transition-colors cursor-pointer" 
+                        style={{ color: "var(--cb-danger)", backgroundColor: "rgba(220, 53, 69, 0.1)" }}
+                        title="Remove Split"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setSplits([...splits, { bales: '', status: 'Pending Passing' }])}
+                    className="mt-2 flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-md transition-colors cursor-pointer"
+                    style={{ color: "var(--cb-primary)", backgroundColor: "rgba(74, 127, 196, 0.1)" }}
+                  >
+                    <Plus size={14} strokeWidth={3} /> Add Split
+                  </button>
                </div>
             </div>
 
@@ -596,7 +789,7 @@ export default function BargainEntryPage() {
               ) : currentBargains.length === 0 ? (
                 <tr><td colSpan={8} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>No deals found.</td></tr>
               ) : currentBargains.map((deal) => (
-                <tr key={deal.deal_no || deal.id}>
+                <tr key={deal.deal_no}>
                   <td className="font-mono font-bold" style={{ color: "var(--cb-primary)" }}>{deal.smart_deal_id}</td>
                   <td>{formatDate(deal.bargain_date)}</td>
                   <td className="font-medium" style={{ color: "var(--cb-text-heading)" }}>{deal.seller_name}</td>
@@ -617,7 +810,7 @@ export default function BargainEntryPage() {
                       <Edit2 size={16} />
                     </button>
                     <button 
-                      onClick={() => triggerDelete(deal.id, deal.smart_deal_id || deal.deal_no || String(deal.id))}
+                      onClick={() => triggerDelete(deal.deal_no, deal.smart_deal_id || deal.deal_no)}
                       className="p-1.5 rounded-md transition-colors cursor-pointer hover:bg-gray-100 text-gray-500 hover:text-red-500 ml-1"
                       title="Delete Deal"
                     >
@@ -634,7 +827,7 @@ export default function BargainEntryPage() {
         {!loading && totalPages > 1 && (
           <div className="p-4 flex justify-between items-center border-t border-gray-100 mt-4">
             <span className="text-sm font-medium text-gray-500">
-              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredBargains.length)} of {filteredBargains.length} entries
+              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, flattenedBargains.length)} of {flattenedBargains.length} entries
             </span>
             <div className="flex gap-2">
               <button 

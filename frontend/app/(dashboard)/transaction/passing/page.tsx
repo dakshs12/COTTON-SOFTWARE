@@ -2,9 +2,10 @@
 import { Toast } from '@/app/components/Toast';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Save, Plus, CheckCircle, X, ChevronDown, FileCheck, Search, Edit2, Trash2 } from 'lucide-react';
+import { Save, Plus, Edit2, X, Trash2, CheckCircle, ChevronDown, Check, FileCheck, Search } from 'lucide-react';
 // Import the Custom Calendar
 import CustomDatePicker from '@/app/components/CustomDatePicker';
+import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
 
 // Helper to format date as DD-MM-YYYY
 const formatDate = (dateStr: string) => {
@@ -50,12 +51,13 @@ export default function PassingEntryPage() {
 
   const [dealSearch, setDealSearch] = useState("");
   const [isDealDropdownOpen, setIsDealDropdownOpen] = useState(false);
+  const [selectedDealDisplay, setSelectedDealDisplay] = useState({ seller: '', buyer: '', rate: '', payment_condition: 0, bales: 0 });
 
-
-  // Form State
   const initialFormState = {
     bargain: '', // This stores the ID
     approval_date: new Date().toISOString().split('T')[0],
+    due_date: '',
+    lot_no: '',
     pr_no: '',
     book_bargain_no: '',
     approved_by: '',
@@ -63,16 +65,8 @@ export default function PassingEntryPage() {
   };
 
   const [formData, setFormData] = useState(initialFormState);
-  const [splits, setSplits] = useState<{id?: number, bales: string}[]>([]);
 
   // Display State
-  const [selectedDealDisplay, setSelectedDealDisplay] = useState({
-    seller: '',
-    buyer: '',
-    rate: '',
-    payment_condition: 0,
-    bales: 0
-  });
 
   useEffect(() => {
     fetchData();
@@ -96,28 +90,25 @@ export default function PassingEntryPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Logic: When user selects a Deal
-  const handleDealSelect = (deal: any) => {
-    const conditionDays = parseInt(deal.payment_condition) || 0;
-    const newDueDate = addDaysToDate(formData.approval_date, conditionDays);
+  const getApprovedBales = (deal: any) => {
+    if (deal.splits && deal.splits.length > 0) {
+      return deal.splits
+        .filter((s: any) => s.status === "Approved")
+        .reduce((sum: number, s: any) => sum + s.bales, 0);
+    }
+    return deal.status === "Approved" ? deal.bales : 0;
+  };
 
-    setFormData({ 
-      ...formData, 
-      bargain: deal.deal_no,
-      due_date: newDueDate 
-    }); // Store ID
-    setDealSearch(deal.smart_deal_id); // Show Smart ID
-    
-    // Auto-fill visual details
+  const handleDealSelect = (b: any) => {
+    setDealSearch(b.smart_deal_id);
+    setFormData(prev => ({ ...prev, bargain: b.id || b.deal_no }));
     setSelectedDealDisplay({
-      seller: deal.seller_name,
-      buyer: deal.buyer_name,
-      rate: deal.rate,
-      payment_condition: conditionDays,
-      bales: deal.bales
+      seller: b.seller_name,
+      buyer: b.buyer_name,
+      rate: b.rate,
+      payment_condition: b.payment_condition,
+      bales: getApprovedBales(b)
     });
-    setSplits([]); // Reset splits when new deal selected
-    
     setIsDealDropdownOpen(false);
   };
 
@@ -146,7 +137,6 @@ export default function PassingEntryPage() {
       payment_condition: pass.payment_condition || 0,
       bales: pass.bargain_bales || 0
     });
-    setSplits(pass.splits ? pass.splits.map((s:any) => ({ id: s.id, bales: s.bales.toString() })) : []);
     
     // Attempt to fetch bargain bales if missing
     if (!pass.bargain_bales) {
@@ -163,27 +153,23 @@ export default function PassingEntryPage() {
     setFormData(initialFormState);
     setDealSearch("");
     setSelectedDealDisplay({ seller: '', buyer: '', rate: '', payment_condition: 0, bales: 0 });
-    setSplits([]);
   };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-
-    // Validation: If splits are defined, they must equal the total bargain bales
-    const validSplits = splits.filter(s => s.bales).map(s => ({ id: s.id, bales: parseInt(s.bales) }));
-    if (validSplits.length > 0) {
-      const splitSum = validSplits.reduce((sum, s) => sum + s.bales, 0);
-      if (splitSum !== selectedDealDisplay.bales) {
-        showToast(`Split Bales sum (${splitSum}) must equal the total Deal Bales (${selectedDealDisplay.bales}). Please add the remaining ${selectedDealDisplay.bales - splitSum} bales.`, 'error');
-        return;
-      }
-    }
-
     try {
       const payload: any = {
-        ...formData,
-        splits: validSplits
+        ...formData
       };
+      
+      if (!payload.bargain) {
+        showToast('Please select a deal first!', 'error');
+        return;
+      }
+      
+      if (!payload.due_date) {
+        payload.due_date = null;
+      }
       
       delete payload.created_at;
       delete payload.updated_at;
@@ -202,10 +188,13 @@ export default function PassingEntryPage() {
       setFormData(initialFormState);
       setDealSearch("");
       setSelectedDealDisplay({ seller: '', buyer: '', rate: '', payment_condition: 0, bales: 0 });
-      setSplits([]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving passing:", error);
-      showToast('Error saving data.', 'error');
+      if (error.response && error.response.data) {
+        showToast(`Error: ${JSON.stringify(error.response.data)}`, 'error');
+      } else {
+        showToast('Error saving data.', 'error');
+      }
     }
   };
 
@@ -229,11 +218,15 @@ export default function PassingEntryPage() {
   };
 
   // --- Derived State & Pagination ---
-  const filteredBargains = bargains.filter(b => 
-    b.smart_deal_id?.toLowerCase().includes(dealSearch.toLowerCase()) ||
-    b.buyer_name?.toLowerCase().includes(dealSearch.toLowerCase()) ||
-    b.seller_name?.toLowerCase().includes(dealSearch.toLowerCase())
-  );
+  const filteredBargains = bargains.filter(b => {
+    const approvedBales = getApprovedBales(b);
+    const isApprovedOrEditing = approvedBales > 0 || b.deal_no === formData.bargain || b.id === formData.bargain;
+    const matchesSearch = 
+      b.smart_deal_id?.toLowerCase().includes(dealSearch.toLowerCase()) ||
+      b.buyer_name?.toLowerCase().includes(dealSearch.toLowerCase()) ||
+      b.seller_name?.toLowerCase().includes(dealSearch.toLowerCase());
+    return isApprovedOrEditing && matchesSearch;
+  });
 
   const filteredPassings = passings.filter(pass => 
     (pass.passing_no && pass.passing_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -247,6 +240,13 @@ export default function PassingEntryPage() {
   const currentPassings = filteredPassings.slice(
     (currentPage - 1) * itemsPerPage, 
     currentPage * itemsPerPage
+  );
+
+  const { highlightedIndex: dealHighlightedIndex, handleKeyDown: handleDealKeyDown, listRef: dealListRef } = useDropdownKeyboardNav(
+    filteredBargains,
+    isDealDropdownOpen,
+    setIsDealDropdownOpen,
+    handleDealSelect
   );
 
   return (
@@ -313,6 +313,7 @@ export default function PassingEntryPage() {
                           setIsDealDropdownOpen((prev) => (prev ? false : prev));
                         }, 200);
                       }}
+                      onKeyDown={handleDealKeyDown}
                       placeholder="Search Deal..."
                       className="neu-input cursor-pointer pr-10"
                       required
@@ -323,9 +324,13 @@ export default function PassingEntryPage() {
                       style={{ color: "var(--cb-primary)" }}
                     />
                     {isDealDropdownOpen && (
-                      <ul className="neu-dropdown">
-                        {filteredBargains.map(b => (
-                          <li key={b.deal_no} onMouseDown={() => handleDealSelect(b)}>
+                      <ul className="neu-dropdown" ref={dealListRef as React.RefObject<HTMLUListElement>}>
+                        {filteredBargains.map((b, idx) => (
+                          <li 
+                            key={b.deal_no} 
+                            onMouseDown={() => handleDealSelect(b)}
+                            style={dealHighlightedIndex === idx ? { backgroundColor: '#dde3eb' } : {}}
+                          >
                             <div className="w-full overflow-hidden">
                               <div className="flex justify-between items-center w-full">
                                 <span className="font-bold truncate" style={{ color: "var(--cb-primary)" }}>{b.smart_deal_id}</span>
@@ -373,6 +378,8 @@ export default function PassingEntryPage() {
                />
             </div>
 
+
+
             <div className="col-span-1">
                <label className="neu-label">Lot No</label>
                <input name="lot_no" value={formData.lot_no} onChange={handleChange} className="neu-input" required />
@@ -381,6 +388,15 @@ export default function PassingEntryPage() {
             <div className="col-span-1">
                <label className="neu-label">PR No</label>
                <input name="pr_no" value={formData.pr_no} onChange={handleChange} className="neu-input" />
+            </div>
+
+            <div className="col-span-1">
+               <label className="neu-label">Approved Bales</label>
+               <input 
+                 className="neu-input bg-gray-50 text-gray-500 font-mono cursor-not-allowed" 
+                 value={selectedDealDisplay.bales || ''} 
+                 disabled 
+               />
             </div>
             
             <div className="md:col-span-1">
@@ -396,56 +412,6 @@ export default function PassingEntryPage() {
             <div className="md:col-span-4">
                <label className="neu-label">Remarks</label>
                <input name="remarks" value={formData.remarks} onChange={handleChange} className="neu-input" />
-            </div>
-
-            {/* Bales Split Section */}
-            <div className="md:col-span-4 p-5 rounded-xl border border-dashed mt-2" style={{ borderColor: "var(--cb-divider)" }}>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-sm" style={{ color: "var(--cb-text-heading)" }}>Bales Split (Optional)</h3>
-                  {selectedDealDisplay.bales > 0 && (
-                    <span className="text-xs font-semibold" style={{ color: "var(--cb-text-label)" }}>
-                      Total Deal: <span style={{ color: "var(--cb-primary)" }}>{selectedDealDisplay.bales}</span> | 
-                      Allocated: <span style={{ color: "var(--cb-secondary)" }}>{splits.reduce((sum, s) => sum + (parseInt(s.bales)||0), 0)}</span>
-                    </span>
-                  )}
-                </div>
-                
-                {splits.map((split, idx) => (
-                  <div key={idx} className="flex gap-4 items-end mb-3">
-                    <div className="flex-1 relative">
-                      <label className="neu-label text-xs">Split {idx + 1} Bales</label>
-                      <input 
-                        type="number" 
-                        value={split.bales} 
-                        onChange={(e) => {
-                          const newSplits = [...splits];
-                          newSplits[idx].bales = e.target.value;
-                          setSplits(newSplits);
-                        }}
-                        className="neu-input font-mono" 
-                        placeholder="e.g. 200"
-                      />
-                    </div>
-                    <button 
-                      type="button" 
-                      onClick={() => setSplits(splits.filter((_, i) => i !== idx))}
-                      className="mb-2 p-2 rounded-lg transition-colors" 
-                      style={{ color: "var(--cb-danger)", backgroundColor: "rgba(220, 53, 69, 0.1)" }}
-                      title="Remove Split"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ))}
-                
-                <button
-                  type="button"
-                  onClick={() => setSplits([...splits, { bales: '' }])}
-                  className="text-sm font-bold flex items-center gap-1 mt-2 p-2 -ml-2 rounded-lg transition-colors hover:bg-gray-50"
-                  style={{ color: "var(--cb-primary)" }}
-                >
-                  <Plus size={16} /> Add Split
-                </button>
             </div>
 
             {/* Footer */}
@@ -485,12 +451,12 @@ export default function PassingEntryPage() {
           <table className="neu-table">
             <thead>
               <tr>
-                <th>PR No</th>
-                <th>Date</th>
                 <th>Deal No</th>
+                <th>Date</th>
                 <th>Seller</th>
                 <th>Buyer</th>
                 <th>Lot No</th>
+                <th>PR No</th>
                 <th className="text-right">Action</th>
               </tr>
             </thead>
@@ -501,12 +467,12 @@ export default function PassingEntryPage() {
                 <tr><td colSpan={7} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>No passing entries found.</td></tr>
               ) : currentPassings.map((pass) => (
                 <tr key={pass.id}>
-                  <td className="font-bold" style={{ color: "var(--cb-secondary)" }}>{pass.pr_no || "-"}</td>
-                  <td>{formatDate(pass.approval_date)}</td>
                   <td className="font-mono font-bold" style={{ color: "var(--cb-primary)" }}>{pass.deal_no}</td>
+                  <td>{formatDate(pass.approval_date)}</td>
                   <td>{pass.seller_name}</td>
                   <td>{pass.buyer_name}</td>
                   <td className="font-mono">{pass.lot_no}</td>
+                  <td className="font-bold" style={{ color: "var(--cb-secondary)" }}>{pass.pr_no || "-"}</td>
                   <td className="text-right">
                     <div className="flex justify-end items-center gap-3">
                       <button 

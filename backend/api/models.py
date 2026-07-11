@@ -226,19 +226,19 @@ class PassingEntry(BaseModel):
     approved_by = models.CharField(max_length=100)
     remarks = models.TextField(blank=True, null=True)
 
-class PassingSplit(BaseModel):
+class BargainSplit(BaseModel):
     tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
-    passing = models.ForeignKey(PassingEntry, related_name='splits', on_delete=models.PROTECT)
+    bargain = models.ForeignKey(BargainEntry, related_name='splits', on_delete=models.CASCADE)
     bales = models.IntegerField()
+    status = models.CharField(max_length=50, choices=BargainEntry.STATUS_CHOICES, default='Pending Passing')
     
     def __str__(self):
-        return f"Split: {self.bales} Bales (Pass #{self.passing.id})"
+        return f"Split: {self.bales} Bales (Deal #{self.bargain.deal_no})"
 
 class DeliveryDetails(BaseModel):
     tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
     bargain = models.ForeignKey(BargainEntry, on_delete=models.PROTECT)
     passing = models.ForeignKey(PassingEntry, on_delete=models.SET_NULL, null=True, blank=True)
-    passing_split = models.ForeignKey(PassingSplit, on_delete=models.SET_NULL, null=True, blank=True)
     bill_no = models.CharField(max_length=50)
     bill_date = models.DateField()
     truck_no = models.CharField(max_length=20)

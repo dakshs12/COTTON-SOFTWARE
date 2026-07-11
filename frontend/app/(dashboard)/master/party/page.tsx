@@ -3,6 +3,7 @@ import { Toast } from '@/app/components/Toast';
 import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
 import { Save, Search, Plus, Edit2, X, Trash2, ChevronDown, Check } from 'lucide-react';
+import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
 
 export default function PartyMasterPage() {
   const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
@@ -26,7 +27,7 @@ export default function PartyMasterPage() {
     "Rajasthan", "TN", "Telangana", "UP"
   ];
 
-  const PARTY_TYPES = ["Mill", "Trader", "Ginner", "Buyer", "Seller", "Other"];
+  const PARTY_TYPES = ["Mill", "Trader", "Ginner", "Buyer", "Seller"];
 
   // 2. Smart State Logic: Combine Default + Database States
   const availableStates = useMemo(() => {
@@ -142,6 +143,20 @@ export default function PartyMasterPage() {
     currentPage * itemsPerPage
   );
 
+  const { highlightedIndex: stateHighlightedIndex, handleKeyDown: handleStateKeyDown, listRef: stateListRef } = useDropdownKeyboardNav(
+    filteredStates,
+    isStateDropdownOpen,
+    setIsStateDropdownOpen,
+    handleStateSelect
+  );
+
+  const { highlightedIndex: typeHighlightedIndex, handleKeyDown: handleTypeKeyDown, listRef: typeListRef } = useDropdownKeyboardNav(
+    PARTY_TYPES,
+    isTypeDropdownOpen,
+    setIsTypeDropdownOpen,
+    handleTypeSelect
+  );
+
   return (
     <div className="max-w-7xl mx-auto neu-fade-in">
         
@@ -223,6 +238,7 @@ export default function PartyMasterPage() {
                       onChange={(e) => { handleChange(e); setIsStateDropdownOpen(true); }}
                       onFocus={() => setIsStateDropdownOpen(true)}
                       onBlur={() => setTimeout(() => setIsStateDropdownOpen(false), 200)}
+                      onKeyDown={handleStateKeyDown}
                       placeholder="Select or Type..."
                       className="neu-input cursor-pointer pr-10"
                       autoComplete="off"
@@ -235,9 +251,13 @@ export default function PartyMasterPage() {
                     />
                     
                     {isStateDropdownOpen && (
-                      <ul className="neu-dropdown">
-                        {filteredStates.map((st) => (
-                          <li key={st} onMouseDown={() => handleStateSelect(st)}>
+                      <ul className="neu-dropdown" ref={stateListRef}>
+                        {filteredStates.map((st, idx) => (
+                          <li 
+                            key={st} 
+                            onMouseDown={() => handleStateSelect(st)}
+                            style={stateHighlightedIndex === idx ? { backgroundColor: '#dde3eb' } : {}}
+                          >
                             {st}
                             {formData.state === st && <Check size={16} style={{ color: "var(--cb-primary)" }} strokeWidth={3} />}
                           </li>
@@ -273,6 +293,7 @@ export default function PartyMasterPage() {
                         readOnly
                         onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)}
                         onBlur={() => setTimeout(() => setIsTypeDropdownOpen(false), 200)}
+                        onKeyDown={handleTypeKeyDown}
                         className="neu-input cursor-pointer pr-10"
                       />
                       <ChevronDown
@@ -282,9 +303,13 @@ export default function PartyMasterPage() {
                       />
                       
                       {isTypeDropdownOpen && (
-                        <ul className="neu-dropdown">
-                          {['Mill', 'Trader', 'Ginner', 'Buyer', 'Seller', 'Other'].map((type) => (
-                            <li key={type} onMouseDown={() => handleTypeSelect(type)}>
+                        <ul className="neu-dropdown" ref={typeListRef}>
+                          {PARTY_TYPES.map((type, idx) => (
+                            <li 
+                              key={type} 
+                              onMouseDown={() => handleTypeSelect(type)}
+                              style={typeHighlightedIndex === idx ? { backgroundColor: '#dde3eb' } : {}}
+                            >
                               {type}
                               {formData.party_type === type && <Check size={16} style={{ color: "var(--cb-primary)" }} strokeWidth={3} />}
                             </li>

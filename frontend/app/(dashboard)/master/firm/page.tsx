@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
 import { Save, Building2, Plus, Edit2, X, ChevronDown, Check, CheckCircle, AlertCircle } from 'lucide-react';
+import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
 
 export default function FirmMasterPage() {
   const [firms, setFirms] = useState<any[]>([]);
@@ -33,6 +34,21 @@ export default function FirmMasterPage() {
   });
   const [letterheadFile, setLetterheadFile] = useState<File | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
+
+  // Smart Filter Logic
+  const filteredStates = useMemo(() => {
+    if (!formData.state) return availableStates;
+    const isExactMatch = availableStates.some(st => st.toLowerCase() === formData.state.toLowerCase());
+    if (isExactMatch) return availableStates;
+    return availableStates.filter(st => st.toLowerCase().includes(formData.state.toLowerCase()));
+  }, [formData.state, availableStates]);
+
+  const { highlightedIndex: stateHighlightedIndex, handleKeyDown: handleStateKeyDown, listRef: stateListRef } = useDropdownKeyboardNav(
+    filteredStates,
+    isStateDropdownOpen,
+    setIsStateDropdownOpen,
+    (val: string) => handleStateSelect(val)
+  );
 
   useEffect(() => {
     fetchFirms();
@@ -112,14 +128,6 @@ export default function FirmMasterPage() {
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  // Smart Filter Logic
-  const filteredStates = useMemo(() => {
-    if (!formData.state) return availableStates;
-    const isExactMatch = availableStates.some(st => st.toLowerCase() === formData.state.toLowerCase());
-    if (isExactMatch) return availableStates;
-    return availableStates.filter(st => st.toLowerCase().includes(formData.state.toLowerCase()));
-  }, [formData.state, availableStates]);
 
   return (
     <div className="max-w-7xl mx-auto neu-fade-in">
@@ -227,6 +235,7 @@ export default function FirmMasterPage() {
                     onChange={(e) => { handleChange(e); setIsStateDropdownOpen(true); }}
                     onFocus={() => setIsStateDropdownOpen(true)}
                     onBlur={() => setTimeout(() => setIsStateDropdownOpen(false), 200)}
+                    onKeyDown={handleStateKeyDown}
                     placeholder="Select or Type..."
                     className="neu-input cursor-pointer pr-10"
                     autoComplete="off"
@@ -239,9 +248,13 @@ export default function FirmMasterPage() {
                   />
                   
                   {isStateDropdownOpen && (
-                    <ul className="neu-dropdown">
-                      {filteredStates.map((st) => (
-                        <li key={st} onMouseDown={() => handleStateSelect(st)}>
+                    <ul className="neu-dropdown" ref={stateListRef}>
+                      {filteredStates.map((st, idx) => (
+                        <li 
+                          key={st} 
+                          onMouseDown={() => handleStateSelect(st)}
+                          style={stateHighlightedIndex === idx ? { backgroundColor: '#dde3eb' } : {}}
+                        >
                           {st}
                           {formData.state === st && <Check size={14} style={{ color: "var(--cb-primary)" }} />}
                         </li>

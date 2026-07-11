@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.db import models
 from .models import (
     PartyMaster, FirmMaster, BargainEntry, PassingEntry, DeliveryDetails,
-    BrokerageBill, PartyPaymentReceipt, PaymentAllocation, PassingSplit
+    BrokerageBill, PartyPaymentReceipt, PaymentAllocation, BargainSplit
 )
 
 class PartyMasterSerializer(serializers.ModelSerializer):
@@ -17,6 +17,12 @@ class FirmMasterSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('tenant',)
 
+class BargainSplitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BargainSplit
+        fields = '__all__'
+        read_only_fields = ('tenant', 'bargain')
+
 class BargainEntrySerializer(serializers.ModelSerializer):
     seller_name = serializers.CharField(source='seller.company_name', read_only=True)
     buyer_name = serializers.CharField(source='buyer.company_name', read_only=True)
@@ -24,6 +30,7 @@ class BargainEntrySerializer(serializers.ModelSerializer):
     # This sends the smart ID (24-25/1) instead of just "1"
     smart_deal_id = serializers.ReadOnlyField()
     remaining_bales = serializers.SerializerMethodField()
+    splits = BargainSplitSerializer(many=True, required=False)
 
     class Meta:
         model = BargainEntry
@@ -34,31 +41,12 @@ class BargainEntrySerializer(serializers.ModelSerializer):
         delivered = obj.deliverydetails_set.aggregate(total=models.Sum('quantity_bales'))['total'] or 0
         return obj.bales - delivered
 
-class PassingSplitSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PassingSplit
-        fields = ['id', 'bales']
-        read_only_fields = ('passing',)
-
-class PassingEntrySerializer(serializers.ModelSerializer):
-    # Fetch details from the linked Bargain so we can see them in the list
-    deal_no = serializers.ReadOnlyField(source='bargain.smart_deal_id')
-    seller_name = serializers.CharField(source='bargain.seller.company_name', read_only=True)
-    buyer_name = serializers.CharField(source='bargain.buyer.company_name', read_only=True)
-    payment_condition = serializers.IntegerField(source='bargain.payment_condition', read_only=True)
-    splits = PassingSplitSerializer(many=True, required=False)
-
-    class Meta:
-        model = PassingEntry
-        fields = '__all__'
-        read_only_fields = ('tenant',)
-
     def create(self, validated_data):
         splits_data = validated_data.pop('splits', [])
-        passing = super().create(validated_data)
+        bargain = super().create(validated_data)
         for split_data in splits_data:
-            PassingSplit.objects.create(passing=passing, **split_data)
-        return passing
+            BargainSplit.objects.create(bargain=bargain, tenant=bargain.tenant, **split_data)
+        return bargain
 
     def update(self, instance, validated_data):
         splits_data = validated_data.pop('splits', None)
@@ -66,8 +54,20 @@ class PassingEntrySerializer(serializers.ModelSerializer):
         if splits_data is not None:
             instance.splits.all().delete()
             for split_data in splits_data:
-                PassingSplit.objects.create(passing=instance, **split_data)
+                BargainSplit.objects.create(bargain=instance, tenant=instance.tenant, **split_data)
         return instance
+
+class PassingEntrySerializer(serializers.ModelSerializer):
+    # Fetch details from the linked Bargain so we can see them in the list
+    deal_no = serializers.ReadOnlyField(source='bargain.smart_deal_id')
+    seller_name = serializers.CharField(source='bargain.seller.company_name', read_only=True)
+    buyer_name = serializers.CharField(source='bargain.buyer.company_name', read_only=True)
+    payment_condition = serializers.IntegerField(source='bargain.payment_condition', read_only=True)
+
+    class Meta:
+        model = PassingEntry
+        fields = '__all__'
+        read_only_fields = ('tenant',)
 
 class DeliveryDetailsSerializer(serializers.ModelSerializer):
     deal_display = serializers.CharField(source='bargain.smart_deal_id', read_only=True)

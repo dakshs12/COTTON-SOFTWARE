@@ -4,14 +4,11 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 django.setup()
 
-from api.serializers import FirmMasterSerializer
-data = {
-    "firm_name": "Test Firm",
-    "address": "123 Test St",
-    "city": "Test City",
-    "state": "Test State",
-    "mobile": "1234567890",
-}
-serializer = FirmMasterSerializer(data=data)
-print("Is valid?", serializer.is_valid())
-print("Errors:", serializer.errors)
+from api.models import BargainEntry
+from api.serializers import BargainEntrySerializer
+
+deal = BargainEntry.objects.last()
+if deal:
+    data = BargainEntrySerializer(deal).data
+    for key, val in data.items():
+        print(f"{key}: {val}")

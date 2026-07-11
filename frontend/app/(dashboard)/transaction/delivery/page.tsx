@@ -1,8 +1,9 @@
 "use client";
 import { Toast } from '@/app/components/Toast';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
-import { Save, Plus, Truck, X, ChevronDown, Search, Edit2, CheckCircle, Trash2 } from 'lucide-react';
+import { Save, Plus, X, Search, CheckCircle, Edit2, Trash2, ChevronDown, FileText, Truck, RefreshCw } from 'lucide-react';
+import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
 // Import the Custom Calendar
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 
@@ -34,11 +35,6 @@ export default function DeliveryEntryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const [availableSplits, setAvailableSplits] = useState<any[]>([]);
-  const [selectedSplit, setSelectedSplit] = useState<number | null>(null);
-  const [remainingBales, setRemainingBales] = useState<number | null>(null);
-  const [isSplitDropdownOpen, setIsSplitDropdownOpen] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -116,12 +112,7 @@ export default function DeliveryEntryPage() {
     let seller = '', buyer = '', station = '', lotNo = '', bargainNo = '';
     
     if (isDirectDelivery) {
-      const remaining = item.remaining_bales !== undefined ? item.remaining_bales : (item.bales || formData.quantity_bales);
-      setRemainingBales(item.remaining_bales !== undefined ? item.remaining_bales : null);
-      setAvailableSplits([]);
-      setSelectedSplit(null);
-
-      const newData = { ...formData, bargain: item.id, passing: '', rate: item.rate, quantity_bales: remaining };
+      const newData = { ...formData, bargain: item.id, passing: '', rate: item.rate, quantity_bales: item.bales };
       setFormData(newData);
       calculateTotals(newData);
       seller = item.seller_name;
@@ -130,11 +121,6 @@ export default function DeliveryEntryPage() {
       bargainNo = item.smart_deal_id;
       setSearchTerm(item.smart_deal_id);
     } else {
-      setRemainingBales(null);
-      
-      const usedSplitIds = deliveries.map(d => d.passing_split).filter(Boolean);
-      const avail = (item.splits || []).filter((s: any) => !usedSplitIds.includes(s.id));
-      setAvailableSplits(avail);
       let bales = formData.quantity_bales;
       let rate = item.deal_rate || formData.rate;
       let dealSmartId = item.deal_no;
@@ -145,13 +131,6 @@ export default function DeliveryEntryPage() {
         bales = matchedBargain.bales || bales;
         rate = matchedBargain.rate || rate;
         dealSmartId = matchedBargain.smart_deal_id || dealSmartId;
-      }
-      
-      if (avail.length > 0) {
-        bales = avail[0].bales;
-        setSelectedSplit(avail[0].id);
-      } else {
-        setSelectedSplit(null);
       }
 
       const newData = { ...formData, bargain: item.bargain, passing: item.id, rate, quantity_bales: bales };
@@ -167,17 +146,6 @@ export default function DeliveryEntryPage() {
     
     setDisplayInfo({ seller, buyer, station, lot_no: lotNo, bargain_no: bargainNo });
     setIsDropdownOpen(false);
-  };
-
-  const handleSplitChange = (splitId: number) => {
-    setSelectedSplit(splitId);
-    const splitObj = availableSplits.find(s => s.id === splitId);
-    if (splitObj) {
-      const newData = { ...formData, quantity_bales: splitObj.bales };
-      setFormData(newData);
-      calculateTotals(newData);
-    }
-    setIsSplitDropdownOpen(false);
   };
 
   const handleEditClick = (del: any) => {
@@ -225,9 +193,6 @@ export default function DeliveryEntryPage() {
     setFormData(initialFormState);
     setSearchTerm("");
     setDisplayInfo({ seller: '', buyer: '', station: '', lot_no: '', bargain_no: '' });
-    setAvailableSplits([]);
-    setSelectedSplit(null);
-    setRemainingBales(null);
   };
 
   const handleSubmit = async (e: any) => {
@@ -240,8 +205,7 @@ export default function DeliveryEntryPage() {
         net_weight: parseFloat(formData.net_weight as any) || 0,
         cotton_value: parseFloat(formData.cotton_value as any) || 0,
         gst_amount: parseFloat(formData.gst_amount as any) || 0,
-        total_bill_amount: parseFloat(formData.total_bill_amount as any) || 0,
-        passing_split: selectedSplit
+        total_bill_amount: parseFloat(formData.total_bill_amount as any) || 0
       };
       
       delete payload.created_at;
@@ -263,9 +227,6 @@ export default function DeliveryEntryPage() {
       setFormData(initialFormState);
       setSearchTerm("");
       setDisplayInfo({ seller: '', buyer: '', station: '', lot_no: '', bargain_no: '' });
-      setAvailableSplits([]);
-      setSelectedSplit(null);
-      setRemainingBales(null);
     } catch (error: any) {
       console.error("Error saving:", error);
       if (error.response && error.response.data) {
@@ -288,6 +249,13 @@ export default function DeliveryEntryPage() {
       (p.deal_no && p.deal_no.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   };
+
+  const { highlightedIndex, handleKeyDown, listRef } = useDropdownKeyboardNav(
+    getFilteredOptions(),
+    isDropdownOpen,
+    setIsDropdownOpen,
+    handleSelection
+  );
 
   const triggerDelete = (id: number, displayId: string) => {
     setRecordToDelete({ id, displayId });
@@ -405,13 +373,14 @@ export default function DeliveryEntryPage() {
                           setIsDropdownOpen((prev) => (prev ? false : prev));
                         }, 200);
                       }}
+                      onKeyDown={handleKeyDown}
                       placeholder={isDirectDelivery ? "Search Deal No..." : "Search Passing No..."}
                       className="neu-input cursor-pointer pr-10"
                     />
                     <ChevronDown size={16} className="absolute right-3 top-3 pointer-events-none" style={{ color: "var(--cb-primary)" }}/>
                     {isDropdownOpen && (
-                      <ul className="neu-dropdown z-50">
-                        {getFilteredOptions().map((item: any) => {
+                      <ul className="neu-dropdown z-50" ref={listRef as React.RefObject<HTMLUListElement>}>
+                        {getFilteredOptions().map((item: any, idx: number) => {
                           let bargainDate = "";
                           if (isDirectDelivery) {
                              bargainDate = item.bargain_date;
@@ -421,7 +390,11 @@ export default function DeliveryEntryPage() {
                           }
                           
                           return (
-                            <li key={item.id || item.deal_no} onMouseDown={() => handleSelection(item)}>
+                            <li 
+                              key={item.id || item.deal_no} 
+                              onMouseDown={() => handleSelection(item)}
+                              style={highlightedIndex === idx ? { backgroundColor: '#dde3eb' } : {}}
+                            >
                               <div className="w-full overflow-hidden">
                                 <div className="flex justify-between items-center w-full">
                                   {isDirectDelivery ? (
@@ -467,44 +440,6 @@ export default function DeliveryEntryPage() {
                  </div>
                </div>
             </div>
-
-            {/* Split Selection / Remaining Bales Info */}
-             {remainingBales !== null && remainingBales > 0 && isDirectDelivery && (
-               <div className="md:col-span-4 px-5 py-3 rounded-lg" style={{ background: "rgba(220, 165, 80, 0.1)", border: "1px solid var(--cb-warning)" }}>
-                 <span className="text-sm font-bold" style={{ color: "var(--cb-warning)" }}>
-                   Note: This Direct Deal has {remainingBales} Bales remaining.
-                 </span>
-               </div>
-             )}
-             
-             {availableSplits.length > 0 && !isDirectDelivery && (
-               <div className="md:col-span-4 p-5 rounded-lg border border-dashed" style={{ borderColor: "var(--cb-primary)", background: "rgba(74, 127, 196, 0.03)" }}>
-                 <label className="neu-label font-bold" style={{ color: "var(--cb-primary)" }}>Select Delivery Split</label>
-                 <div className="relative mt-2">
-                   <div 
-                     className="neu-input font-bold cursor-pointer flex justify-between items-center bg-white hover:bg-gray-50 transition-colors"
-                     onClick={() => setIsSplitDropdownOpen(!isSplitDropdownOpen)}
-                   >
-                     <span>{selectedSplit ? `${availableSplits.find(s => s.id === selectedSplit)?.bales} Bales` : 'Select a split...'}</span>
-                     <ChevronDown size={16} style={{ color: "var(--cb-primary)" }} />
-                   </div>
-                   {isSplitDropdownOpen && (
-                     <ul className="neu-dropdown z-50">
-                       {availableSplits.map(s => (
-                         <li 
-                           key={s.id} 
-                           onMouseDown={() => handleSplitChange(s.id)}
-                           className="flex items-center justify-between"
-                         >
-                           <span className="font-bold" style={{ color: "var(--cb-primary)" }}>{s.bales} Bales</span>
-                           {selectedSplit === s.id && <CheckCircle size={14} style={{ color: "var(--cb-success, #28a745)" }} />}
-                         </li>
-                       ))}
-                     </ul>
-                   )}
-                 </div>
-               </div>
-             )}
 
             {/* --- Order: BILL NO, BILL DATE, BALES, RATE, NET WEIGHT, COTTON VALUE, GST, BILL AMOUNT --- */}
             <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-6">
