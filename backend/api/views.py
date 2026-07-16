@@ -163,17 +163,20 @@ def get_dashboard_analytics(request):
 
         fy_label = f"Apr '{str(fy_start_date.year)[-2:]} - Mar '{str(fy_end_year)[-2:]}"
 
-        total_deals = BargainEntry.objects.filter(
+        total_bales_ytd_agg = BargainEntry.objects.filter(
             tenant=request.user.tenant,
             bargain_date__gte=fy_start_date
-        ).count()
+        ).aggregate(Sum('bales'))
+        total_bales_ytd = total_bales_ytd_agg['bales__sum'] or 0
         
         # Calculate Total Bales (from BargainEntry)
         total_bales_agg = BargainEntry.objects.filter(tenant=request.user.tenant).aggregate(Sum('bales'))
         total_bales = total_bales_agg['bales__sum'] or 0
         
-        # Calculate Pending Dispatches (Bargains with 0 Deliveries)
-        pending_dispatches = BargainEntry.objects.filter(tenant=request.user.tenant).annotate(del_count=Count('deliverydetails')).filter(del_count=0).count()
+        # Calculate Pending Dispatches (Bales awaiting dispatch = Total Bales - Delivered Bales)
+        total_delivered_agg = DeliveryDetails.objects.filter(tenant=request.user.tenant).aggregate(Sum('quantity_bales'))
+        total_delivered_bales = total_delivered_agg['quantity_bales__sum'] or 0
+        pending_dispatches = max(0, total_bales - total_delivered_bales)
 
         # Unbilled Deliveries Logic (Older than 6 months or oldest)
         from datetime import date, timedelta
@@ -258,7 +261,7 @@ def get_dashboard_analytics(request):
         
         return Response({
             "kpi": {
-                "total_deals": total_deals,
+                "total_bales_ytd": total_bales_ytd,
                 "total_deals_label": fy_label,
                 "total_bales": total_bales,
                 "pending_dispatches": pending_dispatches,

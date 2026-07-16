@@ -63,11 +63,15 @@ class PassingEntrySerializer(serializers.ModelSerializer):
     seller_name = serializers.CharField(source='bargain.seller.company_name', read_only=True)
     buyer_name = serializers.CharField(source='bargain.buyer.company_name', read_only=True)
     payment_condition = serializers.IntegerField(source='bargain.payment_condition', read_only=True)
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = PassingEntry
         fields = '__all__'
         read_only_fields = ('tenant',)
+
+    def get_status(self, obj):
+        return "Dispatched" if obj.deliverydetails_set.exists() else "Pending Dispatch"
 
 class DeliveryDetailsSerializer(serializers.ModelSerializer):
     deal_display = serializers.CharField(source='bargain.smart_deal_id', read_only=True)

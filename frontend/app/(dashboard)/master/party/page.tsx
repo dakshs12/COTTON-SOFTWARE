@@ -341,8 +341,14 @@ export default function PartyMasterPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                   <input name="email1" placeholder="Email #1" value={formData.email1} onChange={handleChange} className="neu-input" />
-                   <input name="email2" placeholder="Email #2" value={formData.email2} onChange={handleChange} className="neu-input" />
+                   <div>
+                     <label className="neu-label">Email #1</label>
+                     <input name="email1" placeholder="Email #1" value={formData.email1} onChange={handleChange} className="neu-input" />
+                   </div>
+                   <div>
+                     <label className="neu-label">Email #2</label>
+                     <input name="email2" placeholder="Email #2" value={formData.email2} onChange={handleChange} className="neu-input" />
+                   </div>
                 </div>
               </div>
 
@@ -350,14 +356,32 @@ export default function PartyMasterPage() {
               <div style={{ borderTop: "1px solid var(--cb-divider)", paddingTop: "1.5rem" }}>
                 <h3 className="neu-section-title mb-5">Banking & Tax</h3>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <input name="gst_no" placeholder="GST No" value={formData.gst_no} onChange={handleChange} className="neu-input" />
-                  <input name="pan_no" placeholder="PAN No" value={formData.pan_no} onChange={handleChange} className="neu-input" />
+                  <div>
+                    <label className="neu-label">GST No</label>
+                    <input name="gst_no" placeholder="GST No" value={formData.gst_no} onChange={handleChange} className="neu-input" />
+                  </div>
+                  <div>
+                    <label className="neu-label">PAN No</label>
+                    <input name="pan_no" placeholder="PAN No" value={formData.pan_no} onChange={handleChange} className="neu-input" />
+                  </div>
                   <div className="col-span-2 hidden md:block"></div> {/* Spacer */}
                   
-                  <input name="bank_name" placeholder="Bank Name" value={formData.bank_name} onChange={handleChange} className="neu-input" />
-                  <input name="branch" placeholder="Branch" value={formData.branch} onChange={handleChange} className="neu-input" />
-                  <input name="bank_ac_no" placeholder="Account No" value={formData.bank_ac_no} onChange={handleChange} className="neu-input" />
-                  <input name="ifsc_code" placeholder="IFSC Code" value={formData.ifsc_code} onChange={handleChange} className="neu-input" />
+                  <div>
+                    <label className="neu-label">Bank Name</label>
+                    <input name="bank_name" placeholder="Bank Name" value={formData.bank_name} onChange={handleChange} className="neu-input" />
+                  </div>
+                  <div>
+                    <label className="neu-label">Branch</label>
+                    <input name="branch" placeholder="Branch" value={formData.branch} onChange={handleChange} className="neu-input" />
+                  </div>
+                  <div>
+                    <label className="neu-label">Account No</label>
+                    <input name="bank_ac_no" placeholder="Account No" value={formData.bank_ac_no} onChange={handleChange} className="neu-input" />
+                  </div>
+                  <div>
+                    <label className="neu-label">IFSC Code</label>
+                    <input name="ifsc_code" placeholder="IFSC Code" value={formData.ifsc_code} onChange={handleChange} className="neu-input" />
+                  </div>
                 </div>
               </div>
 

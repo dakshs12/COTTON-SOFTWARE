@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
-import { Save, Building2, Plus, Edit2, X, ChevronDown, Check, CheckCircle, AlertCircle } from 'lucide-react';
+import { Save, Building2, Plus, Edit2, X, ChevronDown, Check, CheckCircle, AlertCircle, Upload } from 'lucide-react';
 import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
 
 export default function FirmMasterPage() {
@@ -196,13 +196,26 @@ export default function FirmMasterPage() {
                 <input name="firm_name" value={formData.firm_name} onChange={handleChange} className="neu-input" required />
               </div>
               <div className="col-span-2">
-                 <label className="neu-label">Letterhead Image</label>
-                 <input 
-                   type="file" 
-                   accept="image/*"
-                   onChange={(e) => setLetterheadFile(e.target.files ? e.target.files[0] : null)} 
-                   className="neu-input p-1" 
-                 />
+                 <label className="neu-label">UPLOAD FIRM LOGO</label>
+                 <div className="flex gap-3">
+                   <div className="neu-input w-32 flex items-center bg-gray-50 text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap">
+                     {letterheadFile ? letterheadFile.name : 'No file selected'}
+                   </div>
+                   <button 
+                     type="button" 
+                     className="neu-btn flex items-center justify-center px-4 hover:text-blue-500 active:scale-90 active:bg-blue-50 transition-all duration-150"
+                     onClick={() => document.getElementById('letterhead_input')?.click()}
+                   >
+                     <Upload size={18} />
+                   </button>
+                   <input 
+                     id="letterhead_input"
+                     type="file" 
+                     accept="image/*"
+                     onChange={(e) => setLetterheadFile(e.target.files ? e.target.files[0] : null)} 
+                     className="hidden" 
+                   />
+                 </div>
               </div>
             </div>
 
@@ -279,14 +292,30 @@ export default function FirmMasterPage() {
             <div className="md:col-span-4 pt-5 mt-2" style={{ borderTop: "1px solid var(--cb-divider)" }}>
               <h3 className="neu-section-title mb-4">Contact & Web</h3>
               <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-                <input name="contact_person" placeholder="Contact Person" value={formData.contact_person} onChange={handleChange} className="neu-input" />
-                <input name="contact_person_designation" placeholder="Designation" value={formData.contact_person_designation} onChange={handleChange} className="neu-input" />
-                <input name="mobile" placeholder="Mobile" value={formData.mobile} onChange={handleChange} className="neu-input" required />
-                <input name="tele_o" placeholder="Office Tele" value={formData.tele_o} onChange={handleChange} className="neu-input" />
-                <input name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="neu-input" />
+                <div>
+                  <label className="neu-label">Contact Person</label>
+                  <input name="contact_person" placeholder="Contact Person" value={formData.contact_person} onChange={handleChange} className="neu-input" />
+                </div>
+                <div>
+                  <label className="neu-label">Designation</label>
+                  <input name="contact_person_designation" placeholder="Designation" value={formData.contact_person_designation} onChange={handleChange} className="neu-input" />
+                </div>
+                <div>
+                  <label className="neu-label">Mobile</label>
+                  <input name="mobile" placeholder="Mobile" value={formData.mobile} onChange={handleChange} className="neu-input" required />
+                </div>
+                <div>
+                  <label className="neu-label">Office Tele</label>
+                  <input name="tele_o" placeholder="Office Tele" value={formData.tele_o} onChange={handleChange} className="neu-input" />
+                </div>
+                <div>
+                  <label className="neu-label">Email</label>
+                  <input name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="neu-input" />
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-4">
                  <div className="col-span-2">
+                   <label className="neu-label">Website URL</label>
                    <input name="website" placeholder="Website URL" value={formData.website} onChange={handleChange} className="neu-input" />
                  </div>
               </div>
@@ -296,15 +325,39 @@ export default function FirmMasterPage() {
             <div className="md:col-span-4 pt-5 mt-2" style={{ borderTop: "1px solid var(--cb-divider)" }}>
               <h3 className="neu-section-title mb-4">Registration & Banking</h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <input name="gst_no" placeholder="GST No" value={formData.gst_no} onChange={handleChange} className="neu-input" />
-                <input name="pan_no" placeholder="PAN No" value={formData.pan_no} onChange={handleChange} className="neu-input" />
-                <input name="cin_no" placeholder="CIN No" value={formData.cin_no} onChange={handleChange} className="neu-input" />
-                <input name="tan_no" placeholder="TAN No" value={formData.tan_no} onChange={handleChange} className="neu-input" />
+                <div>
+                  <label className="neu-label">GST No</label>
+                  <input name="gst_no" placeholder="GST No" value={formData.gst_no} onChange={handleChange} className="neu-input" />
+                </div>
+                <div>
+                  <label className="neu-label">PAN No</label>
+                  <input name="pan_no" placeholder="PAN No" value={formData.pan_no} onChange={handleChange} className="neu-input" />
+                </div>
+                <div>
+                  <label className="neu-label">CIN No</label>
+                  <input name="cin_no" placeholder="CIN No" value={formData.cin_no} onChange={handleChange} className="neu-input" />
+                </div>
+                <div>
+                  <label className="neu-label">TAN No</label>
+                  <input name="tan_no" placeholder="TAN No" value={formData.tan_no} onChange={handleChange} className="neu-input" />
+                </div>
                 
-                <input name="bank_name" placeholder="Bank Name" value={formData.bank_name} onChange={handleChange} className="neu-input" />
-                <input name="branch" placeholder="Branch" value={formData.branch} onChange={handleChange} className="neu-input" />
-                <input name="bank_ac_no" placeholder="Account No" value={formData.bank_ac_no} onChange={handleChange} className="neu-input" />
-                <input name="ifsc_code" placeholder="IFSC Code" value={formData.ifsc_code} onChange={handleChange} className="neu-input" />
+                <div>
+                  <label className="neu-label">Bank Name</label>
+                  <input name="bank_name" placeholder="Bank Name" value={formData.bank_name} onChange={handleChange} className="neu-input" />
+                </div>
+                <div>
+                  <label className="neu-label">Branch</label>
+                  <input name="branch" placeholder="Branch" value={formData.branch} onChange={handleChange} className="neu-input" />
+                </div>
+                <div>
+                  <label className="neu-label">Account No</label>
+                  <input name="bank_ac_no" placeholder="Account No" value={formData.bank_ac_no} onChange={handleChange} className="neu-input" />
+                </div>
+                <div>
+                  <label className="neu-label">IFSC Code</label>
+                  <input name="ifsc_code" placeholder="IFSC Code" value={formData.ifsc_code} onChange={handleChange} className="neu-input" />
+                </div>
               </div>
             </div>
 

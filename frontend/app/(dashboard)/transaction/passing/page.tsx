@@ -29,7 +29,7 @@ const addDaysToDate = (dateStr: string, days: number) => {
 
 export default function PassingEntryPage() {
   const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
-  const showToast = (msg: string, type: 'success' | 'error') => {
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({text: msg, type});
     setTimeout(() => setToastMessage(null), 3000);
   };
@@ -57,6 +57,7 @@ export default function PassingEntryPage() {
     bargain: '', // This stores the ID
     approval_date: new Date().toISOString().split('T')[0],
     due_date: '',
+    bales: 0,
     lot_no: '',
     pr_no: '',
     book_bargain_no: '',
@@ -99,15 +100,33 @@ export default function PassingEntryPage() {
     return deal.status === "Approved" ? deal.bales : 0;
   };
 
+  const getRemainingBales = (deal: any) => {
+    const approvedBales = getApprovedBales(deal);
+    const totalPassed = passings
+      .filter(pass => pass.bargain === deal.id || pass.bargain === deal.deal_no)
+      .reduce((sum, pass) => sum + (pass.bales || 0), 0);
+    return approvedBales - totalPassed;
+  };
+
   const handleDealSelect = (b: any) => {
     setDealSearch(b.smart_deal_id);
-    setFormData(prev => ({ ...prev, bargain: b.id || b.deal_no }));
+    const remaining = getRemainingBales(b);
+    const days = b.payment_condition || 0;
+    const newDueDate = addDaysToDate(formData.approval_date, days);
+
+    setFormData(prev => ({ 
+      ...prev, 
+      bargain: b.id || b.deal_no, 
+      bales: remaining,
+      due_date: newDueDate 
+    }));
+    
     setSelectedDealDisplay({
       seller: b.seller_name,
       buyer: b.buyer_name,
       rate: b.rate,
       payment_condition: b.payment_condition,
-      bales: getApprovedBales(b)
+      bales: remaining
     });
     setIsDealDropdownOpen(false);
   };
@@ -128,6 +147,7 @@ export default function PassingEntryPage() {
       ...sanitizedPass,
       bargain: sanitizedPass.bargain?.toString() || sanitizedPass.deal_no, // Depend on API structure
       approval_date: sanitizedPass.approval_date || initialFormState.approval_date,
+      bales: pass.bales || 0
     });
     setDealSearch(pass.deal_no || '');
     setSelectedDealDisplay({
@@ -135,14 +155,9 @@ export default function PassingEntryPage() {
       buyer: pass.buyer_name || '',
       rate: pass.rate || '',
       payment_condition: pass.payment_condition || 0,
-      bales: pass.bargain_bales || 0
+      bales: pass.bales || 0
     });
     
-    // Attempt to fetch bargain bales if missing
-    if (!pass.bargain_bales) {
-      const b = bargains.find(x => x.deal_no === pass.bargain || x.id === pass.bargain);
-      if (b) setSelectedDealDisplay(prev => ({...prev, bales: b.bales}));
-    }
     setEditingId(pass.id);
     setIsFormOpen(true);
   };
@@ -218,13 +233,18 @@ export default function PassingEntryPage() {
   };
 
   // --- Derived State & Pagination ---
+  const isDealMatched = bargains.some(b => b.smart_deal_id === dealSearch);
   const filteredBargains = bargains.filter(b => {
-    const approvedBales = getApprovedBales(b);
-    const isApprovedOrEditing = approvedBales > 0 || b.deal_no === formData.bargain || b.id === formData.bargain;
-    const matchesSearch = 
+    const remaining = getRemainingBales(b);
+    const isEditing = b.deal_no === formData.bargain || b.id === formData.bargain;
+    
+    const isApprovedOrEditing = remaining > 0 || isEditing;
+    
+    const matchesSearch = isDealMatched ? true : (
       b.smart_deal_id?.toLowerCase().includes(dealSearch.toLowerCase()) ||
       b.buyer_name?.toLowerCase().includes(dealSearch.toLowerCase()) ||
-      b.seller_name?.toLowerCase().includes(dealSearch.toLowerCase());
+      b.seller_name?.toLowerCase().includes(dealSearch.toLowerCase())
+    );
     return isApprovedOrEditing && matchesSearch;
   });
 
@@ -405,7 +425,7 @@ export default function PassingEntryPage() {
             </div>
 
             <div className="col-span-1">
-               <label className="neu-label">BARGAIN NO.</label>
+               <label className="neu-label">BARGAIN NO. / PO NO.</label>
                <input name="book_bargain_no" value={formData.book_bargain_no} onChange={handleChange} className="neu-input" />
             </div>
 
@@ -457,14 +477,15 @@ export default function PassingEntryPage() {
                 <th>Buyer</th>
                 <th>Lot No</th>
                 <th>PR No</th>
+                <th className="text-right">Status</th>
                 <th className="text-right">Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>Loading data...</td></tr>
+                <tr><td colSpan={8} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>Loading data...</td></tr>
               ) : currentPassings.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>No passing entries found.</td></tr>
+                <tr><td colSpan={8} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>No passing entries found.</td></tr>
               ) : currentPassings.map((pass) => (
                 <tr key={pass.id}>
                   <td className="font-mono font-bold" style={{ color: "var(--cb-primary)" }}>{pass.deal_no}</td>
@@ -473,6 +494,15 @@ export default function PassingEntryPage() {
                   <td>{pass.buyer_name}</td>
                   <td className="font-mono">{pass.lot_no}</td>
                   <td className="font-bold" style={{ color: "var(--cb-secondary)" }}>{pass.pr_no || "-"}</td>
+                  <td className="text-right">
+                    <span className="neu-chip" style={{ 
+                      color: pass.status === "Dispatched" ? "var(--cb-success)" : "var(--cb-warning)", 
+                      fontSize: "0.7rem",
+                      border: `1px solid ${pass.status === "Dispatched" ? "var(--cb-success)" : "var(--cb-warning)"}`
+                    }}>
+                      {pass.status || "Pending Dispatch"}
+                    </span>
+                  </td>
                   <td className="text-right">
                     <div className="flex justify-end items-center gap-3">
                       <button 

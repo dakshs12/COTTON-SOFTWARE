@@ -8,7 +8,12 @@ import CustomDatePicker from '@/app/components/CustomDatePicker';
 import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
 
 const SmartDropdown = ({ label, name, options, placeholder = "Select...", formData, setFormData, activeDropdown, setActiveDropdown }: any) => {
-  const filtered = options.filter((opt: string) => opt.toLowerCase().includes((formData as any)[name]?.toLowerCase() || ''));
+  const currentValue = (formData as any)[name] || '';
+  const isMatched = options.includes(currentValue);
+  const filtered = isMatched 
+    ? options 
+    : options.filter((opt: string) => opt.toLowerCase().includes(currentValue.toLowerCase()));
+    
   const isOpen = activeDropdown === name;
   const setIsOpen = (open: boolean) => setActiveDropdown(open ? name : null);
 
@@ -94,10 +99,10 @@ export default function BargainEntryPage() {
   const [buyerSearch, setBuyerSearch] = useState("");
   const [isSellerDropdownOpen, setIsSellerDropdownOpen] = useState(false);
   const [isBuyerDropdownOpen, setIsBuyerDropdownOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ text: msg, type });
     setTimeout(() => setToastMessage(null), 3000);
   };
 
@@ -117,7 +122,7 @@ export default function BargainEntryPage() {
   const DEAL_TYPE_OPTIONS = ["Pakka Sauda", "Sub. to Passing", "Mill Condition/Direct Dispatch", "Spot", "Forward"];
   const STATUS_OPTIONS = ["Pending Passing", "Approved", "Rejected", "Cancelled"];
   const UNIT_OPTIONS = ["Candy", "Bales", "Tons", "KGs"];
-  const CERTIFICATE_OPTIONS = ["Better Cotton (BCI)", "Organic", "Conventional", "REEL"];
+  const CERTIFICATE_OPTIONS = ["N.A.", "Better Cotton (BCI)", "Organic", "Conventional", "REEL"];
   
   // State Options
   const DEFAULT_STATES = [
@@ -154,8 +159,9 @@ export default function BargainEntryPage() {
     payment_condition: '', payment_by: 'Dispatch Date',
     cash_disc: '', weight_terms: 'Mill Weight', delivery_terms: '',
     delivery_type: 'Spot', delivery_from: '',
-    deal_type: 'Pakka Sauda', cotton_certificate: '',
+    deal_type: 'Pakka Sauda', cotton_certificate: 'N.A.',
     quality_condition: '',
+    advised_by: '',
     remarks: '', status: 'Pending Passing'
   };
 
@@ -180,7 +186,14 @@ export default function BargainEntryPage() {
   };
 
   const handleChange = (e: any) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => {
+      const newData = { ...prev, [name]: value };
+      if (name === 'station') {
+        newData.delivery_from = value;
+      }
+      return newData;
+    });
   };
 
   // Helper for the Custom Calendar
@@ -195,7 +208,7 @@ export default function BargainEntryPage() {
 
   const handlePartySelect = (type: 'seller' | 'buyer', partyId: string, partyName: string, partyStation: string, partyState: string) => {
     if (type === 'seller') {
-      setFormData(prev => ({ ...prev, seller: partyId, station: partyStation, state: partyState })); 
+      setFormData(prev => ({ ...prev, seller: partyId, station: partyStation, state: partyState, delivery_from: partyStation })); 
       setSellerSearch(partyName);
       setIsSellerDropdownOpen(false);
     } else {
@@ -206,9 +219,11 @@ export default function BargainEntryPage() {
   };
 
   const handleEditClick = (deal: any) => {
+    const originalDeal = bargains.find(b => b.deal_no === deal.deal_no) || deal;
+    
     // Replace nulls with empty strings
     const sanitizedDeal = Object.fromEntries(
-      Object.entries(deal).map(([k, v]) => [k, v === null ? '' : v])
+      Object.entries(originalDeal).map(([k, v]) => [k, v === null ? '' : v])
     );
     
     setFormData({
@@ -321,16 +336,18 @@ export default function BargainEntryPage() {
   const allowedSellerTypes = ["Seller", "Ginner", "Trader"];
   const allowedBuyerTypes = ["Buyer", "Mill", "Trader"];
 
+  const isSellerMatched = parties.some(p => allowedSellerTypes.includes(p.party_type) && p.company_name === sellerSearch);
   const filteredSellers = parties.filter(p => 
     allowedSellerTypes.includes(p.party_type) && 
-    p.company_name.toLowerCase().includes(sellerSearch.toLowerCase()) &&
-    String(p.id) !== String(formData.buyer)
+    String(p.id) !== String(formData.buyer) &&
+    (isSellerMatched ? true : p.company_name.toLowerCase().includes(sellerSearch.toLowerCase()))
   );
   
+  const isBuyerMatched = parties.some(p => allowedBuyerTypes.includes(p.party_type) && p.company_name === buyerSearch);
   const filteredBuyers = parties.filter(p => 
     allowedBuyerTypes.includes(p.party_type) && 
-    p.company_name.toLowerCase().includes(buyerSearch.toLowerCase()) &&
-    String(p.id) !== String(formData.seller)
+    String(p.id) !== String(formData.seller) &&
+    (isBuyerMatched ? true : p.company_name.toLowerCase().includes(buyerSearch.toLowerCase()))
   );
 
   // --- Filter & Pagination Logic ---
@@ -382,12 +399,7 @@ export default function BargainEntryPage() {
   return (
     <div className="max-w-7xl mx-auto neu-fade-in">
 
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#4a7fc4] text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 neu-fade-in font-medium tracking-wide">
-          <Check size={20} />
-          {toastMessage}
-        </div>
-      )}
+
 
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -502,15 +514,15 @@ export default function BargainEntryPage() {
                 </div>
                 <div className="col-span-1">
                    <label className="neu-label">Bales</label>
-                   <input type="number" name="bales" value={formData.bales} onChange={handleChange} className="neu-input font-mono" required />
+                   <input type="number" name="bales" value={formData.bales} onChange={handleChange} className="neu-input font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" required />
                 </div>
                 <div className="col-span-1">
                    <label className="neu-label">Rate</label>
-                   <input type="number" name="rate" value={formData.rate} onChange={handleChange} className="neu-input font-mono" required />
+                   <input type="number" name="rate" value={formData.rate} onChange={handleChange} className="neu-input font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" required />
                 </div>
                 <div className="col-span-1">
                    <label className="neu-label">Payment Condition (Days)</label>
-                   <input type="number" name="payment_condition" value={formData.payment_condition} onChange={handleChange} className="neu-input" />
+                   <input type="number" name="payment_condition" value={formData.payment_condition} onChange={handleChange} className="neu-input [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                 </div>
 
                 {/* Row 3 */}
@@ -797,7 +809,11 @@ export default function BargainEntryPage() {
                   <td className="font-mono">{deal.bales}</td>
                   <td className="font-mono">{deal.rate}</td>
                   <td className="text-right">
-                    <span className="neu-chip" style={{ color: "var(--cb-warning)", fontSize: "0.7rem" }}>
+                    <span className="neu-chip" style={{ 
+                      color: deal.status === "Approved" ? "var(--cb-success)" : deal.status === "Rejected" ? "#ef4444" : "var(--cb-warning)", 
+                      fontSize: "0.7rem",
+                      border: `1px solid ${deal.status === "Approved" ? "var(--cb-success)" : deal.status === "Rejected" ? "#ef4444" : "var(--cb-warning)"}`
+                    }}>
                       {deal.status}
                     </span>
                   </td>

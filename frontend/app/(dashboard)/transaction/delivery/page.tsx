@@ -239,12 +239,16 @@ export default function DeliveryEntryPage() {
 
   const getFilteredOptions = () => {
     if (isDirectDelivery) {
+      const isMatched = bargains.some(b => `Deal: ${b.smart_deal_id || b.deal_no} | ${b.seller_name}` === searchTerm);
       return bargains.filter(b => 
+        isMatched || 
         (b.smart_deal_id && b.smart_deal_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (b.seller_name && b.seller_name.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
+    const isMatched = passings.some(p => `Passing: ${p.pr_no || p.passing_no} | Deal: ${p.deal_no}` === searchTerm);
     return passings.filter(p => 
+      isMatched ||
       (p.passing_no && p.passing_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (p.deal_no && p.deal_no.toLowerCase().includes(searchTerm.toLowerCase()))
     );

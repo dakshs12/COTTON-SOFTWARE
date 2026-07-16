@@ -220,6 +220,7 @@ class PassingEntry(BaseModel):
     bargain = models.ForeignKey(BargainEntry, on_delete=models.PROTECT)
     approval_date = models.DateField()
     due_date = models.DateField(blank=True, null=True)
+    bales = models.IntegerField(default=0)
     lot_no = models.CharField(max_length=50)
     pr_no = models.CharField(max_length=50, blank=True, null=True)
     book_bargain_no = models.CharField(max_length=50, blank=True, null=True)

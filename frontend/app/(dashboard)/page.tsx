@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 interface DashboardData {
   kpi: {
-    total_deals: number;
+    total_bales_ytd: number;
     total_deals_label: string;
     total_bales: number;
     pending_dispatches: number;
@@ -145,11 +145,11 @@ export default function DashboardPage() {
 
       {/* Top Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* KPI 1: Total Deals */}
+        {/* KPI 1: Total Bales YTD */}
         <div className="neu-card p-6 flex flex-col justify-between" style={{ borderRadius: "16px" }}>
           <div className="flex justify-between items-start mb-4">
             <span className="text-sm font-bold tracking-wider uppercase" style={{ color: "var(--cb-text-label)", fontFamily: "var(--font-quicksand)" }}>
-              Total Deals <span className="lowercase normal-case font-medium text-xs ml-1 opacity-70">({data.kpi.total_deals_label})</span>
+              Total Bales <span className="lowercase normal-case font-medium text-xs ml-1 opacity-70">({data.kpi.total_deals_label})</span>
             </span>
             <div className="p-2 rounded-full" style={{ background: "var(--cb-bg)", boxShadow: "var(--cb-shadow-sm)" }}>
               <Briefcase size={20} style={{ color: "var(--cb-primary)" }} />
@@ -157,7 +157,7 @@ export default function DashboardPage() {
           </div>
           <div>
             <h3 className="text-3xl font-bold" style={{ color: "var(--cb-text-heading)", fontFamily: "var(--font-playfair-display)" }}>
-              {data.kpi.total_deals}
+              {data.kpi.total_bales_ytd.toLocaleString('en-IN')}
             </h3>
           </div>
         </div>
@@ -198,9 +198,9 @@ export default function DashboardPage() {
           </div>
           <div>
             <h3 className="text-3xl font-bold" style={{ color: "var(--cb-text-heading)", fontFamily: "var(--font-playfair-display)" }}>
-              {data.kpi.pending_dispatches}
+              {data.kpi.pending_dispatches.toLocaleString('en-IN')}
             </h3>
-            <p className="text-xs mt-1" style={{ color: "var(--cb-text-label)" }}>Bargains waiting for trucks</p>
+            <p className="text-xs mt-1" style={{ color: "var(--cb-text-label)" }}>Bales awaiting dispatch</p>
           </div>
         </div>
       </div>
