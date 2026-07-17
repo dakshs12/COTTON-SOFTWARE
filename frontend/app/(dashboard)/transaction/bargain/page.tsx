@@ -514,15 +514,41 @@ export default function BargainEntryPage() {
                 </div>
                 <div className="col-span-1">
                    <label className="neu-label">Bales</label>
-                   <input type="number" name="bales" value={formData.bales} onChange={handleChange} className="neu-input font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" required />
+                   <input 
+                     type="number" 
+                     name="bales" 
+                     min="0"
+                     onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                     value={formData.bales} 
+                     onChange={handleChange} 
+                     className="neu-input font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                     required 
+                   />
                 </div>
                 <div className="col-span-1">
                    <label className="neu-label">Rate</label>
-                   <input type="number" name="rate" value={formData.rate} onChange={handleChange} className="neu-input font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" required />
+                   <input 
+                     type="number" 
+                     name="rate" 
+                     min="0"
+                     onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                     value={formData.rate} 
+                     onChange={handleChange} 
+                     className="neu-input font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                     required 
+                   />
                 </div>
                 <div className="col-span-1">
                    <label className="neu-label">Payment Condition (Days)</label>
-                   <input type="number" name="payment_condition" value={formData.payment_condition} onChange={handleChange} className="neu-input [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                   <input 
+                     type="number" 
+                     name="payment_condition" 
+                     min="0"
+                     onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
+                     value={formData.payment_condition} 
+                     onChange={handleChange} 
+                     className="neu-input [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                   />
                 </div>
 
                 {/* Row 3 */}
@@ -624,7 +650,9 @@ export default function BargainEntryPage() {
                       <div className="flex-1 relative">
                         <label className="neu-label text-xs">Split {idx + 1} Bales</label>
                         <input 
-                          type="number" 
+                          type="number"
+                          min="0"
+                          onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }} 
                           value={split.bales} 
                           onChange={(e) => {
                             const newSplits = [...splits];

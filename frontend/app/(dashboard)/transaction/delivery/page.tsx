@@ -463,17 +463,17 @@ export default function DeliveryEntryPage() {
 
               <div className="col-span-1">
                  <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Bales</label>
-                 <input type="number" name="quantity_bales" value={formData.quantity_bales} onChange={handleChange} className="neu-input font-mono" />
+                 <input type="number" min="0" onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }} name="quantity_bales" value={formData.quantity_bales} onChange={handleChange} className="neu-input font-mono" />
               </div>
 
               <div className="col-span-1">
                  <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Rate</label>
-                 <input type="number" name="rate" value={formData.rate} onChange={handleChange} className="neu-input font-mono" />
+                 <input type="number" min="0" onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }} name="rate" value={formData.rate} onChange={handleChange} className="neu-input font-mono" />
               </div>
 
               <div className="col-span-1">
                  <label className="neu-label" style={{ color: "var(--cb-secondary)" }}>Net Weight</label>
-                 <input type="number" name="net_weight" value={formData.net_weight} onChange={handleChange} className="neu-input font-mono" />
+                 <input type="number" min="0" onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }} name="net_weight" value={formData.net_weight} onChange={handleChange} className="neu-input font-mono" />
               </div>
 
               <div className="col-span-1">

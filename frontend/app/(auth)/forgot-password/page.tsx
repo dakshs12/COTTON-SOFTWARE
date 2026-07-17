@@ -153,7 +153,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="w-full max-w-md p-8 bg-cb-bg rounded-[30px] shadow-neu animate-in zoom-in-95 duration-500 my-8">
+    <div className="w-full max-w-[420px] p-6 sm:p-8 md:p-10 bg-cb-bg rounded-[24px] sm:rounded-[32px] shadow-neu animate-in zoom-in-95 duration-500 my-8">
       <Toast message={toastMessage} />
       
       <div className="text-center mb-8">
@@ -177,7 +177,7 @@ export default function ForgotPasswordPage() {
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                className="neu-input"
+                className="neu-input" style={{ backgroundColor: "white" }}
                 placeholder="broker@example.com"
                 required
               />
@@ -192,14 +192,14 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full neu-btn neu-btn-primary mt-2 disabled:opacity-50"
+              className="w-full py-2.5 sm:py-3 px-4 bg-[#65a34e] hover:bg-[#599144] text-white rounded-lg sm:rounded-xl font-bold transition-colors disabled:opacity-50 mt-4 sm:mt-6 text-sm sm:text-base cursor-pointer"
             >
               {loading ? "Sending..." : "Send Verification Code"}
             </button>
           </form>
           
           <div className="mt-8 text-center text-sm font-bold">
-            <Link href="/login" className="text-gray-500 hover:text-blue-600 transition-colors">
+            <Link href="/login" className="text-[#65a34e] font-bold hover:underline">
               Back to Login
             </Link>
           </div>
@@ -227,7 +227,7 @@ export default function ForgotPasswordPage() {
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                  className="neu-input w-12 h-14 text-center text-2xl font-bold rounded-xl text-gray-700 p-0"
+                  className="neu-input w-12 h-14 text-center text-2xl font-bold rounded-xl text-gray-700 p-0" style={{ backgroundColor: "white" }}
                 />
               ))}
             </div>
@@ -241,7 +241,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading || otp.join('').length < 6}
-              className="w-full neu-btn neu-btn-primary disabled:opacity-50"
+              className="w-full py-2.5 sm:py-3 px-4 bg-[#65a34e] hover:bg-[#599144] text-white rounded-lg sm:rounded-xl font-bold transition-colors disabled:opacity-50 mt-4 sm:mt-6 text-sm sm:text-base cursor-pointer"
             >
               {loading ? "Verifying..." : "Verify Code"}
             </button>
@@ -251,7 +251,7 @@ export default function ForgotPasswordPage() {
                 type="button"
                 onClick={handleResend}
                 disabled={countdown > 0 || loading}
-                className={`text-sm font-bold ${countdown > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:underline'}`}
+                className={`text-sm font-bold ${countdown > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-[#65a34e] hover:underline'}`}
               >
                 {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend Verification Code'}
               </button>
@@ -273,7 +273,7 @@ export default function ForgotPasswordPage() {
                   type={showPassword ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="neu-input pl-4 pr-12"
+                  className="neu-input pl-4 pr-12" style={{ backgroundColor: "white" }}
                   placeholder="••••••••"
                   required
                 />
@@ -294,7 +294,7 @@ export default function ForgotPasswordPage() {
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="neu-input pl-4 pr-12"
+                  className="neu-input pl-4 pr-12" style={{ backgroundColor: "white" }}
                   placeholder="••••••••"
                   required
                 />
@@ -317,7 +317,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full neu-btn neu-btn-primary mt-6 disabled:opacity-50"
+              className="w-full py-2.5 sm:py-3 px-4 bg-[#65a34e] hover:bg-[#599144] text-white rounded-lg sm:rounded-xl font-bold transition-colors disabled:opacity-50 mt-4 sm:mt-6 text-sm sm:text-base cursor-pointer"
             >
               {loading ? "Resetting..." : "Reset Password"}
             </button>
