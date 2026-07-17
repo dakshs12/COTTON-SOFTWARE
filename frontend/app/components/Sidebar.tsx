@@ -68,27 +68,14 @@ export default function Sidebar() {
     >
       {/* ── Brand Header ── */}
       <div
-        className="px-7 py-6"
-        style={{ borderBottom: "1px solid var(--cb-divider)" }}
+        className="px-4 py-8 flex items-center justify-center"
+        style={{ borderBottom: "1px solid var(--cb-divider)", minHeight: "85px" }}
       >
-        <h1
-          className="text-2xl font-bold tracking-tight"
-          style={{
-            fontFamily: "var(--font-playfair-display), 'Playfair Display', serif",
-            color: "var(--cb-primary)",
-          }}
-        >
-          CottBook
-        </h1>
-        <p
-          className="text-xs mt-1 font-medium"
-          style={{
-            fontFamily: "var(--font-quicksand), 'Quicksand', sans-serif",
-            color: "var(--cb-text-label)",
-          }}
-        >
-          Brokerage Management
-        </p>
+        <img 
+          src="/full-logo-main.svg" 
+          alt="CottBook Brokerage Management" 
+          className="w-56 h-auto object-contain"
+        />
       </div>
 
       {/* ── Navigation ── */}

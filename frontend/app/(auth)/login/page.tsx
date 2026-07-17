@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../components/AuthProvider";
 import Link from "next/link";
 import api from "../../../lib/api";
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin, useGoogleLogin } from '@react-oauth/google';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -120,53 +120,65 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full max-w-md p-8 bg-cb-bg rounded-[30px] shadow-neu animate-in zoom-in-95 duration-500">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-playfair font-bold text-gray-800 tracking-tight flex items-center justify-center gap-3">
-          <img src="/favicon.png" alt="CottBook Logo" className="w-8 h-8 rounded-lg shadow-sm" />
-          CottBook
-        </h1>
-        <p className="text-sm text-gray-500 font-sans mt-2">Brokerage Management System</p>
+      <div className="w-full max-w-[420px] p-6 sm:p-8 md:p-10 bg-cb-bg rounded-[24px] sm:rounded-[32px] shadow-neu animate-in zoom-in-95 duration-500">
+      <div className="text-center mb-5 sm:mb-8 flex flex-col items-center">
+        <img src="/full-logo-main.svg" alt="CottBook Logo" className="w-56 sm:w-64 h-auto object-contain mb-1 sm:mb-2" />
       </div>
 
       {!needsCompany ? (
         <>
-          <form onSubmit={handleSubmit(onLogin)} className="space-y-5" autoComplete="off">
+          <form onSubmit={handleSubmit(onLogin)} className="space-y-4 sm:space-y-5" autoComplete="off">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 px-2">Username / Email</label>
-              <input
-                {...register("username")}
-                type="text"
-                autoComplete="new-password" 
-                className="neu-input"
-                placeholder="Enter your username"
-              />
-              {errors.username && <p className="text-red-500 text-xs px-2 mt-1">{errors.username.message}</p>}
+              <label className="block text-[12px] sm:text-[13px] font-bold text-gray-700 mb-1 sm:mb-1.5 px-1">Username / Email</label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="sm:w-[18px] sm:h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                </div>
+                <input
+                  {...register("username")}
+                  type="text"
+                  autoComplete="new-password" 
+                  className="w-full px-4 py-2.5 sm:py-3 pl-10 sm:pl-11 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-cb-primary/20 transition-all text-[13px] sm:text-sm"
+                  style={{ boxShadow: "var(--cb-pressed)", backgroundColor: "white", border: "none" }}
+                  placeholder="Enter your email or username"
+                />
+              </div>
+              {errors.username && <p className="text-red-500 text-[10px] sm:text-xs px-2 mt-1">{errors.username.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 px-2">Password</label>
+              <label className="block text-[12px] sm:text-[13px] font-bold text-gray-700 mb-1 sm:mb-1.5 px-1">Password</label>
               <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="sm:w-[18px] sm:h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
                 <input
                   {...register("password")}
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  className="neu-input pl-4 pr-12"
-                  placeholder="••••••••"
+                  className="w-full px-4 py-2.5 sm:py-3 pl-10 sm:pl-11 pr-11 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-cb-primary/20 transition-all text-[13px] sm:text-sm"
+                  style={{ boxShadow: "var(--cb-pressed)", backgroundColor: "white", border: "none" }}
+                  placeholder="Enter your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff className="w-4 h-4 sm:w-[18px] sm:h-[18px]" /> : <Eye className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-500 text-xs px-2 mt-1">{errors.password.message}</p>}
+              {errors.password && <p className="text-red-500 text-[10px] sm:text-xs px-2 mt-1">{errors.password.message}</p>}
+              
+              <div className="flex justify-end mt-1.5 sm:mt-2">
+                <Link href="/forgot-password" className="text-[11px] sm:text-[12px] font-medium text-[#65a34e] hover:text-[#528a3f] transition-colors">
+                  Forgot Password?
+                </Link>
+              </div>
             </div>
 
             {error && (
-              <div className="text-red-500 text-sm px-2 font-medium text-center">
+              <div className="text-red-500 text-xs sm:text-sm px-2 font-medium text-center">
                 {error}
               </div>
             )}
@@ -174,38 +186,36 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full neu-btn neu-btn-primary mt-2 disabled:opacity-50"
+              className="w-full py-2.5 sm:py-3 px-4 bg-[#65a34e] hover:bg-[#599144] text-white rounded-lg sm:rounded-xl font-bold transition-colors disabled:opacity-50 mt-1 sm:mt-2 text-sm sm:text-base cursor-pointer"
             >
               {loading ? "Authenticating..." : "Login"}
             </button>
-            
-            <div className="text-center mt-3">
-              <Link href="/forgot-password" className="text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors">
-                Forgot Password?
-              </Link>
-            </div>
           </form>
 
-          <div className="mt-6 flex items-center justify-center gap-2">
+          <div className="mt-4 sm:mt-6 flex items-center justify-center gap-3">
             <div className="h-px bg-gray-200 flex-1"></div>
-            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">OR</span>
+            <span className="text-[10px] sm:text-xs text-gray-400 font-medium lowercase">or</span>
             <div className="h-px bg-gray-200 flex-1"></div>
           </div>
 
-          <div className="mt-6 flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setError("Google Sign-In failed.")}
-              useOneTap
-              theme="outline"
-              shape="pill"
-            />
+          <div className="mt-4 sm:mt-6 flex justify-center">
+            <div className="w-full [&>div]:w-full [&>div>div]:w-full flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError("Google Sign-In failed.")}
+                useOneTap
+                theme="outline"
+                shape="pill"
+                width="100%"
+                text="signin_with"
+              />
+            </div>
           </div>
 
-          <div className="mt-8 text-center text-sm text-gray-500 font-sans">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-blue-600 font-bold hover:underline">
-              Register Firm
+          <div className="mt-5 sm:mt-8 text-center text-xs sm:text-sm text-gray-500 font-sans">
+            Don't have an account?{" "}
+            <Link href="/register" className="text-[#65a34e] font-bold hover:underline">
+              Sign up
             </Link>
           </div>
         </>

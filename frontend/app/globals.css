@@ -151,6 +151,17 @@ body {
 }
 
 /* Input — inner depth (inset shadow) */
+/* Utility to remove arrows from number inputs */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
 .neu-input {
   width: 100%;
   padding: 0.65rem 0.85rem;

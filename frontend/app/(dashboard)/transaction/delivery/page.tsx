@@ -121,14 +121,13 @@ export default function DeliveryEntryPage() {
       bargainNo = item.smart_deal_id;
       setSearchTerm(item.smart_deal_id);
     } else {
-      let bales = formData.quantity_bales;
+      let bales = item.bales || formData.quantity_bales;
       let rate = item.deal_rate || formData.rate;
       let dealSmartId = item.deal_no;
       const matchedBargain = bargains.find(b => b?.id?.toString() === item.bargain?.toString() || b?.deal_no === item.bargain);
       if (matchedBargain) {
         station = matchedBargain.station;
         bargainNo = matchedBargain.smart_deal_id || bargainNo;
-        bales = matchedBargain.bales || bales;
         rate = matchedBargain.rate || rate;
         dealSmartId = matchedBargain.smart_deal_id || dealSmartId;
       }
@@ -139,7 +138,7 @@ export default function DeliveryEntryPage() {
       seller = item.seller_name;
       buyer = item.buyer_name;
       lotNo = item.lot_no;
-      bargainNo = item.deal_no; // from passing deal_no
+      bargainNo = item.book_bargain_no || ''; 
       
       setSearchTerm(dealSmartId);
     }
@@ -170,9 +169,11 @@ export default function DeliveryEntryPage() {
     if (!del.passing) {
       bargainNo = del.deal_display;
     } else {
-      bargainNo = del.deal_display;
       const matchedPassing = passings.find(p => p.id === del.passing);
-      if (matchedPassing) lotNo = matchedPassing.lot_no;
+      if (matchedPassing) {
+        lotNo = matchedPassing.lot_no;
+        bargainNo = matchedPassing.book_bargain_no || '';
+      }
     }
 
     const matchedBargain = bargains.find(b => b?.id?.toString() === del.bargain?.toString() || b?.deal_no === del.bargain);
@@ -439,7 +440,7 @@ export default function DeliveryEntryPage() {
                    <div className="text-sm font-semibold truncate" style={{ color: "var(--cb-text-heading)" }}>{displayInfo.lot_no || "-"}</div>
                  </div>
                  <div>
-                   <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--cb-text-placeholder)" }}>Bargain No.</label>
+                   <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--cb-text-placeholder)" }}>Bargain No. / PO No.</label>
                    <div className="text-sm font-semibold truncate" style={{ color: "var(--cb-text-heading)" }}>{displayInfo.bargain_no || "-"}</div>
                  </div>
                </div>

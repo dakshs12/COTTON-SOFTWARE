@@ -211,12 +211,9 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="w-full max-w-md p-8 bg-cb-bg rounded-[30px] shadow-neu my-8 animate-in zoom-in-95 duration-500">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-playfair font-bold text-gray-800 tracking-tight flex items-center justify-center gap-3">
-          <img src="/favicon.png" alt="CottBook Logo" className="w-8 h-8 rounded-lg shadow-sm" />
-          CottBook
-        </h1>
+    <div className="w-full max-w-[460px] p-6 sm:p-8 md:p-10 bg-cb-bg rounded-[24px] sm:rounded-[32px] shadow-neu my-8 animate-in zoom-in-95 duration-500">
+      <div className="text-center mb-5 sm:mb-8 flex flex-col items-center">
+        <img src="/full-logo-main.svg" alt="CottBook Logo" className="w-56 sm:w-64 h-auto object-contain mb-1 sm:mb-2" />
         <p className="text-sm text-gray-500 font-sans mt-2">Start managing your brokerage today.</p>
       </div>
 
@@ -230,7 +227,7 @@ export default function RegisterPage() {
                   {...register("first_name")}
                   type="text"
                   autoComplete="off"
-                  className="neu-input"
+                  className="neu-input" style={{ backgroundColor: "white" }}
                   placeholder="John"
                 />
                 {errors.first_name && <p className="text-red-500 text-xs px-2 mt-1">{errors.first_name.message}</p>}
@@ -241,7 +238,7 @@ export default function RegisterPage() {
                   {...register("last_name")}
                   type="text"
                   autoComplete="off"
-                  className="neu-input"
+                  className="neu-input" style={{ backgroundColor: "white" }}
                   placeholder="Doe"
                 />
                 {errors.last_name && <p className="text-red-500 text-xs px-2 mt-1">{errors.last_name.message}</p>}
@@ -254,7 +251,7 @@ export default function RegisterPage() {
                 {...register("company_name")}
                 type="text"
                 autoComplete="off"
-                className="neu-input"
+                className="neu-input" style={{ backgroundColor: "white" }}
                 placeholder="e.g. Daksh Cotton Brokers"
               />
               {errors.company_name && <p className="text-red-500 text-xs px-2 mt-1">{errors.company_name.message}</p>}
@@ -266,7 +263,7 @@ export default function RegisterPage() {
                 {...register("username")}
                 type="text"
                 autoComplete="new-password"
-                className="neu-input"
+                className="neu-input" style={{ backgroundColor: "white" }}
                 placeholder="Choose a username"
               />
               {errors.username && <p className="text-red-500 text-xs px-2 mt-1">{errors.username.message}</p>}
@@ -278,7 +275,7 @@ export default function RegisterPage() {
                 {...register("email")}
                 type="email"
                 autoComplete="off"
-                className="neu-input"
+                className="neu-input" style={{ backgroundColor: "white" }}
                 placeholder="broker@example.com"
               />
               {errors.email && <p className="text-red-500 text-xs px-2 mt-1">{errors.email.message}</p>}
@@ -291,7 +288,7 @@ export default function RegisterPage() {
                   {...register("password")}
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  className="neu-input pl-4 pr-12"
+                  className="neu-input pl-4 pr-12" style={{ backgroundColor: "white" }}
                   placeholder="••••••••"
                 />
                 <button
@@ -314,7 +311,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full neu-btn neu-btn-primary mt-6 disabled:opacity-50"
+              className="w-full py-2.5 sm:py-3 px-4 bg-[#65a34e] hover:bg-[#599144] text-white rounded-lg sm:rounded-xl font-bold transition-colors disabled:opacity-50 mt-4 sm:mt-6 text-sm sm:text-base cursor-pointer"
             >
               {loading ? "Registering..." : "Create Account"}
             </button>
@@ -322,24 +319,27 @@ export default function RegisterPage() {
 
           <div className="mt-6 flex items-center justify-center gap-2">
             <div className="h-px bg-gray-200 flex-1"></div>
-            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">OR</span>
+            <span className="text-xs text-gray-400 font-medium lowercase">or</span>
             <div className="h-px bg-gray-200 flex-1"></div>
           </div>
 
           <div className="mt-6 flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setError("Google Sign-Up failed.")}
-              useOneTap
-              theme="outline"
-              shape="pill"
-              text="signup_with"
-            />
+            <div className="w-full [&>div]:w-full [&>div>div]:w-full flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError("Google Sign-Up failed.")}
+                useOneTap
+                theme="outline"
+                shape="pill"
+                width="100%"
+                text="signup_with"
+              />
+            </div>
           </div>
 
           <div className="mt-8 text-center text-sm text-gray-500 font-sans">
             Already have an account?{" "}
-            <Link href="/login" className="text-blue-600 font-bold hover:underline">
+            <Link href="/login" className="text-[#65a34e] font-bold hover:underline">
               Login here
             </Link>
           </div>
@@ -437,7 +437,7 @@ export default function RegisterPage() {
                 {...registerCompany("company_name")}
                 type="text"
                 autoComplete="off"
-                className="neu-input"
+                className="neu-input" style={{ backgroundColor: "white" }}
                 placeholder="e.g. Daksh Cotton Brokers"
               />
               {companyErrors.company_name && <p className="text-red-500 text-xs px-2 mt-1">{companyErrors.company_name.message}</p>}
