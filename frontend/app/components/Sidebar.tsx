@@ -68,13 +68,13 @@ export default function Sidebar() {
     >
       {/* ── Brand Header ── */}
       <div
-        className="px-4 py-8 flex items-center justify-center"
+        className="px-4 py-6 sm:py-8 flex items-center justify-center shrink-0"
         style={{ borderBottom: "1px solid var(--cb-divider)", minHeight: "85px" }}
       >
         <img 
           src="/full-logo-main.svg" 
           alt="CottBook Brokerage Management" 
-          className="w-56 h-auto object-contain"
+          className="w-48 sm:w-56 h-auto object-contain"
         />
       </div>
 

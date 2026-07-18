@@ -138,7 +138,7 @@ export default function DueListPage() {
                 </div>
                 <button 
                   onClick={() => setIsPaymentModalOpen(true)}
-                  className="neu-btn neu-btn-primary flex items-center"
+                  className="neu-btn neu-btn-action flex items-center"
                 >
                   <IndianRupee size={18} className="mr-1" />
                   Receive Payment

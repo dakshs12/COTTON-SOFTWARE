@@ -29,9 +29,9 @@ const companySchema = z.object({
 type CompanyFormValues = z.infer<typeof companySchema>;
 
 export default function RegisterPage() {
-  const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const showToast = (msg: string, type: 'success' | 'error') => {
-    setToastMessage({text: msg, type});
+    setToastMessage({ text: msg, type });
     setTimeout(() => setToastMessage(null), 3000);
   };
 
@@ -65,7 +65,7 @@ export default function RegisterPage() {
       nextInput?.focus();
     }
   };
-  
+
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       const prevInput = document.getElementById(`otp-${index - 1}`);
@@ -138,7 +138,7 @@ export default function RegisterPage() {
       return;
     }
     if (!registrationData) return;
-    
+
     setError("");
     setLoading(true);
     try {
@@ -167,7 +167,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const res = await api.post("auth/google/", { token: credentialResponse.credential });
-      
+
       if (res.status === 202) {
         // User needs to provide company name
         setGoogleUserData(res.data);
@@ -197,7 +197,7 @@ export default function RegisterPage() {
         last_name: googleUserData.last_name,
         company_name: data.company_name
       });
-      
+
       localStorage.setItem('last_username', googleUserData.email);
       const success = await checkAuth();
       if (success) {
@@ -228,7 +228,7 @@ export default function RegisterPage() {
                   type="text"
                   autoComplete="off"
                   className="neu-input" style={{ backgroundColor: "white" }}
-                  placeholder="John"
+                  placeholder="Daksh"
                 />
                 {errors.first_name && <p className="text-red-500 text-xs px-2 mt-1">{errors.first_name.message}</p>}
               </div>
@@ -239,7 +239,7 @@ export default function RegisterPage() {
                   type="text"
                   autoComplete="off"
                   className="neu-input" style={{ backgroundColor: "white" }}
-                  placeholder="Doe"
+                  placeholder="Sethi"
                 />
                 {errors.last_name && <p className="text-red-500 text-xs px-2 mt-1">{errors.last_name.message}</p>}
               </div>
@@ -397,7 +397,7 @@ export default function RegisterPage() {
             >
               {loading ? "Verifying..." : "Verify & Register"}
             </button>
-            
+
             <div className="text-center mt-4">
               <button
                 type="button"
@@ -409,9 +409,9 @@ export default function RegisterPage() {
               </button>
             </div>
           </form>
-          
+
           <div className="mt-6 text-center text-sm text-gray-500">
-            <button type="button" onClick={() => {setStep(1); setError('');}} className="hover:underline">
+            <button type="button" onClick={() => { setStep(1); setError(''); }} className="hover:underline">
               Back to Registration
             </button>
           </div>

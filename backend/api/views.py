@@ -169,14 +169,28 @@ def get_dashboard_analytics(request):
         ).aggregate(Sum('bales'))
         total_bales_ytd = total_bales_ytd_agg['bales__sum'] or 0
         
-        # Calculate Total Bales (from BargainEntry)
-        total_bales_agg = BargainEntry.objects.filter(tenant=request.user.tenant).aggregate(Sum('bales'))
+        # Calculate Total Bales for current month
+        current_month = now.month
+        current_year = now.year
+        total_bales_agg = BargainEntry.objects.filter(
+            tenant=request.user.tenant,
+            bargain_date__year=current_year,
+            bargain_date__month=current_month
+        ).aggregate(Sum('bales'))
         total_bales = total_bales_agg['bales__sum'] or 0
         
-        # Calculate Pending Dispatches (Bales awaiting dispatch = Total Bales - Delivered Bales)
+        # Calculate Pending Dispatches (Bales awaiting dispatch = Lifetime Bales - Delivered Bales)
+        lifetime_bales = BargainEntry.objects.filter(tenant=request.user.tenant).aggregate(Sum('bales'))['bales__sum'] or 0
         total_delivered_agg = DeliveryDetails.objects.filter(tenant=request.user.tenant).aggregate(Sum('quantity_bales'))
         total_delivered_bales = total_delivered_agg['quantity_bales__sum'] or 0
-        pending_dispatches = max(0, total_bales - total_delivered_bales)
+        pending_dispatches = max(0, lifetime_bales - total_delivered_bales)
+        
+        # Calculate Pending Passing
+        pending_passing_agg = BargainSplit.objects.filter(
+            tenant=request.user.tenant, 
+            status='Pending Passing'
+        ).aggregate(Sum('bales'))
+        pending_passing = pending_passing_agg['bales__sum'] or 0
 
         # Unbilled Deliveries Logic (Older than 6 months or oldest)
         from datetime import date, timedelta
@@ -265,6 +279,7 @@ def get_dashboard_analytics(request):
                 "total_deals_label": fy_label,
                 "total_bales": total_bales,
                 "pending_dispatches": pending_dispatches,
+                "pending_passing": pending_passing,
                 "unbilled_info": unbilled_info,
                 "fulfillment_progress": fulfillment_progress,
                 "current_month_name": date.today().strftime('%B')

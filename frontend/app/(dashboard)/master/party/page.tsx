@@ -169,7 +169,7 @@ export default function PartyMasterPage() {
           {!isFormOpen && (
             <button 
               onClick={() => setIsFormOpen(true)}
-              className="neu-btn neu-btn-primary"
+              className="neu-btn neu-btn-action"
             >
               <Plus size={20} strokeWidth={2.5} />
               Add Party
@@ -182,10 +182,8 @@ export default function PartyMasterPage() {
           <div className="neu-card p-8 mb-12 relative">
             <button 
               onClick={() => setIsFormOpen(false)}
-              className="absolute top-6 right-6 p-2 rounded-full transition-colors duration-150 cursor-pointer"
-              style={{ color: "var(--cb-text-label)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--cb-danger)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--cb-text-label)"; }}
+              className="neu-btn neu-btn-cancel-action absolute top-6 right-6 p-2 rounded-full cursor-pointer"
+              style={{ padding: "0.5rem" }}
             >
               <X size={20} strokeWidth={2.5} />
             </button>
@@ -400,13 +398,13 @@ export default function PartyMasterPage() {
                       bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
                     });
                   }}
-                  className="neu-btn"
+                  className="neu-btn neu-btn-cancel-action"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="neu-btn neu-btn-primary"
+                  className="neu-btn neu-btn-action"
                 >
                   <Save size={18} strokeWidth={2.5} /> {editId ? 'Update Party' : 'Save Party'}
                 </button>
@@ -473,10 +471,10 @@ export default function PartyMasterPage() {
                     <td className="font-mono font-medium" style={{ color: "var(--cb-text-label)" }}>{party.mobile}</td>
                     <td className="text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ opacity: 1 }}>
-                        <button onClick={() => handleEdit(party)} className="neu-btn p-2" style={{ color: "var(--cb-primary)", padding: "0.4rem" }}>
+                        <button onClick={() => handleEdit(party)} className="neu-btn neu-btn-action p-2" style={{ padding: "0.4rem" }}>
                           <Edit2 size={16} strokeWidth={2.5}/>
                         </button>
-                        <button className="neu-btn p-2" style={{ color: "var(--cb-danger)", padding: "0.4rem" }}>
+                        <button className="neu-btn neu-btn-danger-action p-2" style={{ padding: "0.4rem" }}>
                           <Trash2 size={16} strokeWidth={2.5}/>
                         </button>
                       </div>
@@ -497,14 +495,14 @@ export default function PartyMasterPage() {
               <button 
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="neu-btn px-4 py-1.5"
+                className="neu-btn neu-btn-action px-4 py-1.5"
               >
                 Previous
               </button>
               <button 
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="neu-btn px-4 py-1.5"
+                className="neu-btn neu-btn-action px-4 py-1.5"
               >
                 Next
               </button>

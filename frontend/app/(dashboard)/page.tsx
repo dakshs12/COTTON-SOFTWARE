@@ -11,6 +11,7 @@ interface DashboardData {
     total_bales_ytd: number;
     total_deals_label: string;
     total_bales: number;
+    pending_passing: number;
     pending_dispatches: number;
     unbilled_info: {
       count: number;
@@ -119,7 +120,7 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-500">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-playfair font-bold text-gray-800 tracking-tight">Dashboard</h1>
           <p className="text-gray-500 font-sans mt-1">Track your recent deals, bales, and daily dispatches.</p>
@@ -127,7 +128,7 @@ export default function DashboardPage() {
         
         {/* Live Clock Widget */}
         {time && (
-          <div className="neu-card px-5 py-3 flex items-center gap-4" style={{ borderRadius: "16px" }}>
+          <div className="neu-card px-5 py-3 flex items-center gap-4 mt-4 md:mt-0" style={{ borderRadius: "16px" }}>
             <div className="p-2 rounded-full" style={{ background: "var(--cb-bg)", boxShadow: "var(--cb-shadow-sm)" }}>
               <Clock size={24} style={{ color: "var(--cb-secondary)" }} />
             </div>
@@ -144,7 +145,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Top Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* KPI 1: Total Bales YTD */}
         <div className="neu-card p-6 flex flex-col justify-between" style={{ borderRadius: "16px" }}>
           <div className="flex justify-between items-start mb-4">
@@ -188,7 +189,23 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* KPI 3: Pending Dispatches */}
+        {/* KPI 3: Pending Passing */}
+        <div className="neu-card p-6 flex flex-col justify-between" style={{ borderRadius: "16px" }}>
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-sm font-bold tracking-wider uppercase" style={{ color: "var(--cb-text-label)", fontFamily: "var(--font-quicksand)" }}>Pending Passing</span>
+            <div className="p-2 rounded-full" style={{ background: "var(--cb-bg)", boxShadow: "var(--cb-shadow-sm)" }}>
+              <AlertCircle size={20} style={{ color: "var(--cb-warning)" }} />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-3xl font-bold" style={{ color: "var(--cb-text-heading)", fontFamily: "var(--font-playfair-display)" }}>
+              {data.kpi.pending_passing?.toLocaleString('en-IN') || 0}
+            </h3>
+            <p className="text-xs mt-1" style={{ color: "var(--cb-text-label)" }}>Bales awaiting passing</p>
+          </div>
+        </div>
+
+        {/* KPI 4: Pending Dispatches */}
         <div className="neu-card p-6 flex flex-col justify-between" style={{ borderRadius: "16px" }}>
           <div className="flex justify-between items-start mb-4">
             <span className="text-sm font-bold tracking-wider uppercase" style={{ color: "var(--cb-text-label)", fontFamily: "var(--font-quicksand)" }}>Pending Dispatches</span>

@@ -219,10 +219,10 @@ export default function BillsStatementPage() {
         </div>
         {statementData && (
           <div className="flex gap-4">
-            <button className="neu-btn" onClick={handleExportExcel}>
+            <button className="neu-btn neu-btn-action" onClick={handleExportExcel}>
               <Download size={18} /> Export Excel
             </button>
-            <button className="neu-btn neu-btn-primary" onClick={handlePrint}>
+            <button className="neu-btn neu-btn-action" onClick={handlePrint}>
               <Printer size={18} /> Print PDF
             </button>
           </div>
@@ -315,8 +315,7 @@ export default function BillsStatementPage() {
 
         <div className="mt-6 flex justify-end">
           <button 
-            className="neu-btn" 
-            style={{ color: "var(--cb-primary)" }}
+            className="neu-btn neu-btn-action" 
             onClick={fetchStatement}
             disabled={fetchingStatement}
           >

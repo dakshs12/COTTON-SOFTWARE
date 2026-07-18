@@ -222,6 +222,12 @@ export default function BillGenerationPage() {
   const selectedFirmObj = firms.find(f => f.id == formData.firm_id);
   const selectedDeliveryItems = pendingDeliveries.filter(d => selectedIds.includes(d.id));
 
+  const isFirmMatched = firms.some(f => f.firm_name === firmSearch);
+  const filteredFirms = firms.filter(f => isFirmMatched ? true : f.firm_name.toLowerCase().includes(firmSearch.toLowerCase()));
+
+  const isPartyMatched = parties.some(p => p.company_name === partySearch);
+  const filteredParties = parties.filter(p => isPartyMatched ? true : p.company_name.toLowerCase().includes(partySearch.toLowerCase()));
+
   return (
     <div className="max-w-7xl mx-auto neu-fade-in pb-20 print:max-w-none print:w-full print:m-0 print:p-0">
       
@@ -232,7 +238,7 @@ export default function BillGenerationPage() {
               <h1 className="neu-page-title text-3xl">Brokerage Bill</h1>
               <p className="mt-1 font-medium" style={{ color: "var(--cb-text-label)" }}>Generate commission invoices.</p>
             </div>
-            <button onClick={() => window.print()} className="neu-btn" style={{ color: "var(--cb-text-heading)" }}>
+            <button onClick={() => window.print()} className="neu-btn text-[#04294E] !border !border-[#65a34e] hover:!bg-[#65a34e] hover:!text-white transition-all duration-300 flex items-center gap-2">
               <Printer size={18} /> Print Bill
             </button>
           </div>
@@ -259,7 +265,7 @@ export default function BillGenerationPage() {
                             <ChevronDown size={16} className="absolute right-3 top-9 pointer-events-none" style={{ color: "var(--cb-text-label)" }}/>
                             {isFirmDropdownOpen && (
                                 <ul className="neu-dropdown">
-                                    {firms.filter(f => f.firm_name.toLowerCase().includes(firmSearch.toLowerCase())).map(f => (
+                                    {filteredFirms.map(f => (
                                         <li key={f.id} onMouseDown={() => handleFirmSelect(f)}>
                                             {f.firm_name}
                                             {formData.firm_id == f.id && <Check size={14} style={{ color: "var(--cb-primary)" }}/>}
@@ -284,7 +290,7 @@ export default function BillGenerationPage() {
                             <ChevronDown size={16} className="absolute right-3 top-9 pointer-events-none" style={{ color: "var(--cb-text-label)" }}/>
                             {isPartyDropdownOpen && (
                                 <ul className="neu-dropdown">
-                                    {parties.filter(p => p.company_name.toLowerCase().includes(partySearch.toLowerCase())).map(p => (
+                                    {filteredParties.map(p => (
                                         <li key={p.id} onMouseDown={() => handlePartySelect(p)}>
                                             <div>
                                               <span className="font-bold">{p.company_name}</span>
@@ -367,7 +373,7 @@ export default function BillGenerationPage() {
                         <button
                           onClick={handleGenerate}
                           disabled={selectedIds.length === 0}
-                          className="neu-btn neu-btn-primary w-full mt-4 py-3 disabled:opacity-50 flex justify-center items-center gap-2"
+                          className="neu-btn text-[#04294E] !border !border-[#65a34e] enabled:hover:!bg-[#65a34e] enabled:hover:!text-white transition-all duration-300 w-full mt-4 py-3 disabled:cursor-not-allowed disabled:opacity-70 flex justify-center items-center gap-2"
                         >
                             <Save size={20} /> Generate & Save Bill
                         </button>

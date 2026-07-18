@@ -222,14 +222,14 @@ export default function ProfilePage() {
               fetchProfile(); // Re-fetch to reset
             }}
             disabled={saving}
-            className="cursor-pointer px-8 py-3.5 bg-cb-bg rounded-xl shadow-neu text-gray-600 font-bold hover:shadow-neu-pressed active:shadow-neu-pressed transition-all duration-200 disabled:opacity-50"
+            className="neu-btn neu-btn-cancel-action px-8 py-3.5"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="cursor-pointer px-8 py-3.5 bg-blue-600 rounded-xl shadow-md text-white font-bold hover:bg-blue-700 active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
+            className="neu-btn neu-btn-action px-8 py-3.5"
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>
@@ -270,14 +270,14 @@ export default function ProfilePage() {
             <div className="flex gap-4">
               <button
                 onClick={() => setShowOtpModal(false)}
-                className="flex-1 py-3 bg-cb-bg rounded-xl shadow-neu text-gray-600 font-bold hover:shadow-neu-pressed"
+                className="neu-btn neu-btn-cancel-action flex-1 py-3"
               >
                 Cancel
               </button>
               <button
                 onClick={verifyEmailOtp}
                 disabled={otpLoading}
-                className="flex-1 py-3 bg-cb-bg rounded-xl shadow-neu text-cb-primary font-bold hover:shadow-neu-pressed disabled:opacity-50"
+                className="neu-btn neu-btn-action flex-1 py-3"
               >
                 {otpLoading ? "..." : "Verify"}
               </button>

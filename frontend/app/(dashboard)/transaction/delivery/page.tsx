@@ -312,7 +312,7 @@ export default function DeliveryEntryPage() {
             Generate bills and track logistics.
           </p>
         </div>
-        <button onClick={() => setIsFormOpen(true)} className="neu-btn neu-btn-primary">
+        <button onClick={() => setIsFormOpen(true)} className="neu-btn neu-btn-action">
           <Plus size={18} /> New Delivery
         </button>
       </div>
@@ -321,10 +321,8 @@ export default function DeliveryEntryPage() {
         <div className="neu-card p-8 mb-8 relative">
           <button
             onClick={() => setIsFormOpen(false)}
-            className="absolute top-5 right-5 p-2 rounded-full transition-colors duration-150 cursor-pointer"
-            style={{ color: "var(--cb-text-label)" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--cb-danger)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--cb-text-label)"; }}
+            className="neu-btn neu-btn-cancel-action absolute top-5 right-5 p-2 rounded-full cursor-pointer"
+            style={{ padding: "0.5rem" }}
           >
             <X size={20} />
           </button>
@@ -537,10 +535,10 @@ export default function DeliveryEntryPage() {
             </div>
 
             <div className="md:col-span-4 flex justify-end gap-4 pt-6" style={{ borderTop: "1px solid var(--cb-divider)" }}>
-              <button type="button" onClick={handleCancel} className="neu-btn">
+              <button type="button" onClick={handleCancel} className="neu-btn neu-btn-cancel-action">
                 Cancel
               </button>
-              <button type="submit" className="neu-btn neu-btn-primary">
+              <button type="submit" className="neu-btn neu-btn-action">
                 <Save size={18} /> {editingId ? "Update Delivery" : "Save Delivery"}
               </button>
             </div>
@@ -603,14 +601,14 @@ export default function DeliveryEntryPage() {
                   <td className="text-right">
                     <button 
                       onClick={() => handleEditClick(del)}
-                      className="p-1.5 rounded-md transition-colors cursor-pointer hover:bg-gray-100 text-gray-500 hover:text-[#4a7fc4]"
+                      className="neu-btn neu-btn-action" style={{ padding: "0.35rem" }}
                       title="Edit Delivery"
                     >
                       <Edit2 size={16} />
                     </button>
                     <button 
                       onClick={() => triggerDelete(del.id, del.bill_no || del.deal_display || String(del.id))}
-                      className="p-1.5 rounded-md transition-colors cursor-pointer hover:bg-gray-100 text-gray-500 hover:text-red-500 ml-1"
+                      className="neu-btn neu-btn-danger-action ml-1" style={{ padding: "0.35rem" }}
                       title="Delete Delivery"
                     >
                       <Trash2 size={16} />
@@ -632,14 +630,14 @@ export default function DeliveryEntryPage() {
               <button 
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="neu-btn px-4 py-1.5"
+                className="neu-btn neu-btn-action px-4 py-1.5"
               >
                 Previous
               </button>
               <button 
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="neu-btn px-4 py-1.5"
+                className="neu-btn neu-btn-action px-4 py-1.5"
               >
                 Next
               </button>
@@ -660,13 +658,13 @@ export default function DeliveryEntryPage() {
             <div className="flex gap-4 justify-end">
               <button 
                 onClick={() => setDeleteModalOpen(false)}
-                className="neu-btn px-6 py-2 text-gray-600 hover:text-gray-800 font-bold cursor-pointer"
+                className="neu-btn neu-btn-cancel-action px-6 py-2 cursor-pointer"
               >
                 Cancel
               </button>
               <button 
                 onClick={confirmDelete}
-                className="px-6 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 font-bold shadow-md transition-colors cursor-pointer"
+                className="neu-btn neu-btn-danger-action px-6 py-2 cursor-pointer"
               >
                 Confirm Delete
               </button>

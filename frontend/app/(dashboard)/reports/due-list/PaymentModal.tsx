@@ -2,7 +2,7 @@
 import { Toast } from '@/app/components/Toast';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { X, IndianRupee } from 'lucide-react';
+import { X, IndianRupee, ChevronDown, Check } from 'lucide-react';
 
 export default function PaymentModal({ party, bills, onClose, onSuccess }: any) {
   const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
@@ -13,6 +13,14 @@ export default function PaymentModal({ party, bills, onClose, onSuccess }: any) 
 
   const [amount, setAmount] = useState<string>('');
   const [paymentMode, setPaymentMode] = useState('NEFT');
+  const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
+  const PAYMENT_MODES = ["NEFT", "Cheque", "UPI", "Cash"];
+  const MODE_DISPLAY: Record<string, string> = {
+    "NEFT": "NEFT / RTGS",
+    "Cheque": "Cheque",
+    "UPI": "UPI",
+    "Cash": "Cash"
+  };
   const [receiptDate, setReceiptDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [referenceNo, setReferenceNo] = useState('');
   const [remarks, setRemarks] = useState('');
@@ -96,8 +104,8 @@ export default function PaymentModal({ party, bills, onClose, onSuccess }: any) 
             <h2 className="text-2xl font-bold text-gray-800">Receive Payment</h2>
             <p className="text-sm font-medium text-gray-500 mt-1">{party.company_name}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <X size={24} className="text-gray-500" />
+          <button onClick={onClose} className="neu-btn neu-btn-cancel-action p-2 rounded-full" style={{ padding: "0.5rem" }}>
+            <X size={20} />
           </button>
         </div>
 
@@ -129,18 +137,36 @@ export default function PaymentModal({ party, bills, onClose, onSuccess }: any) 
                 />
               </div>
               
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 relative">
                 <label className="neu-label">Mode</label>
-                <select 
-                  className="neu-input w-full"
-                  value={paymentMode}
-                  onChange={(e) => setPaymentMode(e.target.value)}
-                >
-                  <option value="NEFT">NEFT / RTGS</option>
-                  <option value="Cheque">Cheque</option>
-                  <option value="UPI">UPI</option>
-                  <option value="Cash">Cash</option>
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={MODE_DISPLAY[paymentMode] || paymentMode}
+                    readOnly
+                    onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
+                    onBlur={() => setTimeout(() => setIsModeDropdownOpen(false), 200)}
+                    className="neu-input w-full cursor-pointer pr-10"
+                  />
+                  <ChevronDown
+                    className={`absolute right-3 top-3 pointer-events-none transition-transform duration-200 ${isModeDropdownOpen ? 'rotate-180' : ''}`}
+                    size={18}
+                    style={{ color: "var(--cb-text-label)" }}
+                  />
+                  {isModeDropdownOpen && (
+                    <ul className="neu-dropdown z-50">
+                      {PAYMENT_MODES.map((mode) => (
+                        <li
+                          key={mode}
+                          onMouseDown={() => setPaymentMode(mode)}
+                        >
+                          {MODE_DISPLAY[mode]}
+                          {paymentMode === mode && <Check size={16} style={{ color: "var(--cb-primary)" }} strokeWidth={3} />}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
               <div className="md:col-span-2">
                 <label className="neu-label">Reference No</label>
@@ -166,7 +192,7 @@ export default function PaymentModal({ party, bills, onClose, onSuccess }: any) 
                 <button 
                   type="button" 
                   onClick={handleAutoAllocate}
-                  className="text-sm font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors"
+                  className="text-sm font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
                 >
                   Auto-Allocate Chronologically
                 </button>
@@ -239,14 +265,14 @@ export default function PaymentModal({ party, bills, onClose, onSuccess }: any) 
           <button 
             type="button" 
             onClick={onClose}
-            className="neu-btn bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+            className="neu-btn neu-btn-cancel-action"
           >
             Cancel
           </button>
           <button 
             type="submit" 
             form="payment-form"
-            className="neu-btn neu-btn-primary"
+            className="neu-btn neu-btn-action"
             disabled={isOverAllocated || !amount}
           >
             Save Payment & Allocations

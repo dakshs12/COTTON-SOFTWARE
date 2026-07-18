@@ -1,13 +1,15 @@
 "use client";
 import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
-import { Save, Building2, Plus, Edit2, X, ChevronDown, Check, CheckCircle, AlertCircle, Upload } from 'lucide-react';
+import { Save, Building2, Plus, Edit2, X, ChevronDown, Check, CheckCircle, AlertCircle, Upload, Trash2 } from 'lucide-react';
 import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
 
 export default function FirmMasterPage() {
   const [firms, setFirms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState<{id: number, displayId: string} | null>(null);
   
   // State Dropdown Logic
   const [isStateDropdownOpen, setIsStateDropdownOpen] = useState(false);
@@ -129,6 +131,24 @@ export default function FirmMasterPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const triggerDelete = (id: number, displayId: string) => {
+    setRecordToDelete({ id, displayId });
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!recordToDelete) return;
+    try {
+      await api.delete(`firms/${recordToDelete.id}/`);
+      setDeleteModalOpen(false);
+      setRecordToDelete(null);
+      fetchFirms();
+    } catch (error) {
+      console.error("Error deleting firm:", error);
+    }
+  };
+
+
   return (
     <div className="max-w-7xl mx-auto neu-fade-in">
       
@@ -142,7 +162,7 @@ export default function FirmMasterPage() {
         </div>
         <button 
           onClick={() => setIsFormOpen(true)}
-          className="neu-btn neu-btn-primary"
+          className="neu-btn neu-btn-action"
         >
           <Plus size={18} />
           Add Firm
@@ -164,10 +184,8 @@ export default function FirmMasterPage() {
                 bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
               });
             }}
-            className="absolute top-5 right-5 p-2 rounded-full transition-colors duration-150 cursor-pointer"
-            style={{ color: "var(--cb-text-label)" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--cb-danger)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--cb-text-label)"; }}
+            className="neu-btn neu-btn-cancel-action absolute top-5 right-5 p-2 rounded-full cursor-pointer"
+            style={{ padding: "0.5rem" }}
           >
             <X size={20} />
           </button>
@@ -203,7 +221,7 @@ export default function FirmMasterPage() {
                    </div>
                    <button 
                      type="button" 
-                     className="neu-btn flex items-center justify-center px-4 hover:text-blue-500 active:scale-90 active:bg-blue-50 transition-all duration-150"
+                     className="neu-btn neu-btn-action flex items-center justify-center px-4"
                      onClick={() => document.getElementById('letterhead_input')?.click()}
                    >
                      <Upload size={18} />
@@ -373,10 +391,10 @@ export default function FirmMasterPage() {
                   cin_no: '', pan_no: '', gst_no: '', tan_no: '',
                   bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
                 });
-              }} className="neu-btn">
+              }} className="neu-btn neu-btn-cancel-action">
                 Cancel
               </button>
-              <button type="submit" className="neu-btn neu-btn-primary">
+              <button type="submit" className="neu-btn neu-btn-action">
                 <Save size={18} /> {editId ? 'Update Firm' : 'Save Firm'}
               </button>
             </div>
@@ -420,8 +438,14 @@ export default function FirmMasterPage() {
                   <td>{firm.mobile}</td>
                   <td className="text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ opacity: 1 }}>
-                      <button onClick={() => handleEdit(firm)} className="neu-btn" style={{ color: "var(--cb-primary)", padding: "0.35rem" }}>
+                      <button onClick={() => handleEdit(firm)} className="neu-btn neu-btn-action p-2" style={{ padding: "0.35rem" }}>
                         <Edit2 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => triggerDelete(firm.id, firm.firm_name)}
+                        className="neu-btn neu-btn-danger-action p-2 ml-1" style={{ padding: "0.35rem" }}
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -442,6 +466,32 @@ export default function FirmMasterPage() {
               <AlertCircle size={20} className="text-red-500" />
             )}
             <span className="font-semibold text-gray-700">{toastMessage.text}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && recordToDelete && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center neu-fade-in p-4">
+          <div className="bg-[var(--cb-bg)] p-8 rounded-[30px] shadow-neu max-w-md w-full mx-4 animate-in zoom-in-95 duration-300">
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Confirm Deletion</h3>
+            <p className="text-gray-600 mb-8">
+              Are you sure you want to delete <span className="font-bold text-gray-800">{recordToDelete.displayId}</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-4 justify-end">
+              <button 
+                onClick={() => setDeleteModalOpen(false)}
+                className="neu-btn neu-btn-cancel-action px-6 py-2 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="neu-btn neu-btn-danger-action px-6 py-2 cursor-pointer"
+              >
+                Confirm Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
