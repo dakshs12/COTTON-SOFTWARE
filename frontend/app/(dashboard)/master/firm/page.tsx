@@ -28,7 +28,7 @@ export default function FirmMasterPage() {
   }, [firms]);
 
   const [formData, setFormData] = useState({
-    firm_name: '', title: '', firm_no: '',
+    firm_name: '', title: '', firm_no: '', tagline: '', jurisdiction: '',
     address: '', branch_address: '', city: '', pincode: '', state: '',
     tele_o: '', mobile: '', email: '', website: '', contact_person: '', contact_person_designation: '',
     cin_no: '', pan_no: '', gst_no: '', tan_no: '',
@@ -122,7 +122,7 @@ export default function FirmMasterPage() {
 
   const handleEdit = (firm: any) => {
     setFormData({
-      firm_name: firm.firm_name || '', title: firm.title || '', firm_no: firm.firm_no || '',
+      firm_name: firm.firm_name || '', title: firm.title || '', firm_no: firm.firm_no || '', tagline: firm.tagline || '', jurisdiction: firm.jurisdiction || '',
       address: firm.address || '', branch_address: firm.branch_address || '', city: firm.city || '', pincode: firm.pincode || '', state: firm.state || '',
       tele_o: firm.tele_o || '', mobile: firm.mobile || '', email: firm.email || '', website: firm.website || '', contact_person: firm.contact_person || '', contact_person_designation: firm.contact_person_designation || '',
       cin_no: firm.cin_no || '', pan_no: firm.pan_no || '', gst_no: firm.gst_no || '', tan_no: firm.tan_no || '',
@@ -181,7 +181,7 @@ export default function FirmMasterPage() {
               setIsFormOpen(false);
               setEditId(null);
               setFormData({
-                firm_name: '', title: '', firm_no: '',
+                firm_name: '', title: '', firm_no: '', tagline: '', jurisdiction: '',
                 address: '', branch_address: '', city: '', pincode: '', state: '',
                 tele_o: '', mobile: '', email: '', website: '', contact_person: '', contact_person_designation: '',
                 cin_no: '', pan_no: '', gst_no: '', tan_no: '',
@@ -239,6 +239,11 @@ export default function FirmMasterPage() {
                    />
                  </div>
               </div>
+              
+              <div className="col-span-6 mt-2">
+                <label className="neu-label">Tagline (e.g. Cotton Broker & Commission Agent)</label>
+                <input name="tagline" placeholder="Optional sub-title printed below firm name on bills" value={formData.tagline} onChange={handleChange} className="neu-input" />
+              </div>
             </div>
 
             {/* --- Section 2: Address --- */}
@@ -253,7 +258,7 @@ export default function FirmMasterPage() {
               </div>
             </div>
             
-            <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+            <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-6 mt-4">
               <div className="col-span-1">
                  <label className="neu-label">City</label>
                  <input name="city" value={formData.city} onChange={handleChange} className="neu-input" required />
@@ -307,6 +312,10 @@ export default function FirmMasterPage() {
               <div className="col-span-1">
                  <label className="neu-label">Pin Code</label>
                  <input name="pincode" value={formData.pincode} onChange={handleChange} className="neu-input" />
+              </div>
+              <div className="col-span-1">
+                 <label className="neu-label">Jurisdiction</label>
+                 <input name="jurisdiction" placeholder="Indore" value={formData.jurisdiction} onChange={handleChange} className="neu-input" />
               </div>
             </div>
 

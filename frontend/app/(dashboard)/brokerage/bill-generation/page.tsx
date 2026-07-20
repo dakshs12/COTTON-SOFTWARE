@@ -464,7 +464,7 @@ export default function BillGenerationPage() {
                       <div className="flex justify-between items-start border-b border-gray-300 pb-4">
                           <div>
                               <h1 className="text-2xl font-bold uppercase tracking-wide">{selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</h1>
-                              <p className="font-bold text-sm">Cotton Broker & Commission Agent</p>
+                              {selectedFirmObj?.tagline && <p className="font-bold text-sm">{selectedFirmObj.tagline}</p>}
                               <p className="text-sm">{selectedFirmObj?.address}</p>
                               <p className="text-sm">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}, {selectedFirmObj?.state}</p>
                               <p className="text-sm">Email: {selectedFirmObj?.email || "-"}</p>
@@ -482,7 +482,7 @@ export default function BillGenerationPage() {
                       <div className="flex justify-between items-start border-b border-gray-300 pb-4">
                           <div>
                               <h1 className="text-2xl font-bold uppercase tracking-wide">{selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</h1>
-                              <p className="font-bold text-sm">Cotton Broker & Commission Agent</p>
+                              {selectedFirmObj?.tagline && <p className="font-bold text-sm">{selectedFirmObj.tagline}</p>}
                               <p className="text-sm">{selectedFirmObj?.address}</p>
                               <p className="text-sm">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}, {selectedFirmObj?.state}</p>
                               <p className="text-sm">Email: {selectedFirmObj?.email || "-"}</p>
@@ -602,7 +602,7 @@ export default function BillGenerationPage() {
                       <p className="font-bold">A/c No: {selectedFirmObj?.bank_ac_no}</p>
                       <p className="font-bold">IFSC: {selectedFirmObj?.ifsc_code}</p>
                       
-                      <p className="mt-6">E & O.E (Subject to {selectedFirmObj?.city || 'Indore'} Jurisdiction)</p>
+                      <p className="mt-6">E & O.E (Subject to {selectedFirmObj?.jurisdiction ? selectedFirmObj.jurisdiction + " " : '\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0'}Jurisdiction)</p>
                   </div>
                   <div className="text-right">
                       <p className="font-bold">For: {selectedFirmObj?.firm_name}</p>
