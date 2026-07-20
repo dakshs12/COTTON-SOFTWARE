@@ -238,7 +238,7 @@ export default function BillsStatementPage() {
             <label className="neu-label">Select Firm</label>
             <button 
               type="button"
-              className="neu-input w-full text-left flex justify-between items-center"
+              className="neu-input w-full text-left flex justify-between items-center cursor-pointer"
               onClick={() => setIsFirmDropdownOpen(!isFirmDropdownOpen)}
             >
               <span className="truncate">{selectedFirm ? selectedFirm.firm_name : "Select Firm..."}</span>
@@ -267,7 +267,7 @@ export default function BillsStatementPage() {
             <label className="neu-label">Select Party</label>
             <button 
               type="button"
-              className="neu-input w-full text-left flex justify-between items-center"
+              className="neu-input w-full text-left flex justify-between items-center cursor-pointer"
               onClick={() => setIsPartyDropdownOpen(!isPartyDropdownOpen)}
             >
               <span className="truncate">{selectedParty ? `${selectedParty.company_name} - ${selectedParty.station}` : "Search Party..."}</span>

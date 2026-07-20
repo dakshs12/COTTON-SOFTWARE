@@ -35,6 +35,7 @@ export default function FirmMasterPage() {
     bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
   });
   const [letterheadFile, setLetterheadFile] = useState<File | null>(null);
+  const [existingLetterhead, setExistingLetterhead] = useState<string | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
 
   // Smart Filter Logic
@@ -111,6 +112,7 @@ export default function FirmMasterPage() {
         bank_name: '', branch: '', bank_ac_no: '', ifsc_code: ''
       });
       setLetterheadFile(null);
+      setExistingLetterhead(null);
     } catch (error) {
       console.error("Error saving firm:", error);
       setToastMessage({text: 'Error saving data.', type: 'error'});
@@ -126,6 +128,8 @@ export default function FirmMasterPage() {
       cin_no: firm.cin_no || '', pan_no: firm.pan_no || '', gst_no: firm.gst_no || '', tan_no: firm.tan_no || '',
       bank_name: firm.bank_name || '', branch: firm.branch || '', bank_ac_no: firm.bank_ac_no || '', ifsc_code: firm.ifsc_code || ''
     });
+    setExistingLetterhead(firm.letterhead || null);
+    setLetterheadFile(null);
     setEditId(firm.id);
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -216,8 +220,8 @@ export default function FirmMasterPage() {
               <div className="col-span-2">
                  <label className="neu-label">UPLOAD FIRM LOGO</label>
                  <div className="flex gap-3">
-                   <div className="neu-input w-32 flex items-center bg-gray-50 text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap">
-                     {letterheadFile ? letterheadFile.name : 'No file selected'}
+                   <div className="neu-input w-32 flex items-center bg-gray-50 text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap" title={letterheadFile ? letterheadFile.name : (existingLetterhead ? existingLetterhead.split('/').pop() : 'No file selected')}>
+                     {letterheadFile ? letterheadFile.name : (existingLetterhead ? existingLetterhead.split('/').pop() : 'No file selected')}
                    </div>
                    <button 
                      type="button" 

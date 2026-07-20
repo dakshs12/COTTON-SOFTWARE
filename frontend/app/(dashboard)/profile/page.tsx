@@ -117,10 +117,10 @@ export default function ProfilePage() {
   const emailChanged = newEmail !== profile?.email;
 
   return (
-    <div className="max-w-2xl mx-auto pb-12">
+    <div className="max-w-2xl mx-auto pb-12 neu-fade-in">
       <div className="mb-8">
-        <h1 className="text-3xl font-playfair font-bold text-gray-800 tracking-tight">Identity Workspace</h1>
-        <p className="text-gray-500 mt-2">Manage your personal information and account security.</p>
+        <h1 className="neu-page-title text-3xl">Identity Workspace</h1>
+        <p className="mt-1 font-medium" style={{ color: "var(--cb-text-label)" }}>Manage your personal information and account security.</p>
       </div>
 
       {error && (
@@ -137,81 +137,70 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <form onSubmit={handleSaveProfile} className="bg-cb-bg p-8 rounded-[30px] shadow-neu">
+      <form onSubmit={handleSaveProfile} className="neu-card p-8 mb-8">
         
         {/* Name Fields */}
         <div className="grid grid-cols-2 gap-6 mb-6">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">First Name</label>
-            <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                value={profile?.first_name || ""}
-                onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
-                className="w-full pl-12 pr-4 py-3 bg-cb-bg border border-gray-200 rounded-xl shadow-neu-inset text-gray-700 focus:outline-none focus:ring-2 focus:ring-cb-primary/20 transition-all"
-              />
-            </div>
+            <label className="neu-label">First Name</label>
+            <input
+              type="text"
+              value={profile?.first_name || ""}
+              onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
+              className="neu-input"
+            />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Last Name</label>
+            <label className="neu-label">Last Name</label>
             <input
               type="text"
               value={profile?.last_name || ""}
               onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
-              className="w-full px-4 py-3 bg-cb-bg border border-gray-200 rounded-xl shadow-neu-inset text-gray-700 focus:outline-none focus:ring-2 focus:ring-cb-primary/20 transition-all"
+              className="neu-input"
             />
           </div>
         </div>
 
         {/* Username */}
         <div className="mb-6">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Username</label>
-          <div className="relative">
-            <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              value={profile?.username || ""}
-              onChange={(e) => setProfile({ ...profile, username: e.target.value })}
-              className="w-full pl-12 pr-4 py-3 bg-cb-bg border border-gray-200 rounded-xl shadow-neu-inset text-gray-700 focus:outline-none focus:ring-2 focus:ring-cb-primary/20 transition-all"
-            />
-          </div>
+          <label className="neu-label">Username</label>
+          <input
+            type="text"
+            value={profile?.username || ""}
+            onChange={(e) => setProfile({ ...profile, username: e.target.value })}
+            className="neu-input"
+          />
         </div>
 
         {/* Phone */}
         <div className="mb-6">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Phone Number</label>
-          <div className="relative">
-            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              value={profile?.phone_number || ""}
-              onChange={(e) => setProfile({ ...profile, phone_number: e.target.value })}
-              className="w-full pl-12 pr-4 py-3 bg-cb-bg border border-gray-200 rounded-xl shadow-neu-inset text-gray-700 focus:outline-none focus:ring-2 focus:ring-cb-primary/20 transition-all"
-            />
-          </div>
+          <label className="neu-label">Phone Number</label>
+          <input
+            type="text"
+            value={profile?.phone_number || ""}
+            onChange={(e) => setProfile({ ...profile, phone_number: e.target.value })}
+            className="neu-input"
+          />
         </div>
 
-        <hr className="border-gray-200 my-8 shadow-sm" />
-
         {/* Secure Email Pipeline */}
-        <div className="mb-8 p-6 rounded-2xl bg-gray-50/50 border border-gray-100 shadow-sm relative overflow-hidden">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Account Email</label>
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <div className="pt-5 mt-2" style={{ borderTop: "1px solid var(--cb-divider)" }}>
+          <h3 className="neu-section-title mb-4">Account Security</h3>
+          <div className="mb-8">
+            <label className="neu-label">Account Email</label>
             <input
               type="email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-cb-bg border border-gray-200 rounded-xl shadow-neu-inset text-gray-700 focus:outline-none focus:ring-2 focus:ring-cb-primary/20 transition-all"
+              className="neu-input"
             />
+            {emailChanged && (
+              <div className="mt-3 text-xs font-semibold text-amber-600 flex items-center gap-1.5 animate-in slide-in-from-top-1">
+                <Shield className="w-3.5 h-3.5" />
+                Altering account email requires verification. An OTP will be sent to the new address upon saving.
+              </div>
+            )}
           </div>
-          {emailChanged && (
-            <div className="mt-3 text-xs font-semibold text-amber-600 flex items-center gap-1.5 animate-in slide-in-from-top-1">
-              <Shield className="w-3.5 h-3.5" />
-              Altering account email requires verification. An OTP will be sent to the new address upon saving.
-            </div>
-          )}
         </div>
 
         <div className="flex justify-end gap-4">

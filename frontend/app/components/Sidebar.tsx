@@ -45,7 +45,7 @@ const menuItems = [
     items: [
       { name: 'Bills Statement', path: '/reports/bills-statement', icon: ClipboardList },
       { name: "Due List", path: "/reports/due-list", icon: Clock },
-      { name: 'Analytics', path: '/reports/analytics', icon: BarChart3 },
+      // { name: 'Analytics', path: '/reports/analytics', icon: BarChart3 },
     ]
   }
 ];
@@ -185,7 +185,7 @@ export default function Sidebar() {
           My Profile
         </Link>
 
-        <Link
+        {/* <Link
           href="/subscription"
           className="flex items-center gap-3 px-3 py-2.5 w-full transition-all duration-200 text-sm cursor-pointer"
           style={{
@@ -206,7 +206,7 @@ export default function Sidebar() {
         >
           <CreditCard size={18} strokeWidth={pathname === "/subscription" ? 2.5 : 1.8} />
           Billing & Plans
-        </Link>
+        </Link> */}
         
         <button
           onClick={logout}

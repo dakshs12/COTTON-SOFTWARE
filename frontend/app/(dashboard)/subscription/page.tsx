@@ -14,17 +14,17 @@ export default function SubscriptionPage() {
   const status = subscription?.status || "PENDING";
   const daysRemaining = subscription?.days_remaining || 0;
   const currentPlanType = subscription?.plan_type || "None";
-  const endDateStr = subscription?.end_date 
+  const endDateStr = subscription?.end_date
     ? (() => {
-        const d = new Date(subscription.end_date);
-        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-      })()
+      const d = new Date(subscription.end_date);
+      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    })()
     : "N/A";
 
   // Razorpay Checkout
   const handleCheckout = async (planDuration: string) => {
     setLoadingPlan(planDuration);
-    
+
     try {
       // 1. Create Subscription on Backend
       const res = await api.post('/payments/create-subscription/', { plan_duration: planDuration });
@@ -32,7 +32,7 @@ export default function SubscriptionPage() {
 
       // 2. Open Razorpay Checkout Modal
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, 
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         subscription_id: subscription_id,
         name: 'CottBook',
         description: `${planDuration.replace('_', ' ')} Subscription`,
@@ -44,9 +44,9 @@ export default function SubscriptionPage() {
           color: '#2563EB'
         }
       };
-      
+
       const rzp1 = new (window as any).Razorpay(options);
-      rzp1.on('payment.failed', function (response: any){
+      rzp1.on('payment.failed', function (response: any) {
         alert(`Payment Failed: ${response.error.description}`);
       });
       rzp1.open();
@@ -82,12 +82,11 @@ export default function SubscriptionPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
           {/* Status */}
           <div className="bg-cb-bg shadow-neu-inset rounded-2xl p-5 flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
-              status === 'ACTIVE' ? 'bg-green-100' : status === 'LOCKED_OUT' ? 'bg-red-100' : 'bg-amber-100'
-            }`}>
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${status === 'ACTIVE' ? 'bg-green-100' : status === 'LOCKED_OUT' ? 'bg-red-100' : 'bg-amber-100'
+              }`}>
               {status === 'ACTIVE' ? <CheckCircle2 className="w-6 h-6 text-green-600" /> :
-               status === 'LOCKED_OUT' ? <Shield className="w-6 h-6 text-red-600" /> :
-               <Clock className="w-6 h-6 text-amber-600" />}
+                status === 'LOCKED_OUT' ? <Shield className="w-6 h-6 text-red-600" /> :
+                  <Clock className="w-6 h-6 text-amber-600" />}
             </div>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Status</div>
@@ -123,18 +122,17 @@ export default function SubscriptionPage() {
       </div>
 
       {/* Pricing Tier Grid */}
-      <div 
+      <div
         className="grid grid-cols-1 md:grid-cols-3 gap-8"
         onMouseLeave={() => setHoveredPlan('3_YEAR')}
       >
-        
+
         {/* 1-Year Plan */}
-        <div 
-          className={`rounded-[30px] p-8 flex flex-col transition-all duration-300 ${
-            hoveredPlan === '1_YEAR' 
-              ? 'border-2 border-blue-500 bg-white shadow-lg -translate-y-1' 
-              : 'border-2 border-slate-200 bg-white/50'
-          }`}
+        <div
+          className={`rounded-[30px] p-8 flex flex-col transition-all duration-300 ${hoveredPlan === '1_YEAR'
+            ? 'border-2 border-blue-500 bg-white shadow-lg -translate-y-1'
+            : 'border-2 border-slate-200 bg-white/50'
+            }`}
           onMouseEnter={() => setHoveredPlan('1_YEAR')}
         >
           <div className="mb-6">
@@ -143,7 +141,7 @@ export default function SubscriptionPage() {
           </div>
           <div className="mb-8">
             <div className="text-4xl font-black text-cb-primary flex items-end">
-              ₹25,000 <span className="text-lg font-bold text-gray-400 mb-1 ml-1">/yr</span>
+              ₹ xxxbase1 <span className="text-lg font-bold text-gray-400 mb-1 ml-1">/yr</span>
             </div>
           </div>
           <ul className="space-y-4 mb-8 flex-1">
@@ -154,23 +152,21 @@ export default function SubscriptionPage() {
           <button
             onClick={() => handleCheckout('1_YEAR')}
             disabled={loadingPlan !== null}
-            className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${
-              hoveredPlan === '1_YEAR'
-                ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
-                : 'bg-transparent text-blue-600 border-2 border-blue-500'
-            }`}
+            className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${hoveredPlan === '1_YEAR'
+              ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
+              : 'bg-transparent text-blue-600 border-2 border-blue-500'
+              }`}
           >
             {loadingPlan === '1_YEAR' ? "Processing..." : "Select 1 Year"}
           </button>
         </div>
 
         {/* 3-Year Plan */}
-        <div 
-          className={`rounded-[30px] p-8 flex flex-col relative transition-all duration-300 ${
-            hoveredPlan === '3_YEAR' 
-              ? 'border-2 border-blue-500 bg-white shadow-lg -translate-y-1' 
-              : 'border-2 border-slate-200 bg-white/50'
-          }`}
+        <div
+          className={`rounded-[30px] p-8 flex flex-col relative transition-all duration-300 ${hoveredPlan === '3_YEAR'
+            ? 'border-2 border-blue-500 bg-white shadow-lg -translate-y-1'
+            : 'border-2 border-slate-200 bg-white/50'
+            }`}
           onMouseEnter={() => setHoveredPlan('3_YEAR')}
         >
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-cb-primary text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md flex items-center gap-1">
@@ -182,10 +178,10 @@ export default function SubscriptionPage() {
           </div>
           <div className="mb-8">
             <div className="text-4xl font-black text-cb-primary flex items-end">
-              ₹60,000 <span className="text-lg font-bold text-gray-400 mb-1 ml-1">total</span>
+              ₹ xxbase2 <span className="text-lg font-bold text-gray-400 mb-1 ml-1">total</span>
             </div>
             <p className="text-sm text-green-600 font-bold mt-2 border border-green-200 bg-green-50 rounded px-2 py-1 inline-block">
-              Only ₹20,000 / year equivalent
+              Only ₹0 / year equivalent
             </p>
           </div>
           <ul className="space-y-4 mb-8 flex-1">
@@ -199,23 +195,21 @@ export default function SubscriptionPage() {
           <button
             onClick={() => handleCheckout('3_YEAR')}
             disabled={loadingPlan !== null}
-            className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${
-              hoveredPlan === '3_YEAR'
-                ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
-                : 'bg-transparent text-blue-600 border-2 border-blue-500'
-            }`}
+            className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${hoveredPlan === '3_YEAR'
+              ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
+              : 'bg-transparent text-blue-600 border-2 border-blue-500'
+              }`}
           >
             {loadingPlan === '3_YEAR' ? "Processing..." : "Select 3 Years"}
           </button>
         </div>
 
         {/* 5-Year Plan */}
-        <div 
-          className={`rounded-[30px] p-8 flex flex-col relative transition-all duration-300 ${
-            hoveredPlan === '5_YEAR' 
-              ? 'border-2 border-blue-500 bg-white shadow-lg -translate-y-1' 
-              : 'border-2 border-slate-200 bg-white/50'
-          }`}
+        <div
+          className={`rounded-[30px] p-8 flex flex-col relative transition-all duration-300 ${hoveredPlan === '5_YEAR'
+            ? 'border-2 border-blue-500 bg-white shadow-lg -translate-y-1'
+            : 'border-2 border-slate-200 bg-white/50'
+            }`}
           onMouseEnter={() => setHoveredPlan('5_YEAR')}
         >
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-500 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md flex items-center gap-1">
@@ -227,10 +221,10 @@ export default function SubscriptionPage() {
           </div>
           <div className="mb-8">
             <div className="text-4xl font-black text-cb-primary flex items-end">
-              ₹90,000 <span className="text-lg font-bold text-gray-400 mb-1 ml-1">total</span>
+              ₹ xbase3 <span className="text-lg font-bold text-gray-400 mb-1 ml-1">total</span>
             </div>
             <p className="text-sm text-amber-600 font-bold mt-2 border border-amber-200 bg-amber-50 rounded px-2 py-1 inline-block">
-              Only ₹18,000 / year equivalent
+              Only ₹0 / year equivalent
             </p>
           </div>
           <ul className="space-y-4 mb-8 flex-1">
@@ -247,11 +241,10 @@ export default function SubscriptionPage() {
           <button
             onClick={() => handleCheckout('5_YEAR')}
             disabled={loadingPlan !== null}
-            className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${
-              hoveredPlan === '5_YEAR'
-                ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
-                : 'bg-transparent text-blue-600 border-2 border-blue-500'
-            }`}
+            className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${hoveredPlan === '5_YEAR'
+              ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
+              : 'bg-transparent text-blue-600 border-2 border-blue-500'
+              }`}
           >
             {loadingPlan === '5_YEAR' ? "Processing..." : "Select 5 Years"}
           </button>

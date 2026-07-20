@@ -144,7 +144,6 @@ export default function BargainEntryPage() {
   const cashDiscOptions = useMemo(() => getLearnedOptions('cash_disc', DEFAULT_CASH_DISC), [bargains]);
   const qualityOptions = useMemo(() => getLearnedOptions('quality_condition', DEFAULT_QC), [bargains]);
   const deliveryTermsOptions = useMemo(() => getLearnedOptions('delivery_terms', DEFAULT_DELIVERY_TERMS), [bargains]);
-  const unitOptions = useMemo(() => getLearnedOptions('unit', ['Budhani'], ['Bales', 'Candy']), [bargains]);
   const certificateOptions = useMemo(() => getLearnedOptions('cotton_certificate', CERTIFICATE_OPTIONS), [bargains]);
   
   const stateOptions = useMemo(() => {
@@ -155,7 +154,7 @@ export default function BargainEntryPage() {
   const initialFormState = {
     bargain_date: new Date().toISOString().split('T')[0],
     seller: '', buyer: '', state: '', station: '',
-    bales: '', rate: '', unit: 'Budhani',
+    bales: '', rate: '', unit: '',
     payment_condition: '', payment_by: 'Dispatch Date',
     cash_disc: '', weight_terms: 'Mill Weight', delivery_terms: '',
     delivery_type: 'Spot', delivery_from: '',
@@ -603,7 +602,8 @@ export default function BargainEntryPage() {
                    <input name="delivery_from" value={formData.delivery_from} onChange={handleChange} className="neu-input" />
                 </div>
                 <div className="col-span-1">
-                   {renderSmartDropdown("Delivery to (Unit)", "unit", unitOptions)}
+                   <label className="neu-label">Delivery to (Unit)</label>
+                   <input name="unit" value={formData.unit} onChange={handleChange} className="neu-input" />
                 </div>
                 <div className="col-span-1">
                    <label className="neu-label">Advised By</label>

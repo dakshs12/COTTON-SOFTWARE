@@ -103,7 +103,7 @@ class PartyMaster(BaseModel):
     pincode = models.CharField(max_length=20, blank=True, null=True)
     party_type = models.CharField(max_length=20, choices=PARTY_TYPES)
     
-    contact_person = models.CharField(max_length=100)
+    contact_person = models.CharField(max_length=100, blank=True, null=True)
     contact_person_designation = models.CharField(max_length=100, blank=True, null=True)
     mobile = models.CharField(max_length=15)
     whatsapp_no = models.CharField(max_length=15, blank=True, null=True)

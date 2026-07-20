@@ -451,19 +451,31 @@ export default function BillGenerationPage() {
       <div className="hidden print:block font-sans text-black bg-white">
           
           {/* Watermark for all pages */}
-          <div className="fixed bottom-8 left-0 right-0 flex justify-center items-center gap-2 text-[10pt] font-bold text-gray-500 opacity-80 z-50" style={{ fontFamily: "var(--font-quicksand)" }}>
+          <div className="fixed bottom-0 left-0 right-0 flex justify-center items-center gap-2 text-[10pt] font-bold text-gray-500 z-50" style={{ fontFamily: "var(--font-quicksand)" }}>
              <FileText size={14} /> CottBook &bull; Software for Cotton Brokers
           </div>
 
-          <div className="w-full mx-auto min-h-[280mm] px-8 pt-8 pb-4 relative bg-transparent flex flex-col z-10 box-border" style={{ fontFamily: "Arial, sans-serif" }}>
+          <div className="w-full mx-auto min-h-[260mm] px-8 pt-8 pb-12 relative bg-transparent flex flex-col z-10 box-border" style={{ fontFamily: "Arial, sans-serif" }}>
               
               <div className="flex-1 pb-8">
                   {/* Header / Letterhead Area */}
                   <div className="mb-8">
                   {useLetterhead && selectedFirmObj?.letterhead ? (
-                      <div className="w-full">
-                          {/* We assume the uploaded letterhead is a banner image that spans the top */}
-                          <img src={selectedFirmObj.letterhead} alt="Letterhead" className="w-full h-auto max-h-48 object-contain object-top" />
+                      <div className="flex justify-between items-start border-b border-gray-300 pb-4">
+                          <div>
+                              <h1 className="text-2xl font-bold uppercase tracking-wide">{selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</h1>
+                              <p className="font-bold text-sm">Cotton Broker & Commission Agent</p>
+                              <p className="text-sm">{selectedFirmObj?.address}</p>
+                              <p className="text-sm">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}, {selectedFirmObj?.state}</p>
+                              <p className="text-sm">Email: {selectedFirmObj?.email || "-"}</p>
+                              <p className="text-sm">Ph: {[selectedFirmObj?.tele_o, selectedFirmObj?.mobile].filter(Boolean).join(" / ") || "-"}</p>
+                              <p className="text-sm font-bold mt-1">CIN: {selectedFirmObj?.cin_no || "-"}</p>
+                              <p className="text-sm font-bold">GST: {selectedFirmObj?.gst_no}</p>
+                              <p className="text-sm font-bold">PAN: {selectedFirmObj?.pan_no}</p>
+                          </div>
+                          <div>
+                              <img src={selectedFirmObj.letterhead} alt="Letterhead" className="w-48 h-auto object-contain object-top" />
+                          </div>
                       </div>
                   ) : useLetterhead && !selectedFirmObj?.letterhead ? (
                       /* Fallback generic letterhead if checked but no image uploaded */
@@ -474,6 +486,7 @@ export default function BillGenerationPage() {
                               <p className="text-sm">{selectedFirmObj?.address}</p>
                               <p className="text-sm">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}, {selectedFirmObj?.state}</p>
                               <p className="text-sm">Email: {selectedFirmObj?.email || "-"}</p>
+                              <p className="text-sm">Ph: {[selectedFirmObj?.tele_o, selectedFirmObj?.mobile].filter(Boolean).join(" / ") || "-"}</p>
                               <p className="text-sm font-bold mt-1">CIN: {selectedFirmObj?.cin_no || "-"}</p>
                               <p className="text-sm font-bold">GST: {selectedFirmObj?.gst_no}</p>
                               <p className="text-sm font-bold">PAN: {selectedFirmObj?.pan_no}</p>
@@ -501,13 +514,12 @@ export default function BillGenerationPage() {
               <table className="w-full mb-2" style={{ borderTop: "2px solid black", borderBottom: "1px dashed black", fontFamily: "'Courier New', monospace", fontSize: "11pt", tableLayout: "fixed" }}>
                   <thead>
                       <tr style={{ borderBottom: "1px solid black" }}>
-                          <th className="py-2 text-left font-bold" style={{ width: "38%" }}>Name</th>
-                          <th className="py-2 text-center font-bold" style={{ width: "12%" }}>Station</th>
-                          <th className="py-2 text-center font-bold" style={{ width: "8%" }}>Bales</th>
-                          <th className="py-2 text-center font-bold" style={{ width: "10%" }}>Lot No</th>
+                          <th className="py-2 text-left font-bold" style={{ width: "42%" }}>Name</th>
+                          <th className="py-2 text-center font-bold" style={{ width: "15%" }}>Station</th>
+                          <th className="py-2 text-center font-bold" style={{ width: "10%" }}>Bales</th>
+                          <th className="py-2 text-center font-bold" style={{ width: "12%" }}>Lot No</th>
                           <th className="py-2 text-center font-bold" style={{ width: "12%" }}>Bill No</th>
-                          <th className="py-2 text-center font-bold" style={{ width: "13%" }}>Bill Date</th>
-                          <th className="py-2 text-right font-bold" style={{ width: "7%" }}>Rate</th>
+                          <th className="py-2 text-right font-bold" style={{ width: "9%" }}>Rate</th>
                       </tr>
                   </thead>
                   <tbody>
@@ -518,7 +530,6 @@ export default function BillGenerationPage() {
                               <td className="py-2 text-center">{item.bales}</td>
                               <td className="py-2 text-center">{item.lot_no || "-"}</td>
                               <td className="py-2 text-center">{item.party_bill_no || "-"}</td>
-                              <td className="py-2 text-center">{formatDate(item.date)}</td>
                               <td className="py-2 text-right">{item.deal_rate}</td>
                           </tr>
                       ))}
@@ -583,7 +594,7 @@ export default function BillGenerationPage() {
               </div> {/* End flex-1 wrapper */}
 
               {/* Footer */}
-              <div className="mt-auto flex justify-between items-end text-sm pt-4 relative z-10 bg-white" style={{ borderTop: "1px solid black" }}>
+              <div className="mt-auto flex justify-between items-start text-sm pt-4 relative z-10 bg-white" style={{ borderTop: "1px solid black" }}>
                   <div>
                       <p className="font-bold underline mb-1">Bank Details:</p>
                       <p className="font-bold">Bank: {selectedFirmObj?.bank_name}</p>
