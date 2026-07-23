@@ -8,55 +8,8 @@ import api from "@/lib/api";
 
 export default function SubscriptionPage() {
   const { subscription } = useAuth();
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [hoveredPlan, setHoveredPlan] = useState('3_YEAR');
-
-  const status = subscription?.status || "PENDING";
-  const daysRemaining = subscription?.days_remaining || 0;
-  const currentPlanType = subscription?.plan_type || "None";
-  const endDateStr = subscription?.end_date
-    ? (() => {
-      const d = new Date(subscription.end_date);
-      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-    })()
-    : "N/A";
-
-  // Razorpay Checkout
-  const handleCheckout = async (planDuration: string) => {
-    setLoadingPlan(planDuration);
-
-    try {
-      // 1. Create Subscription on Backend
-      const res = await api.post('/payments/create-subscription/', { plan_duration: planDuration });
-      const { subscription_id } = res.data;
-
-      // 2. Open Razorpay Checkout Modal
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        subscription_id: subscription_id,
-        name: 'CottBook',
-        description: `${planDuration.replace('_', ' ')} Subscription`,
-        handler: function (response: any) {
-          alert(`Subscription Successful! Thank you for subscribing.`);
-          window.location.reload();
-        },
-        theme: {
-          color: '#2563EB'
-        }
-      };
-
-      const rzp1 = new (window as any).Razorpay(options);
-      rzp1.on('payment.failed', function (response: any) {
-        alert(`Payment Failed: ${response.error.description}`);
-      });
-      rzp1.open();
-
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Failed to initiate checkout");
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
+  const [isContactModalOpen, setContactModalOpen] = useState(false);
 
   const getStatusColor = () => {
     if (status === 'ACTIVE') return 'text-green-600';
@@ -67,8 +20,6 @@ export default function SubscriptionPage() {
 
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-500 pb-12">
-      {/* Load Razorpay SDK */}
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -150,14 +101,13 @@ export default function SubscriptionPage() {
             </li>
           </ul>
           <button
-            onClick={() => handleCheckout('1_YEAR')}
-            disabled={loadingPlan !== null}
+            onClick={() => setContactModalOpen(true)}
             className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${hoveredPlan === '1_YEAR'
               ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
               : 'bg-transparent text-blue-600 border-2 border-blue-500'
               }`}
           >
-            {loadingPlan === '1_YEAR' ? "Processing..." : "Select 1 Year"}
+            Contact to Subscribe
           </button>
         </div>
 
@@ -193,14 +143,13 @@ export default function SubscriptionPage() {
             </li>
           </ul>
           <button
-            onClick={() => handleCheckout('3_YEAR')}
-            disabled={loadingPlan !== null}
+            onClick={() => setContactModalOpen(true)}
             className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${hoveredPlan === '3_YEAR'
               ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
               : 'bg-transparent text-blue-600 border-2 border-blue-500'
               }`}
           >
-            {loadingPlan === '3_YEAR' ? "Processing..." : "Select 3 Years"}
+            Contact to Subscribe
           </button>
         </div>
 
@@ -239,18 +188,47 @@ export default function SubscriptionPage() {
             </li>
           </ul>
           <button
-            onClick={() => handleCheckout('5_YEAR')}
-            disabled={loadingPlan !== null}
+            onClick={() => setContactModalOpen(true)}
             className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${hoveredPlan === '5_YEAR'
               ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
               : 'bg-transparent text-blue-600 border-2 border-blue-500'
               }`}
           >
-            {loadingPlan === '5_YEAR' ? "Processing..." : "Select 5 Years"}
+            Contact to Subscribe
           </button>
         </div>
 
       </div>
+
+      {/* Manual Subscription Contact Modal */}
+      {isContactModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-cb-bg rounded-[30px] shadow-neu p-8 max-w-md w-full animate-in zoom-in-95 duration-200">
+            <h3 className="text-2xl font-bold font-playfair text-gray-800 mb-2">Subscribe via Direct Payment</h3>
+            <p className="text-gray-600 mb-6 text-sm">Please contact us via WhatsApp or Email to process your UPI payment and activate your subscription.</p>
+            
+            <div className="bg-cb-bg rounded-2xl shadow-neu-inset p-6 mb-6">
+              <div className="flex flex-col items-center justify-center mb-6">
+                <img src="/whatsapp_qr.png" alt="WhatsApp QR Code" className="w-48 h-48 rounded-lg shadow-sm mb-2 object-cover bg-white" />
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Scan to WhatsApp</span>
+              </div>
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-gray-700 border-b border-gray-200 pb-2">Name: Daksh Sethi</p>
+                <p className="text-sm font-medium text-gray-700 border-b border-gray-200 pb-2">Email: cottbook2026@gmail.com</p>
+                <p className="text-sm font-medium text-gray-700">Phone / WhatsApp: +91 8269603271</p>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setContactModalOpen(false)}
+              className="w-full py-3 bg-cb-bg rounded-xl shadow-neu text-gray-700 font-bold hover:shadow-neu-pressed transition-all duration-200"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

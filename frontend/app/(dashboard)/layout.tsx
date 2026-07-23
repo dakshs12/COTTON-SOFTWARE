@@ -26,16 +26,14 @@ export default function DashboardLayout({
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4 font-playfair">Access Paused</h2>
           <p className="text-gray-600 mb-8">
-            {planType === 'TRIAL' 
-              ? "Your 14-day free trial has ended. Please select a plan to unlock your workspace."
-              : "Your subscription has expired. Please select a renewal plan below to resume operations."}
+            Your 14-day free trial has ended. To upgrade your account and resume operations, please contact support to process your direct payment.
           </p>
-          <button
-            onClick={() => router.push('/subscription')}
-            className="w-full py-4 bg-cb-bg rounded-xl shadow-neu text-blue-600 font-bold hover:shadow-neu-pressed transition-all duration-200"
-          >
-            View Plans & Renew
-          </button>
+          <div className="bg-cb-bg rounded-2xl shadow-neu-pressed p-6 mb-2 text-left space-y-3">
+            <h3 className="font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">Support Contact</h3>
+            <p className="text-sm font-medium text-gray-700">Name: Daksh Sethi</p>
+            <p className="text-sm font-medium text-gray-700">Email: cottbook2026@gmail.com</p>
+            <p className="text-sm font-medium text-gray-700">Phone / WhatsApp: +91 8269603271</p>
+          </div>
         </div>
       </div>
     );

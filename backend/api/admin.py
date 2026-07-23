@@ -1,7 +1,11 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib import messages
+from unfold.admin import ModelAdmin
+from unfold.decorators import action
+
 from .models import (
     Tenant, CustomUser, PartyMaster, FirmMaster, BargainEntry, 
     PassingEntry, DeliveryDetails, BrokerageBill, PartyPaymentReceipt, PaymentAllocation,
@@ -20,8 +24,6 @@ class ExpiringSubscriptionFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == '7_days':
-            # Assuming we add an `end_date` to Tenant. For now we filter on active but maybe add logic here later.
-            # Dodo might not give an end date, just a status, but if we have one we can filter.
             pass
         return queryset
 
@@ -36,16 +38,23 @@ class TenantUsageFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
-        # Could annotate and filter if we needed
         return queryset
 
 # --- Admins ---
 @admin.register(Tenant)
-class TenantAdmin(admin.ModelAdmin):
-    list_display = ('company_name', 'subscription_status', 'dodo_customer_id', 'created_at', 'total_deals', 'total_bales')
+class TenantAdmin(ModelAdmin):
+    list_display = ('company_name', 'subscription_status', 'days_left', 'dodo_customer_id', 'created_at', 'total_deals', 'total_bales')
     list_filter = ('subscription_status', ExpiringSubscriptionFilter)
     search_fields = ('company_name', 'dodo_customer_id')
     readonly_fields = ('created_at', 'total_deals', 'total_bales')
+    ordering = ('-created_at',)  # Show newest first (Notification for new users)
+
+    def days_left(self, obj):
+        try:
+            return obj.subscription.days_remaining
+        except:
+            return 0
+    days_left.short_description = "Days Remaining"
 
     def total_deals(self, obj):
         return BargainEntry.objects.filter(tenant=obj).count()
@@ -57,50 +66,77 @@ class TenantAdmin(admin.ModelAdmin):
         return bales or 0
     total_bales.short_description = "Total Bales"
 
-    def changelist_view(self, request, extra_context=None):
-        from django.db.models import Sum
-        total_brokers = Tenant.objects.count()
-        active = Tenant.objects.filter(subscription_status='active').count()
-        suspended = Tenant.objects.filter(subscription_status__in=['suspended', 'past_due']).count()
-        total_bales_platform = BargainEntry.objects.aggregate(Sum('bales'))['bales__sum'] or 0
-
-        extra_context = extra_context or {}
-        extra_context['custom_kpis'] = {
-            'total_brokers': total_brokers,
-            'active_subs': active,
-            'suspended_subs': suspended,
-            'total_bales': total_bales_platform
-        }
-        return super().changelist_view(request, extra_context=extra_context)
-
 @admin.register(CustomUser)
-class CustomUserAdmin(UserAdmin):
-    fieldsets = UserAdmin.fieldsets + (
-        ('SaaS Info', {'fields': ('tenant',)}),
+class CustomUserAdmin(BaseUserAdmin, ModelAdmin):
+    fieldsets = BaseUserAdmin.fieldsets + (
+        ('SaaS Info', {'fields': ('tenant', 'phone_number', 'failed_login_attempts', 'lockout_until')}),
     )
-    list_display = ('username', 'email', 'tenant', 'is_staff')
+    list_display = ('username', 'email', 'tenant', 'phone_number', 'is_staff')
     list_filter = ('tenant', 'is_staff', 'is_superuser')
+    search_fields = ('username', 'email', 'phone_number')
 
-# Registering Business Models (Just basic registration for now, to ensure they show up)
 @admin.register(PartyMaster)
-class PartyMasterAdmin(admin.ModelAdmin):
-    list_display = ('company_name', 'party_type', 'tenant', 'is_deleted')
-    list_filter = ('tenant', 'party_type', 'is_deleted')
+class PartyMasterAdmin(ModelAdmin):
+    list_display = ('company_name', 'party_code', 'party_type', 'station', 'tenant', 'is_deleted')
+    list_filter = ('tenant', 'party_type', 'station', 'is_deleted')
+    search_fields = ('company_name', 'party_code', 'station')
 
 @admin.register(BargainEntry)
-class BargainEntryAdmin(admin.ModelAdmin):
-    list_display = ('smart_deal_id', 'seller', 'buyer', 'bales', 'rate', 'tenant', 'is_deleted')
-    list_filter = ('tenant', 'status', 'is_deleted')
+class BargainEntryAdmin(ModelAdmin):
+    list_display = ('smart_deal_id', 'bargain_date', 'seller', 'buyer', 'bales', 'rate', 'status', 'tenant')
+    list_filter = ('tenant', 'status', 'is_deleted', 'bargain_date')
+    search_fields = ('smart_deal_id', 'seller__company_name', 'buyer__company_name')
 
-admin.site.register(FirmMaster)
-admin.site.register(PassingEntry)
-admin.site.register(DeliveryDetails)
-admin.site.register(BrokerageBill)
-admin.site.register(PartyPaymentReceipt)
-admin.site.register(PaymentAllocation)
+@admin.register(FirmMaster)
+class FirmMasterAdmin(ModelAdmin):
+    list_display = ('firm_name', 'title', 'city', 'state', 'mobile', 'tenant')
+    list_filter = ('tenant', 'state')
+    search_fields = ('firm_name', 'city', 'state')
+
+@admin.register(PassingEntry)
+class PassingEntryAdmin(ModelAdmin):
+    list_display = ('bargain', 'approval_date', 'bales', 'lot_no', 'tenant')
+    list_filter = ('tenant',)
+
+@admin.register(DeliveryDetails)
+class DeliveryDetailsAdmin(ModelAdmin):
+    list_display = ('passing', 'bill_no', 'truck_no', 'quantity_bales', 'tenant')
+    list_filter = ('tenant',)
+
+@admin.register(BrokerageBill)
+class BrokerageBillAdmin(ModelAdmin):
+    list_display = ('bill_no', 'bill_date', 'firm', 'party', 'net_amount', 'tenant')
+    list_filter = ('tenant', 'bill_date')
+    search_fields = ('bill_no', 'party__company_name')
+
+@admin.register(PartyPaymentReceipt)
+class PartyPaymentReceiptAdmin(ModelAdmin):
+    list_display = ('id', 'receipt_date', 'party', 'amount', 'tenant')
+    list_filter = ('tenant', 'receipt_date')
+
+@admin.register(PaymentAllocation)
+class PaymentAllocationAdmin(ModelAdmin):
+    list_display = ('receipt', 'bill', 'allocated_amount', 'tenant')
+    list_filter = ('tenant',)
 
 @admin.register(TenantSubscription)
-class TenantSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('tenant', 'plan_type', 'end_date', 'subscription_status', 'is_active')
-    list_filter = ('plan_type', 'is_active')
+class TenantSubscriptionAdmin(ModelAdmin):
+    list_display = ('tenant', 'plan_type', 'start_date', 'end_date', 'subscription_status', 'is_active', 'days_left')
+    list_filter = ('plan_type', 'is_active', 'start_date', 'end_date')
     search_fields = ('tenant__company_name',)
+    
+    actions_row = ('approve_renewal',)
+    actions_detail = ('approve_renewal',)
+
+    def days_left(self, obj):
+        return obj.days_remaining
+    days_left.short_description = "Days Remaining"
+
+    @action(description="Approve 1-Year Renewal")
+    def approve_renewal(self, request, object_id=None):
+        if object_id:
+            sub = TenantSubscription.objects.get(pk=object_id)
+            sub.end_date = timezone.now() + timedelta(days=365)
+            sub.is_active = True
+            sub.save()
+            messages.success(request, f"Successfully renewed {sub.tenant.company_name} for 1 year.")

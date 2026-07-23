@@ -16,6 +16,10 @@ class Tenant(models.Model):
     dodo_customer_id = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
+    class Meta:
+        verbose_name = "Firm"
+        verbose_name_plural = "Firms"
+
     def __str__(self):
         return self.company_name
 
@@ -59,6 +63,10 @@ class TenantSubscription(models.Model):
         else:
             return 'LOCKED_OUT'
             
+    class Meta:
+        verbose_name = "Firm Subscription"
+        verbose_name_plural = "Firm Subscriptions"
+
     def __str__(self):
         return f"{self.tenant.company_name} - {self.subscription_status}"
 
