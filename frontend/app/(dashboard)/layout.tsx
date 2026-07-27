@@ -19,7 +19,7 @@ export default function DashboardLayout({
 
   if (status === 'LOCKED_OUT') {
     return (
-      <div className="min-h-screen bg-cb-bg flex items-center justify-center p-4">
+      <div className="min-h-screen w-full bg-cb-bg flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-cb-bg rounded-[30px] shadow-neu p-8 text-center animate-in zoom-in-95 duration-500">
           <div className="w-20 h-20 mx-auto bg-cb-bg rounded-full shadow-neu flex items-center justify-center mb-6">
             <Lock className="w-10 h-10 text-red-500" />

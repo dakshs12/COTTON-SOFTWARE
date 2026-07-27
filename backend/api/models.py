@@ -222,6 +222,10 @@ class BargainEntry(BaseModel):
             fy = f"{(date.year - 1) % 100}-{date.year % 100}"
         return f"{fy}/{self.deal_no}"
 
+    class Meta:
+        verbose_name = "Bargain"
+        verbose_name_plural = "Bargains"
+
     def __str__(self):
         return self.smart_deal_id
 
@@ -236,6 +240,10 @@ class PassingEntry(BaseModel):
     book_bargain_no = models.CharField(max_length=50, blank=True, null=True)
     approved_by = models.CharField(max_length=100)
     remarks = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Passing"
+        verbose_name_plural = "Passings"
 
 class BargainSplit(BaseModel):
     tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
@@ -268,6 +276,10 @@ class DeliveryDetails(BaseModel):
     # We track Buyer and Seller separately so you can bill them at different times
     seller_billed = models.BooleanField(default=False) 
     buyer_billed = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "Delivery"
+        verbose_name_plural = "Deliveries"
 
     def __str__(self):
         return f"Bill #{self.bill_no}"
@@ -302,6 +314,10 @@ class BrokerageBill(BaseModel):
     amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     is_paid = models.BooleanField(default=False)
 
+    class Meta:
+        verbose_name = "Brokerage Bill"
+        verbose_name_plural = "Brokerage Bills"
+
     def __str__(self):
         return f"Brokerage Bill #{self.bill_no}"
 
@@ -316,7 +332,11 @@ class PartyPaymentReceipt(BaseModel):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Receipt {self.id} - {self.party.company_name} - {self.amount}"
+        return f"Receipt #{self.id} - {self.party.company_name}"
+
+    class Meta:
+        verbose_name = "Payment Receipt"
+        verbose_name_plural = "Payment Receipts"
 
 class PaymentAllocation(BaseModel):
     tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
@@ -325,7 +345,11 @@ class PaymentAllocation(BaseModel):
     allocated_amount = models.DecimalField(max_digits=12, decimal_places=2)
 
     def __str__(self):
-        return f"Allocation {self.id}: {self.allocated_amount} to Bill #{self.bill.bill_no}"
+        return f"Allocation: {self.allocated_amount} to Bill {self.bill.bill_no}"
+
+    class Meta:
+        verbose_name = "Payment Allocation"
+        verbose_name_plural = "Payment Allocations"
 
 class OTPVerification(models.Model):
     email = models.EmailField(unique=True)

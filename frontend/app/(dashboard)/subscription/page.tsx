@@ -11,6 +11,13 @@ export default function SubscriptionPage() {
   const [hoveredPlan, setHoveredPlan] = useState('3_YEAR');
   const [isContactModalOpen, setContactModalOpen] = useState(false);
 
+  const status = subscription?.status || 'ACTIVE';
+  const currentPlanType = subscription?.plan_type || 'TRIAL';
+  const daysRemaining = subscription?.days_remaining || 0;
+  
+  const endDate = subscription?.end_date ? new Date(subscription.end_date) : new Date();
+  const endDateStr = endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
   const getStatusColor = () => {
     if (status === 'ACTIVE') return 'text-green-600';
     if (status === 'EXPIRING_WARNING') return 'text-blue-600';

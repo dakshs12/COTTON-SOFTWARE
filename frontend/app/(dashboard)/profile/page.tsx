@@ -68,6 +68,7 @@ export default function ProfilePage() {
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) return;
+    if (value !== "" && !/^\d+$/.test(value)) return;
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
@@ -251,7 +252,7 @@ export default function ProfilePage() {
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                  className="w-12 h-12 text-center text-xl font-bold bg-cb-bg rounded-xl shadow-neu-inset text-gray-800 focus:outline-none focus:ring-2 focus:ring-cb-primary/30"
+                  className="w-12 h-12 text-center text-xl font-bold neu-pressed rounded-xl border border-white/30 text-gray-800 focus:outline-none focus:ring-2 focus:ring-cb-primary/30"
                 />
               ))}
             </div>

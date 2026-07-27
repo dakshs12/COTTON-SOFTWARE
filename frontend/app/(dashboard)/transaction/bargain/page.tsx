@@ -15,7 +15,13 @@ const SmartDropdown = ({ label, name, options, placeholder = "Select...", formDa
     : options.filter((opt: string) => opt.toLowerCase().includes(currentValue.toLowerCase()));
     
   const isOpen = activeDropdown === name;
-  const setIsOpen = (open: boolean) => setActiveDropdown(open ? name : null);
+  const setIsOpen = (open: boolean) => {
+    if (open) {
+      setActiveDropdown(name);
+    } else {
+      setActiveDropdown((prev: any) => prev === name ? null : prev);
+    }
+  };
 
   const handleSelect = (opt: string) => {
     setFormData({ ...formData, [name]: opt });

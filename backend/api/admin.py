@@ -4,7 +4,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.contrib import messages
 from unfold.admin import ModelAdmin
-from unfold.decorators import action
+from unfold.decorators import action, display
 
 from .models import (
     Tenant, CustomUser, PartyMaster, FirmMaster, BargainEntry, 
@@ -43,11 +43,23 @@ class TenantUsageFilter(admin.SimpleListFilter):
 # --- Admins ---
 @admin.register(Tenant)
 class TenantAdmin(ModelAdmin):
-    list_display = ('company_name', 'subscription_status', 'days_left', 'dodo_customer_id', 'created_at', 'total_deals', 'total_bales')
+    list_display = ('company_name', 'status_badge', 'days_left', 'dodo_customer_id', 'created_at', 'total_deals', 'total_bales')
     list_filter = ('subscription_status', ExpiringSubscriptionFilter)
     search_fields = ('company_name', 'dodo_customer_id')
     readonly_fields = ('created_at', 'total_deals', 'total_bales')
     ordering = ('-created_at',)  # Show newest first (Notification for new users)
+
+    @display(description="Status", label={
+        "ACTIVE": "success",
+        "EXPIRING_WARNING": "warning",
+        "READ_ONLY_GRACE": "info",
+        "LOCKED_OUT": "danger",
+    })
+    def status_badge(self, obj):
+        try:
+            return obj.subscription.subscription_status
+        except:
+            return "LOCKED_OUT"
 
     def days_left(self, obj):
         try:
@@ -121,12 +133,26 @@ class PaymentAllocationAdmin(ModelAdmin):
 
 @admin.register(TenantSubscription)
 class TenantSubscriptionAdmin(ModelAdmin):
-    list_display = ('tenant', 'plan_type', 'start_date', 'end_date', 'subscription_status', 'is_active', 'days_left')
+    list_display = ('tenant', 'tenant_users', 'plan_type', 'start_date', 'end_date', 'status_badge', 'is_active', 'days_left')
     list_filter = ('plan_type', 'is_active', 'start_date', 'end_date')
     search_fields = ('tenant__company_name',)
     
-    actions_row = ('approve_renewal',)
-    actions_detail = ('approve_renewal',)
+    actions_row = ('approve_renewal', 'extend_trial', 'suspend_account')
+    actions_detail = ('approve_renewal', 'extend_trial', 'suspend_account')
+
+    @display(description="Status", label={
+        "ACTIVE": "success",
+        "EXPIRING_WARNING": "warning",
+        "READ_ONLY_GRACE": "info",
+        "LOCKED_OUT": "danger",
+    })
+    def status_badge(self, obj):
+        return obj.subscription_status
+
+    def tenant_users(self, obj):
+        users = obj.tenant.customuser_set.all()
+        return ", ".join([u.username for u in users]) if users else "None"
+    tenant_users.short_description = "Users"
 
     def days_left(self, obj):
         return obj.days_remaining
@@ -140,3 +166,20 @@ class TenantSubscriptionAdmin(ModelAdmin):
             sub.is_active = True
             sub.save()
             messages.success(request, f"Successfully renewed {sub.tenant.company_name} for 1 year.")
+            
+    @action(description="Extend Trial (+7 Days)")
+    def extend_trial(self, request, object_id=None):
+        if object_id:
+            sub = TenantSubscription.objects.get(pk=object_id)
+            sub.end_date = sub.end_date + timedelta(days=7)
+            sub.is_active = True
+            sub.save()
+            messages.success(request, f"Extended trial for {sub.tenant.company_name} by 7 days.")
+            
+    @action(description="Suspend Account")
+    def suspend_account(self, request, object_id=None):
+        if object_id:
+            sub = TenantSubscription.objects.get(pk=object_id)
+            sub.is_active = False
+            sub.save()
+            messages.warning(request, f"Suspended account: {sub.tenant.company_name}.")

@@ -234,7 +234,16 @@ export default function FirmMasterPage() {
                      id="letterhead_input"
                      type="file" 
                      accept="image/*"
-                     onChange={(e) => setLetterheadFile(e.target.files ? e.target.files[0] : null)} 
+                     onChange={(e) => {
+                       const file = e.target.files ? e.target.files[0] : null;
+                       if (file && file.size > 2 * 1024 * 1024) {
+                         setToastMessage({ text: "Firm logo file size exceeds 2 MB limit.", type: "error" });
+                         e.target.value = '';
+                         setLetterheadFile(null);
+                         return;
+                       }
+                       setLetterheadFile(file);
+                     }} 
                      className="hidden" 
                    />
                  </div>

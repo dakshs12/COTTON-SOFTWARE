@@ -187,4 +187,83 @@ UNFOLD = {
             "950": "23 37 84",
         },
     },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": ("User Activities"),
+                "separator": True,
+                "items": [
+                    {
+                        "title": ("Bargains"),
+                        "icon": "shopping_cart",
+                        "link": "/admin/api/bargainentry/",
+                    },
+                    {
+                        "title": ("Passings"),
+                        "icon": "fact_check",
+                        "link": "/admin/api/passingentry/",
+                    },
+                    {
+                        "title": ("Deliveries"),
+                        "icon": "local_shipping",
+                        "link": "/admin/api/deliverydetails/",
+                    },
+                    {
+                        "title": ("Brokerage Invoices"),
+                        "icon": "receipt_long",
+                        "link": "/admin/api/brokeragebill/",
+                    },
+                    {
+                        "title": ("Payment Receipts"),
+                        "icon": "payments",
+                        "link": "/admin/api/partypaymentreceipt/",
+                    },
+                    {
+                        "title": ("Payment Allocations"),
+                        "icon": "account_balance_wallet",
+                        "link": "/admin/api/paymentallocation/",
+                    },
+                ],
+            },
+            {
+                "title": ("Master Data"),
+                "separator": True,
+                "items": [
+                    {
+                        "title": ("Broker Firms"),
+                        "icon": "business",
+                        "link": "/admin/api/firmmaster/",
+                    },
+                    {
+                        "title": ("Client Parties"),
+                        "icon": "groups",
+                        "link": "/admin/api/partymaster/",
+                    },
+                ]
+            },
+            {
+                "title": ("Platform Admin"),
+                "separator": True,
+                "items": [
+                    {
+                        "title": ("Registered Firms (Tenants)"),
+                        "icon": "domain",
+                        "link": "/admin/api/tenant/",
+                    },
+                    {
+                        "title": ("Firm Subscriptions"),
+                        "icon": "card_membership",
+                        "link": "/admin/api/tenantsubscription/",
+                    },
+                    {
+                        "title": ("Users"),
+                        "icon": "person",
+                        "link": "/admin/api/customuser/",
+                    },
+                ]
+            }
+        ]
+    }
 }
