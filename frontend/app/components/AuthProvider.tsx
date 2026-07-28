@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import api from "../../lib/api";
 import { useRouter, usePathname } from "next/navigation";
+import posthog from "posthog-js";
 
 interface SubscriptionInfo {
   plan_type: string;
@@ -37,6 +38,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (res.data.subscription) {
         setSubscription(res.data.subscription);
       }
+      if (res.data.username) {
+        posthog.identify(res.data.username);
+      }
       return true;
     } catch (error) {
       setIsAuthenticated(false);
@@ -51,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error(err);
     }
+    posthog.reset();
     setIsAuthenticated(false);
     hasChecked.current = false;
     router.push("/login");

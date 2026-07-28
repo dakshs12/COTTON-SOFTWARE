@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import api from "../../../lib/api";
 import { useAuth } from "../../components/AuthProvider";
+import posthog from "posthog-js";
 import { GoogleLogin } from '@react-oauth/google';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -151,6 +152,7 @@ export default function RegisterPage() {
         first_name: registrationData.first_name,
         last_name: registrationData.last_name
       });
+      posthog.capture("user_registered", { method: "password", company_name: registrationData.company_name });
       showToast("Registration successful! Please login.", 'success');
       setTimeout(() => {
         router.push("/login");
@@ -201,6 +203,8 @@ export default function RegisterPage() {
       localStorage.setItem('last_username', googleUserData.email);
       const success = await checkAuth();
       if (success) {
+        posthog.identify(googleUserData.email);
+        posthog.capture("user_registered_google", { method: "google", company_name: data.company_name });
         window.location.href = "/";
       }
     } catch (err: any) {

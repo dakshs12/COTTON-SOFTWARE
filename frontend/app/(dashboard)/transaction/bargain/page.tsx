@@ -6,6 +6,7 @@ import { Save, Plus, FileText, X, Search, ChevronDown, Check, Edit2, Trash2 } fr
 // Import the new Calendar from your existing folder
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
+import posthog from "posthog-js";
 
 const SmartDropdown = ({ label, name, options, placeholder = "Select...", formData, setFormData, activeDropdown, setActiveDropdown }: any) => {
   const currentValue = (formData as any)[name] || '';
@@ -291,9 +292,24 @@ export default function BargainEntryPage() {
     try {
       if (editingId) {
         await api.put(`bargains/${editingId}/`, payload);
+        posthog.capture("bargain_deal_updated", {
+          deal_id: editingId,
+          bales: payload.bales,
+          rate: payload.rate,
+          deal_type: payload.deal_type,
+          delivery_type: payload.delivery_type,
+          status: payload.status,
+        });
         showToast('Deal Updated Successfully!');
       } else {
         await api.post('bargains/', payload);
+        posthog.capture("bargain_deal_created", {
+          bales: payload.bales,
+          rate: payload.rate,
+          deal_type: payload.deal_type,
+          delivery_type: payload.delivery_type,
+          status: payload.status,
+        });
         showToast('Deal Saved Successfully!');
       }
       setIsFormOpen(false);
@@ -324,6 +340,7 @@ export default function BargainEntryPage() {
     if (!recordToDelete) return;
     try {
       await api.delete(`bargains/${recordToDelete.id}/`);
+      posthog.capture("bargain_deal_deleted", { deal_id: recordToDelete.id });
       showToast('Deal Deleted Successfully!');
       fetchData();
       setDeleteModalOpen(false);

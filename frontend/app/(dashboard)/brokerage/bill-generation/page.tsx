@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { Save, Printer, FileText, Check, ChevronDown } from 'lucide-react';
 import CustomDatePicker from '@/app/components/CustomDatePicker';
+import posthog from "posthog-js";
 
 // Helper to convert number to words (Indian Format)
 const numberToWords = (num: number): string => {
@@ -208,6 +209,13 @@ export default function BillGenerationPage() {
       
     try {
       await api.post('brokerage/generate/', payload);
+      posthog.capture("brokerage_bill_generated", {
+        total_bales: totals.total_bales,
+        gross_amount: totals.gross_amount,
+        net_amount: totals.net_amount,
+        gst_percent: totals.gst_percent,
+        delivery_count: selectedIds.length,
+      });
       showToast("Bill Generated Successfully!", 'success');
       fetchPendingDeliveries(formData.party_id);
       setFormData(prev => ({ ...prev, bill_no: '' }));
