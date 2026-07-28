@@ -1,12 +1,12 @@
 import json
 from django import template
-from api.models import Tenant, CustomUser, BargainEntry, TenantSubscription
+from api.models import Tenant, CustomUser, BargainEntry, UserSubscription
 
 register = template.Library()
 
 @register.simple_tag
 def get_admin_kpis():
-    subs = TenantSubscription.objects.all()
+    subs = UserSubscription.objects.all()
     active = 0
     expiring = 0
     read_only = 0
@@ -23,10 +23,10 @@ def get_admin_kpis():
         else:
             locked_out += 1
             
-    # Include tenants without a subscription as locked out
-    total_tenants = Tenant.objects.count()
-    tenants_with_subs = subs.count()
-    locked_out += (total_tenants - tenants_with_subs)
+    # Include users without a subscription as locked out
+    total_users = CustomUser.objects.filter(is_staff=False).count()
+    users_with_subs = subs.count()
+    locked_out += (total_users - users_with_subs)
     
     chart_data = {
         'labels': ['Active', 'Expiring Soon', 'Read Only Grace', 'Locked Out'],
@@ -35,7 +35,7 @@ def get_admin_kpis():
     }
     
     return {
-        'total_tenants': total_tenants,
+        'total_tenants': Tenant.objects.count(),
         'active_subs': active,
         'suspended_subs': locked_out,
         'total_users': CustomUser.objects.count(),

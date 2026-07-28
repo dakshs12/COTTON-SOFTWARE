@@ -3,7 +3,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.utils import timezone
 from datetime import timedelta
-from .models import TenantSubscription, Tenant
+from .models import UserSubscription, Tenant, CustomUser
 import os
 import razorpay
 import hmac
@@ -17,10 +17,10 @@ def create_razorpay_subscription(request):
     Creates a Razorpay subscription for the authenticated user's tenant.
     """
     plan_duration = request.data.get('plan_duration') # e.g., '1_YEAR', '3_YEAR', '5_YEAR'
-    tenant = request.user.tenant
+    user = request.user
     
-    if not tenant:
-        return Response({"error": "User is not associated with a tenant"}, status=400)
+    if not user:
+        return Response({"error": "User is not authenticated"}, status=400)
         
     if plan_duration == '1_YEAR':
         plan_id = os.environ.get('RAZORPAY_PLAN_1_YEAR')
@@ -43,7 +43,7 @@ def create_razorpay_subscription(request):
             "total_count": 1, # Set based on your billing model (1 means non-recurring strictly, or 1 billing cycle)
             "customer_notify": 1,
             "notes": {
-                "tenant_id": str(tenant.id)
+                "user_id": str(user.id)
             }
         }
         
@@ -83,13 +83,13 @@ def razorpay_webhook(request):
                 plan_id = None # Might need to derive from notes or invoice if using standard payment
                 
             notes = entity.get('notes', {})
-            tenant_id = notes.get('tenant_id')
+            user_id = notes.get('user_id')
             
-            if not tenant_id:
-                return Response({"error": "No tenant_id in metadata"}, status=400)
+            if not user_id:
+                return Response({"error": "No user_id in metadata"}, status=400)
                 
-            tenant = Tenant.objects.get(id=tenant_id)
-            subscription = tenant.subscription
+            user = CustomUser.objects.get(id=user_id)
+            subscription = user.subscription
             
             # Map Razorpay Product IDs to our PLAN_CHOICES
             PLAN_1_YEAR_ID = os.environ.get('RAZORPAY_PLAN_1_YEAR')
@@ -128,7 +128,7 @@ def razorpay_webhook(request):
         
     except razorpay.errors.SignatureVerificationError:
         return Response({"error": "Invalid signature"}, status=400)
-    except Tenant.DoesNotExist:
-        return Response({"error": "Tenant not found"}, status=404)
+    except CustomUser.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
     except Exception as e:
         return Response({"error": str(e)}, status=500)

@@ -13,7 +13,6 @@ class Tenant(models.Model):
     ]
     company_name = models.CharField(max_length=255)
     subscription_status = models.CharField(max_length=50, choices=SUBSCRIPTION_STATUS, default='pending')
-    dodo_customer_id = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -23,14 +22,14 @@ class Tenant(models.Model):
     def __str__(self):
         return self.company_name
 
-class TenantSubscription(models.Model):
+class UserSubscription(models.Model):
     PLAN_CHOICES = [
         ('TRIAL', '14-Day Free Trial'),
         ('1_YEAR', '1 Year Plan'),
         ('3_YEAR', '3 Year Plan'),
         ('5_YEAR', '5 Year Plan'),
     ]
-    tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name='subscription')
+    user = models.OneToOneField('CustomUser', on_delete=models.CASCADE, related_name='subscription')
     plan_type = models.CharField(max_length=50, choices=PLAN_CHOICES, default='1_YEAR')
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField()
@@ -64,11 +63,11 @@ class TenantSubscription(models.Model):
             return 'LOCKED_OUT'
             
     class Meta:
-        verbose_name = "Firm Subscription"
-        verbose_name_plural = "Firm Subscriptions"
+        verbose_name = "User Subscription"
+        verbose_name_plural = "User Subscriptions"
 
     def __str__(self):
-        return f"{self.tenant.company_name} - {self.subscription_status}"
+        return f"Sub - {self.subscription_status}"
 
 class CustomUser(AbstractUser):
     tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT, null=True, blank=True)
@@ -81,11 +80,11 @@ from django.dispatch import receiver
 from django.utils import timezone
 from datetime import timedelta
 
-@receiver(post_save, sender=Tenant)
-def create_tenant_subscription(sender, instance, created, **kwargs):
+@receiver(post_save, sender=CustomUser)
+def create_user_subscription(sender, instance, created, **kwargs):
     if created:
-        TenantSubscription.objects.create(
-            tenant=instance,
+        UserSubscription.objects.create(
+            user=instance,
             plan_type='TRIAL',
             end_date=timezone.now() + timedelta(days=14),
             is_active=True,

@@ -24,8 +24,7 @@ def run():
     print("Creating Tenant and User...")
     tenant1 = Tenant.objects.create(
         company_name="Daksh Cotton Enterprises",
-        subscription_status='active',
-        dodo_customer_id='cus_12345'
+        subscription_status='active'
     )
     user = get_user_model().objects.create_user(
         username='broker1',

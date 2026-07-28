@@ -253,9 +253,9 @@ UNFOLD = {
                         "link": "/admin/api/tenant/",
                     },
                     {
-                        "title": ("Firm Subscriptions"),
-                        "icon": "card_membership",
-                        "link": "/admin/api/tenantsubscription/",
+                        "title": "User Subscriptions",
+                        "icon": "payments",
+                        "link": "/admin/api/usersubscription/"
                     },
                     {
                         "title": ("Users"),

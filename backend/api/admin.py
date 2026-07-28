@@ -9,7 +9,7 @@ from unfold.decorators import action, display
 from .models import (
     Tenant, CustomUser, PartyMaster, FirmMaster, BargainEntry, 
     PassingEntry, DeliveryDetails, BrokerageBill, PartyPaymentReceipt, PaymentAllocation,
-    TenantSubscription
+    UserSubscription
 )
 
 # --- Custom Filters ---
@@ -43,9 +43,9 @@ class TenantUsageFilter(admin.SimpleListFilter):
 # --- Admins ---
 @admin.register(Tenant)
 class TenantAdmin(ModelAdmin):
-    list_display = ('company_name', 'status_badge', 'days_left', 'dodo_customer_id', 'created_at', 'total_deals', 'total_bales')
+    list_display = ('company_name', 'status_badge', 'days_left', 'created_at', 'total_deals', 'total_bales')
     list_filter = ('subscription_status', ExpiringSubscriptionFilter)
-    search_fields = ('company_name', 'dodo_customer_id')
+    search_fields = ('company_name',)
     readonly_fields = ('created_at', 'total_deals', 'total_bales')
     ordering = ('-created_at',)  # Show newest first (Notification for new users)
 
@@ -131,11 +131,11 @@ class PaymentAllocationAdmin(ModelAdmin):
     list_display = ('receipt', 'bill', 'allocated_amount', 'tenant')
     list_filter = ('tenant',)
 
-@admin.register(TenantSubscription)
-class TenantSubscriptionAdmin(ModelAdmin):
-    list_display = ('tenant', 'tenant_users', 'plan_type', 'start_date', 'end_date', 'status_badge', 'is_active', 'days_left')
+@admin.register(UserSubscription)
+class UserSubscriptionAdmin(ModelAdmin):
+    list_display = ('user', 'plan_type', 'start_date', 'end_date', 'status_badge', 'is_active', 'days_left')
     list_filter = ('plan_type', 'is_active', 'start_date', 'end_date')
-    search_fields = ('tenant__company_name',)
+    search_fields = ('user__username', 'user__email', 'user__phone_number')
     
     actions_row = ('approve_renewal', 'extend_trial', 'suspend_account')
     actions_detail = ('approve_renewal', 'extend_trial', 'suspend_account')
@@ -149,11 +149,6 @@ class TenantSubscriptionAdmin(ModelAdmin):
     def status_badge(self, obj):
         return obj.subscription_status
 
-    def tenant_users(self, obj):
-        users = obj.tenant.customuser_set.all()
-        return ", ".join([u.username for u in users]) if users else "None"
-    tenant_users.short_description = "Users"
-
     def days_left(self, obj):
         return obj.days_remaining
     days_left.short_description = "Days Remaining"
@@ -161,25 +156,25 @@ class TenantSubscriptionAdmin(ModelAdmin):
     @action(description="Approve 1-Year Renewal")
     def approve_renewal(self, request, object_id=None):
         if object_id:
-            sub = TenantSubscription.objects.get(pk=object_id)
+            sub = UserSubscription.objects.get(pk=object_id)
             sub.end_date = timezone.now() + timedelta(days=365)
             sub.is_active = True
             sub.save()
-            messages.success(request, f"Successfully renewed {sub.tenant.company_name} for 1 year.")
+            messages.success(request, f"Successfully renewed {sub.user.username} for 1 year.")
             
     @action(description="Extend Trial (+7 Days)")
     def extend_trial(self, request, object_id=None):
         if object_id:
-            sub = TenantSubscription.objects.get(pk=object_id)
+            sub = UserSubscription.objects.get(pk=object_id)
             sub.end_date = sub.end_date + timedelta(days=7)
             sub.is_active = True
             sub.save()
-            messages.success(request, f"Extended trial for {sub.tenant.company_name} by 7 days.")
+            messages.success(request, f"Extended trial for {sub.user.username} by 7 days.")
             
     @action(description="Suspend Account")
     def suspend_account(self, request, object_id=None):
         if object_id:
-            sub = TenantSubscription.objects.get(pk=object_id)
+            sub = UserSubscription.objects.get(pk=object_id)
             sub.is_active = False
             sub.save()
-            messages.warning(request, f"Suspended account: {sub.tenant.company_name}.")
+            messages.warning(request, f"Suspended account: {sub.user.username}.")

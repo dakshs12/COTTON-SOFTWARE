@@ -12,14 +12,14 @@
         
         <!-- KPI Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Total Firms -->
+            <!-- Total Users -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col transition-all hover:shadow-md">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Firms</h3>
-                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Users</h3>
+                    <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 </div>
-                <div class="text-3xl font-bold text-gray-900 mb-1">{{ kpis.total_tenants }}</div>
-                <a href="/admin/api/tenant/" class="text-sm text-blue-600 hover:text-blue-800 font-medium mt-auto">View all firms &rarr;</a>
+                <div class="text-3xl font-bold text-gray-900 mb-1">{{ kpis.total_users }}</div>
+                <a href="/admin/api/customuser/" class="text-sm text-purple-600 hover:text-purple-800 font-medium mt-auto">View users &rarr;</a>
             </div>
 
             <!-- Active Subscriptions -->
@@ -29,7 +29,7 @@
                     <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <div class="text-3xl font-bold text-gray-900 mb-1">{{ kpis.active_subs }}</div>
-                <a href="/admin/api/tenantsubscription/" class="text-sm text-green-600 hover:text-green-800 font-medium mt-auto">Manage subscriptions &rarr;</a>
+                <a href="/admin/api/usersubscription/" class="text-sm text-green-600 hover:text-green-800 font-medium mt-auto">Manage subscriptions &rarr;</a>
             </div>
 
             <!-- Locked/Past Due -->
@@ -39,17 +39,17 @@
                     <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                 </div>
                 <div class="text-3xl font-bold text-gray-900 mb-1">{{ kpis.suspended_subs }}</div>
-                <a href="/admin/api/tenantsubscription/" class="text-sm text-red-600 hover:text-red-800 font-medium mt-auto">Review accounts &rarr;</a>
+                <a href="/admin/api/usersubscription/" class="text-sm text-red-600 hover:text-red-800 font-medium mt-auto">Review accounts &rarr;</a>
             </div>
 
-            <!-- Total Users -->
+            <!-- Total Firms -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col transition-all hover:shadow-md">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Users</h3>
-                    <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Firms</h3>
+                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                 </div>
-                <div class="text-3xl font-bold text-gray-900 mb-1">{{ kpis.total_users }}</div>
-                <a href="/admin/api/customuser/" class="text-sm text-purple-600 hover:text-purple-800 font-medium mt-auto">View users &rarr;</a>
+                <div class="text-3xl font-bold text-gray-900 mb-1">{{ kpis.total_tenants }}</div>
+                <a href="/admin/api/tenant/" class="text-sm text-blue-600 hover:text-blue-800 font-medium mt-auto">View all firms &rarr;</a>
             </div>
         </div>
         

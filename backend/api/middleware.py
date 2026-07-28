@@ -23,10 +23,10 @@ class SubscriptionEnforcerMiddleware:
             if path.startswith(exempt_path):
                 return self.get_response(request)
         
-        # 2. Only enforce rules for authenticated users who have a tenant
-        if hasattr(request, 'user') and request.user.is_authenticated and request.user.tenant:
+        # 2. Only enforce rules for authenticated users who have a subscription
+        if hasattr(request, 'user') and request.user.is_authenticated:
             try:
-                subscription = request.user.tenant.subscription
+                subscription = request.user.subscription
                 status = subscription.subscription_status
                 
                 # If Locked Out: Drop all operational endpoints (402 Payment Required)
