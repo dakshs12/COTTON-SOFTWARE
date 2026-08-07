@@ -443,7 +443,7 @@ export default function DashboardPage() {
                   <RechartsTooltip 
                     cursor={{ fill: "transparent" }}
                     contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "var(--cb-shadow-md)", background: "var(--cb-bg)" }}
-                    formatter={(value: number) => [`${value.toLocaleString('en-IN')} Bales`, "Volume"]}
+                    formatter={(value: any) => [`${Number(value).toLocaleString('en-IN')} Bales`, "Volume"]}
                   />
                   <Bar dataKey="total_bales" fill="var(--cb-secondary)" radius={[0, 4, 4, 0]} barSize={16} />
                 </BarChart>
@@ -472,7 +472,7 @@ export default function DashboardPage() {
                   <RechartsTooltip 
                     cursor={{ fill: "transparent" }}
                     contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "var(--cb-shadow-md)", background: "var(--cb-bg)" }}
-                    formatter={(value: number) => [`${value.toLocaleString('en-IN')} Bales`, "Volume"]}
+                    formatter={(value: any) => [`${Number(value).toLocaleString('en-IN')} Bales`, "Volume"]}
                   />
                   <Bar dataKey="total_bales" fill="var(--cb-primary)" radius={[0, 4, 4, 0]} barSize={16} />
                 </BarChart>
