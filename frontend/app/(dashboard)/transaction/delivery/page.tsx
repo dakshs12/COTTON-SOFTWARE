@@ -37,7 +37,7 @@ export default function DeliveryEntryPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const showToast = (msg: string) => {
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
