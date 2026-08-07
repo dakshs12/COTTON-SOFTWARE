@@ -139,7 +139,7 @@ export default function PassingEntryPage() {
   };
 
   const handleEditClick = (pass: any) => {
-    const sanitizedPass = Object.fromEntries(
+    const sanitizedPass: any = Object.fromEntries(
       Object.entries(pass).map(([k, v]) => [k, v === null ? '' : v])
     );
     
