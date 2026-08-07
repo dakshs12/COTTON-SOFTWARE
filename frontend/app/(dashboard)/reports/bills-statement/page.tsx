@@ -305,11 +305,11 @@ export default function BillsStatementPage() {
 
           <div>
             <label className="neu-label">From Date</label>
-            <CustomDatePicker value={startDate} onChange={setStartDate} />
+            <CustomDatePicker label="" value={startDate} onChange={setStartDate} />
           </div>
           <div>
             <label className="neu-label">To Date</label>
-            <CustomDatePicker value={endDate} onChange={setEndDate} />
+            <CustomDatePicker label="" value={endDate} onChange={setEndDate} />
           </div>
         </div>
 
