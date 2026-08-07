@@ -105,7 +105,7 @@ export default function FirmMasterPage() {
       fetchFirms();
       // Reset
       setFormData({
-        firm_name: '', title: '', firm_no: '',
+        firm_name: '', title: '', firm_no: '', tagline: '', jurisdiction: '',
         address: '', branch_address: '', city: '', pincode: '', state: '',
         tele_o: '', mobile: '', email: '', website: '', contact_person: '', contact_person_designation: '',
         cin_no: '', pan_no: '', gst_no: '', tan_no: '',

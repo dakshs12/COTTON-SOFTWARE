@@ -54,11 +54,6 @@ class UserSubscription(models.Model):
             return 'ACTIVE'
         elif 0 <= days <= 15:
             return 'EXPIRING_WARNING'
-        elif -7 <= days < 0:
-            # Trials do not get the 7-day grace period
-            if self.plan_type == 'TRIAL':
-                return 'LOCKED_OUT'
-            return 'READ_ONLY_GRACE'
         else:
             return 'LOCKED_OUT'
             
@@ -358,3 +353,19 @@ class OTPVerification(models.Model):
 
     def __str__(self):
         return f"OTP for {self.email}"
+
+class AuditLog(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='audit_logs')
+    action = models.CharField(max_length=255)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    details = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = "Audit Log"
+        verbose_name_plural = "Audit Logs"
+
+    def __str__(self):
+        user_display = self.user.username if self.user else "Unknown User"
+        return f"{user_display} - {self.action} at {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"

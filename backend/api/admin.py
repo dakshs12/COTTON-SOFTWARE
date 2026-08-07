@@ -9,7 +9,7 @@ from unfold.decorators import action, display
 from .models import (
     Tenant, CustomUser, PartyMaster, FirmMaster, BargainEntry, 
     PassingEntry, DeliveryDetails, BrokerageBill, PartyPaymentReceipt, PaymentAllocation,
-    UserSubscription
+    UserSubscription, AuditLog
 )
 
 # --- Custom Filters ---
@@ -52,7 +52,6 @@ class TenantAdmin(ModelAdmin):
     @display(description="Status", label={
         "ACTIVE": "success",
         "EXPIRING_WARNING": "warning",
-        "READ_ONLY_GRACE": "info",
         "LOCKED_OUT": "danger",
     })
     def status_badge(self, obj):
@@ -143,7 +142,6 @@ class UserSubscriptionAdmin(ModelAdmin):
     @display(description="Status", label={
         "ACTIVE": "success",
         "EXPIRING_WARNING": "warning",
-        "READ_ONLY_GRACE": "info",
         "LOCKED_OUT": "danger",
     })
     def status_badge(self, obj):
@@ -178,3 +176,10 @@ class UserSubscriptionAdmin(ModelAdmin):
             sub.is_active = False
             sub.save()
             messages.warning(request, f"Suspended account: {sub.user.username}.")
+
+@admin.register(AuditLog)
+class AuditLogAdmin(ModelAdmin):
+    list_display = ('user', 'action', 'ip_address', 'timestamp')
+    list_filter = ('action', 'timestamp')
+    search_fields = ('user__username', 'action', 'ip_address')
+    readonly_fields = ('user', 'action', 'ip_address', 'timestamp', 'details')

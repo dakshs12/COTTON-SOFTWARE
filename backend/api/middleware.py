@@ -35,13 +35,7 @@ class SubscriptionEnforcerMiddleware:
                         "detail": "Subscription locked out. Payment is required to resume operations."
                     }, status=402)
                 
-                # If Read Only: Allow GET (safe), Block POST/PUT/PATCH/DELETE (403 Forbidden)
-                if status == 'READ_ONLY_GRACE':
-                    if request.method not in ['GET', 'HEAD', 'OPTIONS']:
-                        return JsonResponse({
-                            "detail": "Subscription expired. Workspace restricted to read-only."
-                        }, status=403)
-                        
+
             except Exception:
                 # If they somehow have a tenant but no subscription object, fall back to safe read-only or lock
                 # We assume they are locked out to force DB integrity

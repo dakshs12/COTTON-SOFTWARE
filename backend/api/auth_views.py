@@ -6,11 +6,20 @@ from rest_framework.permissions import AllowAny
 from rest_framework import status
 from rest_framework.throttling import ScopedRateThrottle
 from django.utils import timezone
-from .models import CustomUser, Tenant
+from .models import CustomUser, Tenant, AuditLog
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from rest_framework_simplejwt.tokens import RefreshToken
 import os
+import os
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 class CurrentUserView(APIView):
     def get(self, request):
@@ -74,6 +83,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
                 if user.failed_login_attempts >= 5:
                     user.lockout_until = timezone.now() + timezone.timedelta(minutes=15)
                 user.save()
+                AuditLog.objects.create(user=user, action="Failed Login Attempt", ip_address=get_client_ip(request))
             return Response({"detail": "Invalid email or password."}, status=status.HTTP_401_UNAUTHORIZED)
         
         # Reset counters on success
@@ -81,6 +91,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
             user.failed_login_attempts = 0
             user.lockout_until = None
             user.save()
+            AuditLog.objects.create(user=user, action="Logged In", ip_address=get_client_ip(request))
             
         if response.status_code == 200:
             access_token = response.data.get('access')
@@ -249,6 +260,9 @@ class LogoutView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
+        if request.user.is_authenticated:
+            AuditLog.objects.create(user=request.user, action="Logged Out", ip_address=get_client_ip(request))
+
         response = Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
         
         # Delete Cookies
@@ -383,6 +397,8 @@ class VerifyAndRegisterView(APIView):
                     last_name=last_name,
                     tenant=tenant
                 )
+                
+                AuditLog.objects.create(user=user, action="Registered Account", ip_address=get_client_ip(request))
                 
                 otp_record.delete()
                 
@@ -530,6 +546,9 @@ class ForgotPasswordResetView(APIView):
             user.set_password(new_password)
             user.save()
             otp_record.delete()
+            
+            AuditLog.objects.create(user=user, action="Reset Password", ip_address=get_client_ip(request))
+            
             return Response({"message": "Password reset successfully."})
         except Exception as e:
             return Response({"error": str(e)}, status=500)
