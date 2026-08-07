@@ -247,7 +247,7 @@ export default function DashboardPage() {
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "var(--cb-text-label)" }} />
                   <RechartsTooltip 
                     contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "var(--cb-shadow-md)", background: "var(--cb-bg)" }}
-                    formatter={(value: number) => [`${value.toLocaleString('en-IN')} Bales`, "Volume"]}
+                    formatter={(value: any) => [`${Number(value).toLocaleString('en-IN')} Bales`, "Volume"]}
                   />
                   <Area type="monotone" dataKey="volume" stroke="var(--cb-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorBales)" />
                 </AreaChart>
