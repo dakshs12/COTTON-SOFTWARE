@@ -324,7 +324,7 @@ export default function BargainEntryPage() {
       console.error("Error saving deal:", error);
       // Show the specific error message from the backend if available
       if (error.response && error.response.data) {
-        showToast(`Error: ${JSON.stringify(error.response.data, 'error')}`);
+        showToast(`Error: ${JSON.stringify(error.response.data)}`, 'error');
       } else {
         showToast('Error saving deal. Please check all fields.', 'error');
       }

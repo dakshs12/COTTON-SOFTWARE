@@ -243,7 +243,7 @@ export default function DeliveryEntryPage() {
     } catch (error: any) {
       console.error("Error saving:", error);
       if (error.response && error.response.data) {
-        showToast(`Error: ${JSON.stringify(error.response.data, 'error')}`);
+        showToast(`Error: ${JSON.stringify(error.response.data)}`, 'error');
       } else {
         showToast('Error saving data. Please check fields.', 'error');
       }
