@@ -153,7 +153,7 @@ export default function DeliveryEntryPage() {
     setIsDirectDelivery(!del.passing);
     
     // Replace nulls with empty strings to avoid React uncontrolled input warnings
-    const sanitizedDel = Object.fromEntries(
+    const sanitizedDel: any = Object.fromEntries(
       Object.entries(del).map(([k, v]) => [k, v === null ? '' : v])
     );
     
