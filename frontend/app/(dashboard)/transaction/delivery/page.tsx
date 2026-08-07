@@ -3,6 +3,7 @@ import { Toast } from '@/app/components/Toast';
 import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
 import { Save, Plus, X, Search, CheckCircle, Edit2, Trash2, ChevronDown, FileText, Truck, RefreshCw } from 'lucide-react';
+import posthog from "posthog-js";
 import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
 // Import the Custom Calendar
 import CustomDatePicker from '@/app/components/CustomDatePicker';
@@ -217,9 +218,20 @@ export default function DeliveryEntryPage() {
 
       if (editingId) {
         await api.put(`deliveries/${editingId}/`, payload);
+        posthog.capture("delivery_updated", {
+          delivery_id: editingId,
+          quantity_bales: payload.quantity_bales,
+          total_bill_amount: payload.total_bill_amount,
+          is_direct_delivery: isDirectDelivery,
+        });
         showToast('Delivery Updated Successfully!');
       } else {
         await api.post('deliveries/', payload);
+        posthog.capture("delivery_created", {
+          quantity_bales: payload.quantity_bales,
+          total_bill_amount: payload.total_bill_amount,
+          is_direct_delivery: isDirectDelivery,
+        });
         showToast('Delivery Saved Successfully!');
       }
       setIsFormOpen(false);
@@ -271,6 +283,7 @@ export default function DeliveryEntryPage() {
     if (!recordToDelete) return;
     try {
       await api.delete(`deliveries/${recordToDelete.id}/`);
+      posthog.capture("delivery_deleted", { delivery_id: recordToDelete.id });
       showToast('Delivery Deleted Successfully!');
       fetchData();
       setDeleteModalOpen(false);

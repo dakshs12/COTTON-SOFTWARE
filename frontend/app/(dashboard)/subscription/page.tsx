@@ -5,6 +5,7 @@ import { useAuth } from "../../components/AuthProvider";
 import { Shield, Zap, TrendingUp, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import Script from "next/script";
 import api from "@/lib/api";
+import posthog from "posthog-js";
 
 export default function SubscriptionPage() {
   const { subscription } = useAuth();
@@ -23,6 +24,15 @@ export default function SubscriptionPage() {
     if (status === 'EXPIRING_WARNING') return 'text-blue-600';
     if (status === 'READ_ONLY_GRACE') return 'text-amber-600';
     return 'text-red-600';
+  };
+
+  const handleContactClick = (planType: string) => {
+    posthog.capture("subscription_plan_contact_clicked", {
+      plan_type: planType,
+      current_plan: currentPlanType,
+      days_remaining: daysRemaining,
+    });
+    setContactModalOpen(true);
   };
 
   return (
@@ -108,7 +118,7 @@ export default function SubscriptionPage() {
             </li>
           </ul>
           <button
-            onClick={() => setContactModalOpen(true)}
+            onClick={() => handleContactClick('1_YEAR')}
             className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${hoveredPlan === '1_YEAR'
               ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
               : 'bg-transparent text-blue-600 border-2 border-blue-500'
@@ -150,7 +160,7 @@ export default function SubscriptionPage() {
             </li>
           </ul>
           <button
-            onClick={() => setContactModalOpen(true)}
+            onClick={() => handleContactClick('3_YEAR')}
             className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${hoveredPlan === '3_YEAR'
               ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
               : 'bg-transparent text-blue-600 border-2 border-blue-500'
@@ -195,7 +205,7 @@ export default function SubscriptionPage() {
             </li>
           </ul>
           <button
-            onClick={() => setContactModalOpen(true)}
+            onClick={() => handleContactClick('5_YEAR')}
             className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${hoveredPlan === '5_YEAR'
               ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
               : 'bg-transparent text-blue-600 border-2 border-blue-500'

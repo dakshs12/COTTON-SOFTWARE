@@ -3,6 +3,7 @@ import { Toast } from '@/app/components/Toast';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { Save, Plus, Edit2, X, Trash2, CheckCircle, ChevronDown, Check, FileCheck, Search } from 'lucide-react';
+import posthog from "posthog-js";
 // Import the Custom Calendar
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
@@ -191,9 +192,18 @@ export default function PassingEntryPage() {
       delete payload.deleted_at;
       if (editingId) {
         await api.put(`passings/${editingId}/`, payload);
+        posthog.capture("passing_updated", {
+          passing_id: editingId,
+          bales: payload.bales,
+          lot_no: payload.lot_no,
+        });
         showToast('Passing Updated Successfully!');
       } else {
         await api.post('passings/', payload);
+        posthog.capture("passing_created", {
+          bales: payload.bales,
+          lot_no: payload.lot_no,
+        });
         showToast('Passing Saved Successfully!');
       }
       setIsFormOpen(false);
@@ -222,6 +232,7 @@ export default function PassingEntryPage() {
     if (!recordToDelete) return;
     try {
       await api.delete(`passings/${recordToDelete.id}/`);
+      posthog.capture("passing_deleted", { passing_id: recordToDelete.id });
       showToast('Passing Deleted Successfully!');
       fetchData();
       setDeleteModalOpen(false);

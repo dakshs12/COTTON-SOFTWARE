@@ -5,6 +5,7 @@ import { useAuth } from "../../components/AuthProvider";
 import Link from "next/link";
 import api from "../../../lib/api";
 import { GoogleLogin, useGoogleLogin } from '@react-oauth/google';
+import posthog from "posthog-js";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -60,6 +61,8 @@ export default function LoginPage() {
       
       const success = await checkAuth();
       if (success) {
+        posthog.identify(data.username);
+        posthog.capture("user_logged_in", { method: "password" });
         window.location.href = "/";
       } else {
         setError("Login succeeded but session could not be verified. Please try again.");
@@ -86,6 +89,8 @@ export default function LoginPage() {
         localStorage.setItem('last_username', res.data.email || 'google_user');
         const success = await checkAuth();
         if (success) {
+          posthog.identify(res.data.email || 'google_user');
+          posthog.capture("user_logged_in_google", { method: "google" });
           window.location.href = "/";
         }
       }
