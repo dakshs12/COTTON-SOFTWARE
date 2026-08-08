@@ -143,6 +143,9 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://192\.168\..*",
+    r"^https://.*\.vercel\.app$",
+    r"^https://.*\.cottbook\.com$",
+    r"^https://cottbook\.com$",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
