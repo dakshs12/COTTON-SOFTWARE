@@ -203,15 +203,14 @@ export default function LoginPage() {
             <div className="h-px bg-gray-200 flex-1"></div>
           </div>
 
-          <div className="mt-4 sm:mt-6 flex justify-center">
-            <div className="w-full [&>div]:w-full [&>div>div]:w-full flex justify-center">
+          <div className="mt-4 sm:mt-6">
+            <div className="w-full [&>div]:w-full [&>div>div]:w-full [&_iframe]:!w-full">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={() => setError("Google Sign-In failed.")}
                 useOneTap
                 theme="outline"
                 shape="pill"
-                width="100%"
                 text="signin_with"
               />
             </div>
