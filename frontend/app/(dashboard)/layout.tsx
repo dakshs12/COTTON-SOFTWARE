@@ -54,6 +54,20 @@ export default function DashboardLayout({
         </div>
       )}
       
+      {status === 'ACTIVE' && planType === 'TRIAL' && (
+        <div 
+          className="bg-blue-50 border-b border-blue-100 px-4 py-2 flex items-center justify-center gap-2 text-blue-800 z-50 fixed top-0"
+          style={{ left: "var(--cb-sidebar-width)", width: "calc(100% - var(--cb-sidebar-width))" }}
+        >
+          <span className="font-medium">
+            You are currently on a free trial with {daysRemaining} days remaining. Upgrade your plan to unlock full access.
+          </span>
+          <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline cursor-pointer">
+            Upgrade
+          </button>
+        </div>
+      )}
+      
       {status === 'EXPIRING_WARNING' && (
         <div 
           className="bg-blue-50 border-b border-blue-100 px-4 py-2 flex items-center justify-center gap-2 text-blue-800 z-50 fixed top-0"
@@ -78,7 +92,7 @@ export default function DashboardLayout({
         className="flex-1 p-8 print:m-0 print:p-0"
         style={{ 
           marginLeft: "var(--cb-sidebar-width)",
-          marginTop: (status === 'READ_ONLY_GRACE' || status === 'EXPIRING_WARNING') ? "48px" : "0px"
+          marginTop: (status === 'READ_ONLY_GRACE' || status === 'EXPIRING_WARNING' || (status === 'ACTIVE' && planType === 'TRIAL')) ? "48px" : "0px"
         }}
       >
         {children}
