@@ -1,15 +1,23 @@
 import axios from 'axios';
 
-const isBrowser = typeof window !== 'undefined';
-const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
+// Safely resolve the base URL without risking unsecure HTTP fallbacks on production
+const getBaseURL = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')}/api/`;
+  }
 
-// Use NEXT_PUBLIC_API_URL if set in Vercel (https://api.cottbook.com),
-// otherwise fall back to local development defaults on port 8000.
-const baseURL = envApiUrl
-  ? `${envApiUrl.replace(/\/$/, '')}/api/`
-  : isBrowser
-    ? `http://${window.location.hostname}:8000/api/`
-    : 'http://localhost:8000/api/';
+  if (typeof window !== 'undefined') {
+    // Only use port 8000 if explicitly testing on local machine
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return `http://${window.location.hostname}:8000/api/`;
+    }
+  }
+
+  // Production fallback if NEXT_PUBLIC_API_URL is undefined
+  return 'https://api.cottbook.com/api/';
+};
+
+const baseURL = getBaseURL();
 
 const api = axios.create({
   baseURL,
