@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from "r
 import api from "../../lib/api";
 import { useRouter, usePathname } from "next/navigation";
 import posthog from "posthog-js";
+import LoadingScreen from "./LoadingScreen";
 
 interface SubscriptionInfo {
   plan_type: string;
@@ -120,11 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-cb-bg text-gray-500 font-bold text-xl">
-        Loading CottBook...
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // Guard: block protected content if not authenticated (but allow auth pages)
