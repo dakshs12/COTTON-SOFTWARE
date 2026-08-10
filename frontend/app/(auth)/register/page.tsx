@@ -413,8 +413,12 @@ export default function RegisterPage() {
             </div>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-500">
-            <button type="button" onClick={() => { setStep(1); setError(''); }} className="hover:underline">
+          <div className="mt-6 text-center">
+            <button 
+              type="button" 
+              onClick={() => { setStep(1); setError(''); }} 
+              className="neu-btn neu-btn-cancel-action w-full py-4 rounded-[16px] font-bold tracking-wide transition-all duration-200"
+            >
               Back to Registration
             </button>
           </div>
