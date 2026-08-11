@@ -40,13 +40,24 @@ class CurrentUserView(APIView):
             "company_name": tenant.company_name if tenant else None,
         }
         
-        if tenant and hasattr(tenant, 'subscription'):
-            data["subscription"] = {
-                "plan_type": tenant.subscription.plan_type,
-                "days_remaining": tenant.subscription.days_remaining,
-                "status": tenant.subscription.subscription_status,
-                "end_date": tenant.subscription.end_date
-            }
+        sub = getattr(user, 'subscription', None)
+        if not sub:
+            from datetime import timedelta
+            from .models import UserSubscription
+            sub = UserSubscription.objects.create(
+                user=user,
+                plan_type='TRIAL',
+                end_date=timezone.now() + timedelta(days=14),
+                is_active=True,
+                base_firm_limit=2
+            )
+
+        data["subscription"] = {
+            "plan_type": sub.plan_type,
+            "days_remaining": sub.days_remaining,
+            "status": sub.subscription_status,
+            "end_date": sub.end_date
+        }
             
         return Response(data)
 

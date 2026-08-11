@@ -39,10 +39,14 @@ class UserSubscription(models.Model):
     @property
     def days_remaining(self):
         from django.utils import timezone
+        import math
         if not self.end_date:
             return 0
         delta = self.end_date - timezone.now()
-        return delta.days
+        total_seconds = delta.total_seconds()
+        if total_seconds <= 0:
+            return 0
+        return math.ceil(total_seconds / 86400)
         
     @property
     def subscription_status(self):
@@ -50,12 +54,12 @@ class UserSubscription(models.Model):
             return 'LOCKED_OUT'
             
         days = self.days_remaining
-        if days > 15:
-            return 'ACTIVE'
-        elif 0 <= days <= 15:
+        if days <= 0:
+            return 'LOCKED_OUT'
+        elif days <= 3:
             return 'EXPIRING_WARNING'
         else:
-            return 'LOCKED_OUT'
+            return 'ACTIVE'
             
     class Meta:
         verbose_name = "User Subscription"
