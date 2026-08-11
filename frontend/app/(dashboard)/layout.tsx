@@ -41,62 +41,53 @@ export default function DashboardLayout({
 
   return (
     <>
-      {status === 'READ_ONLY_GRACE' && (
-        <div 
-          className="bg-amber-100 border-b border-amber-200 px-4 py-3 flex items-center justify-center gap-2 text-amber-800 shadow-sm z-50 fixed top-0"
-          style={{ left: "var(--cb-sidebar-width)", width: "calc(100% - var(--cb-sidebar-width))" }}
-        >
-          <AlertCircle className="w-5 h-5" />
-          <span className="font-medium">
-            Your subscription has ended. CottBook is in read-only mode for {7 + daysRemaining} more days before total lockout.
-          </span>
-          <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline cursor-pointer">Renew Now</button>
-        </div>
-      )}
-      
-      {status === 'ACTIVE' && planType === 'TRIAL' && (
-        <div 
-          className="bg-blue-50 border-b border-blue-100 px-4 py-2 flex items-center justify-center gap-2 text-blue-800 z-50 fixed top-0"
-          style={{ left: "var(--cb-sidebar-width)", width: "calc(100% - var(--cb-sidebar-width))" }}
-        >
-          <span className="font-medium">
-            You are currently on a free trial with {daysRemaining} days remaining. Upgrade your plan to unlock full access.
-          </span>
-          <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline cursor-pointer">
-            Upgrade
-          </button>
-        </div>
-      )}
-      
-      {status === 'EXPIRING_WARNING' && (
-        <div 
-          className="bg-blue-50 border-b border-blue-100 px-4 py-2 flex items-center justify-center gap-2 text-blue-800 z-50 fixed top-0"
-          style={{ left: "var(--cb-sidebar-width)", width: "calc(100% - var(--cb-sidebar-width))" }}
-        >
-          <span className="font-medium">
-            {planType === 'TRIAL'
-              ? `Your free trial ends in ${daysRemaining} days. Upgrade your plan to prevent service interruption.`
-              : `Your subscription expires in ${daysRemaining} days. Renew your license early to secure seamless billing.`}
-          </span>
-          <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline cursor-pointer">
-            {planType === 'TRIAL' ? 'Upgrade' : 'Renew'}
-          </button>
-        </div>
-      )}
-
       {/* Sidebar — fixed left, light neumorphic */}
       <Sidebar />
 
       {/* Main content area — offset by sidebar width */}
-      <main
-        className="flex-1 p-8 print:m-0 print:p-0"
-        style={{ 
-          marginLeft: "var(--cb-sidebar-width)",
-          marginTop: (status === 'READ_ONLY_GRACE' || status === 'EXPIRING_WARNING' || (status === 'ACTIVE' && planType === 'TRIAL')) ? "48px" : "0px"
-        }}
+      <div 
+        className="flex-1 min-h-screen flex flex-col"
+        style={{ marginLeft: "var(--cb-sidebar-width)" }}
       >
-        {children}
-      </main>
+        {status === 'READ_ONLY_GRACE' && (
+          <div className="bg-amber-100 border-b border-amber-200 px-4 py-2.5 flex items-center justify-center gap-2 text-amber-800 text-sm shadow-sm w-full">
+            <AlertCircle className="w-4 h-4" />
+            <span className="font-medium">
+              Your subscription has ended. CottBook is in read-only mode for {7 + daysRemaining} more days before total lockout.
+            </span>
+            <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline cursor-pointer">Renew Now</button>
+          </div>
+        )}
+        
+        {status === 'ACTIVE' && planType === 'TRIAL' && (
+          <div className="bg-blue-50 border-b border-blue-100 px-4 py-2 flex items-center justify-center gap-2 text-blue-800 text-sm w-full">
+            <span className="font-medium">
+              You are currently on a free trial with {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} remaining. Upgrade your plan to unlock full access.
+            </span>
+            <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline cursor-pointer">
+              Upgrade
+            </button>
+          </div>
+        )}
+        
+        {status === 'EXPIRING_WARNING' && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-center gap-2 text-amber-900 text-sm w-full">
+            <AlertCircle className="w-4 h-4 text-amber-600" />
+            <span className="font-medium">
+              {planType === 'TRIAL'
+                ? `Your free trial ends in ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'}. Upgrade your plan to prevent service interruption.`
+                : `Your subscription expires in ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'}. Renew your license early to secure seamless billing.`}
+            </span>
+            <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline cursor-pointer">
+              {planType === 'TRIAL' ? 'Upgrade' : 'Renew'}
+            </button>
+          </div>
+        )}
+
+        <main className="flex-1 p-8 print:m-0 print:p-0">
+          {children}
+        </main>
+      </div>
     </>
   );
 }
