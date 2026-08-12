@@ -39,14 +39,15 @@ class UserSubscription(models.Model):
     @property
     def days_remaining(self):
         from django.utils import timezone
-        import math
         if not self.end_date:
             return 0
-        delta = self.end_date - timezone.now()
-        total_seconds = delta.total_seconds()
-        if total_seconds <= 0:
+        now = timezone.now()
+        if now >= self.end_date:
             return 0
-        return math.ceil(total_seconds / 86400)
+        today = timezone.localtime(now).date()
+        end_day = timezone.localtime(self.end_date).date()
+        days = (end_day - today).days
+        return max(0, days)
         
     @property
     def subscription_status(self):
