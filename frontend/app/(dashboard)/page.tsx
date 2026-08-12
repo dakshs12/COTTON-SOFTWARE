@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import api from '@/lib/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid } from 'recharts';
-import { Briefcase, Package, Truck, AlertCircle, Edit3, Clock } from 'lucide-react';
+import { Briefcase, Package, Truck, AlertCircle, Edit3, Clock, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 
 interface DashboardData {
@@ -34,15 +34,26 @@ interface PartyDue {
   bill_count: number;
 }
 
+interface ChecklistItem {
+  id: number;
+  text: string;
+  is_done: boolean;
+  created_at?: string;
+}
+
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [dues, setDues] = useState<PartyDue[]>([]);
   const [loading, setLoading] = useState(true);
   const [notepadText, setNotepadText] = useState("");
-  const [todos, setTodos] = useState<{id: string, text: string, done: boolean}[]>([]);
+  const [todos, setTodos] = useState<ChecklistItem[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [activeTab, setActiveTab] = useState<'notepad' | 'checklist'>('checklist');
   const [time, setTime] = useState<Date | null>(null);
+  const [isSyncingNotepad, setIsSyncingNotepad] = useState(false);
+  const [isSyncingChecklist, setIsSyncingChecklist] = useState(false);
+
+  const initialLoadRef = useRef(true);
 
   useEffect(() => {
     // Start Clock
@@ -51,20 +62,16 @@ export default function DashboardPage() {
 
     const fetchData = async () => {
       try {
-        const [dashRes, duesRes] = await Promise.all([
+        const [dashRes, duesRes, noteRes, checklistRes] = await Promise.all([
           api.get("analytics/dashboard/"),
-          api.get("brokerage/party-dues/")
+          api.get("brokerage/party-dues/"),
+          api.get("brokerage/notepad/"),
+          api.get("checklist/")
         ]);
         setData(dashRes.data);
         setDues(duesRes.data);
-        
-        // Load Notepad and Todos from local storage
-        const savedNotes = localStorage.getItem("brokerNotepad");
-        if (savedNotes) setNotepadText(savedNotes);
-        
-        const savedTodos = localStorage.getItem("brokerTodos");
-        if (savedTodos) setTodos(JSON.parse(savedTodos));
-
+        setNotepadText(noteRes.data.content || "");
+        setTodos(checklistRes.data || []);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
       } finally {
@@ -76,30 +83,73 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, []);
 
+  // Auto-save Notepad text with debouncing
+  useEffect(() => {
+    if (loading) return;
+    if (initialLoadRef.current) {
+      initialLoadRef.current = false;
+      return;
+    }
+
+    setIsSyncingNotepad(true);
+    const timer = setTimeout(async () => {
+      try {
+        await api.post("brokerage/notepad/", { content: notepadText });
+      } catch (err) {
+        console.error("Error saving notepad:", err);
+      } finally {
+        setIsSyncingNotepad(false);
+      }
+    }, 700);
+
+    return () => clearTimeout(timer);
+  }, [notepadText]);
+
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNotepadText(e.target.value);
-    localStorage.setItem("brokerNotepad", e.target.value);
   };
 
-  const addTodo = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const addTodo = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && newTodo.trim()) {
-      const updatedTodos = [...todos, { id: Date.now().toString(), text: newTodo.trim(), done: false }];
-      setTodos(updatedTodos);
-      localStorage.setItem("brokerTodos", JSON.stringify(updatedTodos));
+      const text = newTodo.trim();
       setNewTodo("");
+      setIsSyncingChecklist(true);
+      try {
+        const res = await api.post("checklist/", { text, is_done: false });
+        setTodos(prev => [...prev, res.data]);
+      } catch (err) {
+        console.error("Error adding task:", err);
+      } finally {
+        setIsSyncingChecklist(false);
+      }
     }
   };
 
-  const toggleTodo = (id: string) => {
-    const updatedTodos = todos.map(t => t.id === id ? { ...t, done: !t.done } : t);
-    setTodos(updatedTodos);
-    localStorage.setItem("brokerTodos", JSON.stringify(updatedTodos));
+  const toggleTodo = async (id: number, currentDone: boolean) => {
+    setTodos(prev => prev.map(t => t.id === id ? { ...t, is_done: !currentDone } : t));
+    setIsSyncingChecklist(true);
+    try {
+      await api.patch(`checklist/${id}/`, { is_done: !currentDone });
+    } catch (err) {
+      console.error("Error toggling task:", err);
+      setTodos(prev => prev.map(t => t.id === id ? { ...t, is_done: currentDone } : t));
+    } finally {
+      setIsSyncingChecklist(false);
+    }
   };
 
-  const deleteTodo = (id: string) => {
-    const updatedTodos = todos.filter(t => t.id !== id);
-    setTodos(updatedTodos);
-    localStorage.setItem("brokerTodos", JSON.stringify(updatedTodos));
+  const deleteTodo = async (id: number) => {
+    const original = todos;
+    setTodos(prev => prev.filter(t => t.id !== id));
+    setIsSyncingChecklist(true);
+    try {
+      await api.delete(`checklist/${id}/`);
+    } catch (err) {
+      console.error("Error deleting task:", err);
+      setTodos(original);
+    } finally {
+      setIsSyncingChecklist(false);
+    }
   };
 
   const formatCurrency = (val: number) => {
@@ -356,11 +406,19 @@ export default function DashboardPage() {
 
           {/* Broker Notepad */}
           <div className="neu-card p-6" style={{ borderRadius: "16px" }}>
-            <div className="flex items-center gap-2 mb-4">
-              <Edit3 size={20} style={{ color: "var(--cb-secondary)" }} />
-              <h3 className="text-lg font-bold" style={{ color: "var(--cb-text-heading)", fontFamily: "var(--font-playfair-display)" }}>
-                Broker Notepad
-              </h3>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Edit3 size={20} style={{ color: "var(--cb-secondary)" }} />
+                <h3 className="text-lg font-bold" style={{ color: "var(--cb-text-heading)", fontFamily: "var(--font-playfair-display)" }}>
+                  Broker Notepad
+                </h3>
+              </div>
+              {(isSyncingNotepad || isSyncingChecklist) && (
+                <span className="text-[11px] font-bold text-gray-400 animate-pulse flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping"></span>
+                  Syncing...
+                </span>
+              )}
             </div>
             <div className="flex gap-2 bg-cb-bg rounded-xl p-1 shadow-neu-inner mb-4">
               <button 
@@ -400,11 +458,11 @@ export default function DashboardPage() {
                       <label className="flex items-center gap-2 cursor-pointer flex-1">
                         <input 
                           type="checkbox" 
-                          checked={todo.done}
-                          onChange={() => toggleTodo(todo.id)}
+                          checked={todo.is_done}
+                          onChange={() => toggleTodo(todo.id, todo.is_done)}
                           className="rounded text-blue-500 focus:ring-0 border-gray-300 w-4 h-4 cursor-pointer"
                         />
-                        <span className={`text-sm ${todo.done ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                        <span className={`text-sm ${todo.is_done ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                           {todo.text}
                         </span>
                       </label>

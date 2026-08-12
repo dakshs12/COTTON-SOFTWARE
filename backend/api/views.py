@@ -521,3 +521,32 @@ def register_skeleton_account(request):
         })
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+
+class BrokerNoteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        note, _ = BrokerNote.objects.get_or_create(user=request.user)
+        serializer = BrokerNoteSerializer(note)
+        return Response(serializer.data)
+
+    def post(self, request):
+        note, _ = BrokerNote.objects.get_or_create(user=request.user)
+        content = request.data.get('content', '')
+        note.content = content
+        note.save()
+        serializer = BrokerNoteSerializer(note)
+        return Response(serializer.data)
+
+class ChecklistItemViewSet(viewsets.ModelViewSet):
+    serializer_class = ChecklistItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ChecklistItem.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

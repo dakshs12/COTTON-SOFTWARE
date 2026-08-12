@@ -373,4 +373,30 @@ class AuditLog(models.Model):
 
     def __str__(self):
         user_display = self.user.username if self.user else "Unknown User"
-        return f"{user_display} - {self.action} at {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
+        return f"{user_display} - {self.action} at {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+
+class BrokerNote(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='broker_note')
+    content = models.TextField(blank=True, default='')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Broker Note"
+        verbose_name_plural = "Broker Notes"
+
+    def __str__(self):
+        return f"Note for {self.user.username}"
+
+class ChecklistItem(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='checklist_items')
+    text = models.CharField(max_length=500)
+    is_done = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = "Checklist Item"
+        verbose_name_plural = "Checklist Items"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.text[:30]}"

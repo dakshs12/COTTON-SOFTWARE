@@ -2,7 +2,8 @@ from rest_framework import serializers
 from django.db import models
 from .models import (
     PartyMaster, FirmMaster, BargainEntry, PassingEntry, DeliveryDetails,
-    BrokerageBill, PartyPaymentReceipt, PaymentAllocation, BargainSplit
+    BrokerageBill, PartyPaymentReceipt, PaymentAllocation, BargainSplit,
+    BrokerNote, ChecklistItem
 )
 
 class PartyMasterSerializer(serializers.ModelSerializer):
@@ -110,3 +111,14 @@ class PaymentAllocationSerializer(serializers.ModelSerializer):
         model = PaymentAllocation
         fields = '__all__'
         read_only_fields = ('tenant',)
+
+class BrokerNoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BrokerNote
+        fields = ('id', 'content', 'updated_at')
+
+class ChecklistItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChecklistItem
+        fields = ('id', 'text', 'is_done', 'created_at')
+        read_only_fields = ('id', 'created_at')

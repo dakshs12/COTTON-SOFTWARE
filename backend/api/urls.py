@@ -10,9 +10,11 @@ router.register(r'firms', views.FirmMasterViewSet, basename='firmmaster')
 router.register(r'bargains', views.BargainEntryViewSet, basename='bargainentry')
 router.register(r'passings', views.PassingEntryViewSet, basename='passingentry')
 router.register(r'deliveries', views.DeliveryDetailsViewSet, basename='deliverydetails')
+router.register(r'checklist', views.ChecklistItemViewSet, basename='checklistitem')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('brokerage/notepad/', views.BrokerNoteView.as_view()),
     
     # These will now work because 'views' is defined!
     path('brokerage/pending/', views.get_pending_deliveries),
