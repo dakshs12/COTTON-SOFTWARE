@@ -17,13 +17,12 @@ def get_admin_kpis():
             active += 1
         elif st == 'EXPIRING_WARNING':
             expiring += 1
-        else:
+        elif st == 'LOCKED_OUT':
             locked_out += 1
             
-    # Include users without a subscription as locked out
-    total_users = CustomUser.objects.filter(is_staff=False).count()
-    users_with_subs = subs.count()
-    locked_out += (total_users - users_with_subs)
+    # Include non-staff users without a subscription as locked out
+    users_without_sub = CustomUser.objects.filter(subscription__isnull=True, is_staff=False).count()
+    locked_out = max(0, locked_out + users_without_sub)
     
     chart_data = {
         'labels': ['Active', 'Expiring Soon', 'Locked Out'],

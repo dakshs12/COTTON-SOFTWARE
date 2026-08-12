@@ -29,7 +29,7 @@
                     <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <div class="text-3xl font-bold text-gray-900 mb-1">{{ kpis.active_subs }}</div>
-                <a href="/admin/api/usersubscription/" class="text-sm text-green-600 hover:text-green-800 font-medium mt-auto">Manage subscriptions &rarr;</a>
+                <a href="/admin/api/usersubscription/?status=ACTIVE" class="text-sm text-green-600 hover:text-green-800 font-medium mt-auto">Manage subscriptions &rarr;</a>
             </div>
 
             <!-- Locked/Past Due -->
@@ -39,7 +39,7 @@
                     <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                 </div>
                 <div class="text-3xl font-bold text-gray-900 mb-1">{{ kpis.suspended_subs }}</div>
-                <a href="/admin/api/usersubscription/" class="text-sm text-red-600 hover:text-red-800 font-medium mt-auto">Review accounts &rarr;</a>
+                <a href="/admin/api/usersubscription/?status=LOCKED_OUT" class="text-sm text-red-600 hover:text-red-800 font-medium mt-auto">Review accounts &rarr;</a>
             </div>
 
             <!-- Total Firms -->
@@ -71,7 +71,7 @@
                         <svg class="w-5 h-5 mr-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         <span class="font-medium">Onboard New Firm</span>
                     </a>
-                    <a href="/admin/api/tenantsubscription/" class="flex items-center p-3 text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200 shadow-sm">
+                    <a href="/admin/api/usersubscription/" class="flex items-center p-3 text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200 shadow-sm">
                         <svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
                         <span class="font-medium">Manage Subscriptions</span>
                     </a>

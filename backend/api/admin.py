@@ -37,7 +37,32 @@ class TenantUsageFilter(admin.SimpleListFilter):
             ('low', 'Low (<10 Deals)'),
         )
 
+class SubscriptionStatusFilter(admin.SimpleListFilter):
+    title = 'status'
+    parameter_name = 'status'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('ACTIVE', 'Active'),
+            ('EXPIRING_WARNING', 'Expiring Soon'),
+            ('LOCKED_OUT', 'Locked Out'),
+        )
+
     def queryset(self, request, queryset):
+        from django.utils import timezone
+        from django.db import models
+        val = self.value()
+        now = timezone.now()
+        if val == 'LOCKED_OUT':
+            return queryset.filter(models.Q(is_active=False) | models.Q(end_date__lte=now))
+        elif val == 'EXPIRING_WARNING':
+            from datetime import timedelta
+            warning_cutoff = now + timedelta(days=3)
+            return queryset.filter(is_active=True, end_date__gt=now, end_date__lte=warning_cutoff)
+        elif val == 'ACTIVE':
+            from datetime import timedelta
+            warning_cutoff = now + timedelta(days=3)
+            return queryset.filter(is_active=True, end_date__gt=warning_cutoff)
         return queryset
 
 # --- Admins ---
@@ -133,7 +158,7 @@ class PaymentAllocationAdmin(ModelAdmin):
 @admin.register(UserSubscription)
 class UserSubscriptionAdmin(ModelAdmin):
     list_display = ('user', 'plan_type', 'start_date', 'end_date', 'status_badge', 'is_active', 'days_left')
-    list_filter = ('plan_type', 'is_active', 'start_date', 'end_date')
+    list_filter = (SubscriptionStatusFilter, 'plan_type', 'is_active', 'start_date', 'end_date')
     search_fields = ('user__username', 'user__email', 'user__phone_number')
     
     actions_row = ('approve_renewal', 'extend_trial', 'suspend_account')
