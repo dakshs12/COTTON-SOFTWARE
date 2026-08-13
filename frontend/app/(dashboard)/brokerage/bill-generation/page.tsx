@@ -389,10 +389,10 @@ export default function BillGenerationPage() {
                 </div>
             </div>
 
-            {/* Pending Deliveries Table */}
+            {/* Unbilled Deals Table */}
             <div className="lg:col-span-2 neu-card overflow-hidden flex flex-col h-[600px]">
                 <div className="p-4 flex justify-between items-center" style={{ borderBottom: "1px solid var(--cb-divider)" }}>
-                    <h3 className="font-bold" style={{ color: "var(--cb-text-heading)" }}>Pending Deliveries</h3>
+                    <h3 className="font-bold" style={{ color: "var(--cb-text-heading)" }}>Unbilled Deals</h3>
                     <span
                       className="neu-chip text-xs"
                       style={{ color: "var(--cb-warning)" }}

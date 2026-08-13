@@ -115,6 +115,13 @@ def generate_demo_data_for_user(user):
     # 5. Generate Passings & Deliveries for Approved bargains
     approved_bargains = [b for b in created_bargains if b.status == 'Approved']
     
+    # Ensure existing deliveries for this tenant have unbilled items for demo
+    existing_deliveries = list(DeliveryDetails.objects.filter(tenant=tenant))
+    for d in existing_deliveries[:max(3, len(existing_deliveries) // 2)]:
+        d.seller_billed = False
+        d.buyer_billed = False
+        d.save()
+    
     bills_created = []
     for bargain in approved_bargains:
         approval_days = random.randint(1, 3)
@@ -159,12 +166,12 @@ def generate_demo_data_for_user(user):
             gst_percent=Decimal('5.00'),
             gst_amount=gst_amt,
             total_bill_amount=total_bill,
-            seller_billed=True,
-            buyer_billed=True
+            seller_billed=False,
+            buyer_billed=False
         )
 
-        # Generate Brokerage Bill (~70% of deliveries)
-        if random.random() < 0.7:
+        # Generate Brokerage Bill (~40% of deliveries are billed, leaving ~60% unbilled for demo)
+        if random.random() < 0.4:
             b_rate = Decimal(random.choice([50, 60, 70]))
             gross = Decimal(bargain.bales) * b_rate
             cgst = (gross * Decimal('0.09')).quantize(Decimal('0.01'))
@@ -191,6 +198,13 @@ def generate_demo_data_for_user(user):
             )
             bill.deliveries.add(delivery)
             bills_created.append(bill)
+
+            # Update the billed flag for the billed party
+            if billed_party == bargain.seller:
+                delivery.seller_billed = True
+            else:
+                delivery.buyer_billed = True
+            delivery.save()
 
     # 6. Generate Receipts & Allocations (~50% of brokerage bills paid)
     for bill in bills_created:
