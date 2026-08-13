@@ -36,19 +36,19 @@ def generate_demo_data_for_user(user):
         user.tenant = tenant
         user.save()
 
-    # 2. Ensure Broker Firm
-    firm, created = FirmMaster.objects.get_or_create(
-        tenant=tenant,
-        defaults={
-            'firm_name': f"{tenant.company_name} Broking Co.",
-            'city': 'Indore',
-            'state': 'Madhya Pradesh',
-            'mobile': user.phone_number or '9826012345',
-            'email': user.email or 'demo@cottbook.com',
-            'tagline': 'Cotton Broker & Commission Agent',
-            'jurisdiction': 'Indore'
-        }
-    )
+    # 2. Use existing Broker Firm or create default
+    firm = FirmMaster.objects.filter(tenant=tenant).first()
+    if not firm:
+        firm = FirmMaster.objects.create(
+            tenant=tenant,
+            firm_name=f"{tenant.company_name} Broking Co.",
+            city='Indore',
+            state='Madhya Pradesh',
+            mobile=user.phone_number or '9826012345',
+            email=user.email or 'demo@cottbook.com',
+            tagline='Cotton Broker & Commission Agent',
+            jurisdiction='Indore'
+        )
 
     # 3. Create Parties (5 to 10)
     existing_parties = list(PartyMaster.objects.filter(tenant=tenant, is_deleted=False))

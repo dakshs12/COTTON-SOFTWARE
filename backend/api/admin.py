@@ -116,10 +116,17 @@ class CustomUserAdmin(BaseUserAdmin, ModelAdmin):
     actions_row = ('populate_demo_data',)
 
     @action(description="Populate with Demo Data")
-    def populate_demo_data(self, request, queryset):
+    def populate_demo_data(self, request, queryset=None, object_id=None):
+        if object_id:
+            users = CustomUser.objects.filter(pk=object_id)
+        elif queryset is not None:
+            users = queryset
+        else:
+            users = CustomUser.objects.none()
+
         count = 0
         total_bargains = 0
-        for user in queryset:
+        for user in users:
             stats = generate_demo_data_for_user(user)
             count += 1
             total_bargains += stats.get('bargains', 0)
