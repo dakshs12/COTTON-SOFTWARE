@@ -102,6 +102,8 @@ class TenantAdmin(ModelAdmin):
         return bales or 0
     total_bales.short_description = "Total Bales"
 
+from .demo_data import generate_demo_data_for_user
+
 @admin.register(CustomUser)
 class CustomUserAdmin(BaseUserAdmin, ModelAdmin):
     fieldsets = BaseUserAdmin.fieldsets + (
@@ -110,6 +112,23 @@ class CustomUserAdmin(BaseUserAdmin, ModelAdmin):
     list_display = ('username', 'email', 'tenant', 'phone_number', 'is_staff')
     list_filter = ('tenant', 'is_staff', 'is_superuser')
     search_fields = ('username', 'email', 'phone_number')
+    actions = ['populate_demo_data']
+    actions_row = ('populate_demo_data',)
+
+    @action(description="Populate with Demo Data")
+    def populate_demo_data(self, request, queryset):
+        count = 0
+        total_bargains = 0
+        for user in queryset:
+            stats = generate_demo_data_for_user(user)
+            count += 1
+            total_bargains += stats.get('bargains', 0)
+        
+        self.message_user(
+            request,
+            f"Successfully generated demo data (parties, deals, passings, deliveries, bills) for {count} user(s) ({total_bargains} bargains created).",
+            messages.SUCCESS
+        )
 
 @admin.register(PartyMaster)
 class PartyMasterAdmin(ModelAdmin):
