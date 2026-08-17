@@ -89,126 +89,94 @@ export default function SubscriptionPage() {
         <p className="text-gray-500 mt-2">All plans include full access to the Brokerage Management Suite.</p>
       </div>
 
-      {/* Pricing Tier Grid */}
+      {/* Pricing Tier Grid (Centered 2-Card Layout) */}
       <div
-        className="grid grid-cols-1 md:grid-cols-3 gap-8"
+        className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
         onMouseLeave={() => setHoveredPlan('3_YEAR')}
       >
 
         {/* 1-Year Plan */}
         <div
           className={`rounded-[30px] p-8 flex flex-col transition-all duration-300 ${hoveredPlan === '1_YEAR'
-            ? 'border-2 border-blue-500 bg-white shadow-lg -translate-y-1'
-            : 'border-2 border-slate-200 bg-white/50'
+            ? 'border-2 border-blue-500 bg-white shadow-xl -translate-y-1'
+            : 'border-2 border-slate-200 bg-white/70 shadow-sm'
             }`}
           onMouseEnter={() => setHoveredPlan('1_YEAR')}
         >
           <div className="mb-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">1-Year Plan</h3>
-            <p className="text-gray-500 text-sm">Standard core baseline.</p>
+            <h3 className="text-2xl font-bold text-gray-800 mb-2 font-playfair">1-Year Plan</h3>
+            <p className="text-gray-500 text-sm">Standard core access for growing brokerages.</p>
           </div>
           <div className="mb-8">
             <div className="text-4xl font-black text-cb-primary flex items-end">
-              ₹ xxxbase1 <span className="text-lg font-bold text-gray-400 mb-1 ml-1">/yr</span>
+              ₹30,000 <span className="text-lg font-bold text-gray-400 mb-1 ml-1.5">/ year</span>
             </div>
           </div>
           <ul className="space-y-4 mb-8 flex-1">
-            <li className="flex items-center gap-3 text-gray-600 font-medium">
-              <CheckCircle2 className="w-5 h-5 text-green-500" /> Full Suite Access
+            <li className="flex items-start gap-3 text-gray-700 font-medium text-sm">
+              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+              <span>Full Brokerage Management Suite Access</span>
+            </li>
+            <li className="flex items-start gap-3 text-gray-700 font-medium text-sm">
+              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+              <span>Unlimited Bargains, Deliveries &amp; Invoices</span>
             </li>
           </ul>
           <button
             onClick={() => handleContactClick('1_YEAR')}
             className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${hoveredPlan === '1_YEAR'
-              ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
-              : 'bg-transparent text-blue-600 border-2 border-blue-500'
+              ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md hover:bg-blue-700'
+              : 'bg-transparent text-blue-600 border-2 border-blue-500 hover:bg-blue-50'
               }`}
           >
             Contact to Subscribe
           </button>
         </div>
 
-        {/* 3-Year Plan */}
+        {/* 3-Year Plan (Featured / Highlighted Card) */}
         <div
           className={`rounded-[30px] p-8 flex flex-col relative transition-all duration-300 ${hoveredPlan === '3_YEAR'
-            ? 'border-2 border-blue-500 bg-white shadow-lg -translate-y-1'
-            : 'border-2 border-slate-200 bg-white/50'
+            ? 'border-2 border-blue-500 bg-white shadow-xl -translate-y-1'
+            : 'border-2 border-slate-200 bg-white/70 shadow-sm'
             }`}
           onMouseEnter={() => setHoveredPlan('3_YEAR')}
         >
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-cb-primary text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md flex items-center gap-1">
-            <Zap className="w-3.5 h-3.5" /> Save 20%
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-cb-primary text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md flex items-center gap-1.5 whitespace-nowrap">
+            <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300" /> BEST VALUE - SAVE 17%
           </div>
           <div className="mb-6 mt-2">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">3-Year Plan</h3>
-            <p className="text-gray-500 text-sm">Upfront commitment value.</p>
+            <h3 className="text-2xl font-bold text-gray-800 mb-2 font-playfair">3-Year Plan</h3>
+            <p className="text-gray-500 text-sm">Long-term commitment with locked-in rates.</p>
           </div>
           <div className="mb-8">
             <div className="text-4xl font-black text-cb-primary flex items-end">
-              ₹ xxbase2 <span className="text-lg font-bold text-gray-400 mb-1 ml-1">total</span>
+              ₹75,000 <span className="text-lg font-bold text-gray-400 mb-1 ml-1.5">total</span>
             </div>
-            <p className="text-sm text-green-600 font-bold mt-2 border border-green-200 bg-green-50 rounded px-2 py-1 inline-block">
-              Only ₹0 / year equivalent
-            </p>
+            <div className="mt-3">
+              <span className="text-xs font-bold text-green-700 bg-green-100/90 border border-green-300 px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                Only ₹25,000 / year equivalent
+              </span>
+            </div>
           </div>
           <ul className="space-y-4 mb-8 flex-1">
-            <li className="flex items-center gap-3 text-gray-600 font-medium">
-              <CheckCircle2 className="w-5 h-5 text-green-500" /> Secure current pricing
+            <li className="flex items-start gap-3 text-gray-700 font-medium text-sm">
+              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+              <span>Everything in 1-Year Plan</span>
             </li>
-            <li className="flex items-center gap-3 text-gray-600 font-medium">
-              <CheckCircle2 className="w-5 h-5 text-green-500" /> Priority Support
+            <li className="flex items-start gap-3 text-gray-700 font-medium text-sm">
+              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+              <span>Save ₹15,000 &amp; Lock-in current rate against future price hikes</span>
+            </li>
+            <li className="flex items-start gap-3 text-gray-700 font-medium text-sm">
+              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+              <span>Priority Support</span>
             </li>
           </ul>
           <button
             onClick={() => handleContactClick('3_YEAR')}
             className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${hoveredPlan === '3_YEAR'
-              ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
-              : 'bg-transparent text-blue-600 border-2 border-blue-500'
-              }`}
-          >
-            Contact to Subscribe
-          </button>
-        </div>
-
-        {/* 5-Year Plan */}
-        <div
-          className={`rounded-[30px] p-8 flex flex-col relative transition-all duration-300 ${hoveredPlan === '5_YEAR'
-            ? 'border-2 border-blue-500 bg-white shadow-lg -translate-y-1'
-            : 'border-2 border-slate-200 bg-white/50'
-            }`}
-          onMouseEnter={() => setHoveredPlan('5_YEAR')}
-        >
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-500 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md flex items-center gap-1">
-            <TrendingUp className="w-3.5 h-3.5" /> Save 28%
-          </div>
-          <div className="mb-6 mt-2">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">5-Year Plan</h3>
-            <p className="text-gray-500 text-sm">Maximum duration tier.</p>
-          </div>
-          <div className="mb-8">
-            <div className="text-4xl font-black text-cb-primary flex items-end">
-              ₹ xbase3 <span className="text-lg font-bold text-gray-400 mb-1 ml-1">total</span>
-            </div>
-            <p className="text-sm text-amber-600 font-bold mt-2 border border-amber-200 bg-amber-50 rounded px-2 py-1 inline-block">
-              Only ₹0 / year equivalent
-            </p>
-          </div>
-          <ul className="space-y-4 mb-8 flex-1">
-            <li className="flex items-center gap-3 text-gray-600 font-medium">
-              <CheckCircle2 className="w-5 h-5 text-green-500" /> Maximize savings
-            </li>
-            <li className="flex items-center gap-3 text-gray-600 font-medium">
-              <CheckCircle2 className="w-5 h-5 text-green-500" /> VIP Dedicated Support
-            </li>
-            <li className="flex items-center gap-3 text-gray-600 font-medium">
-              <CheckCircle2 className="w-5 h-5 text-green-500" /> All Future Updates
-            </li>
-          </ul>
-          <button
-            onClick={() => handleContactClick('5_YEAR')}
-            className={`w-full py-4 rounded-xl font-bold cursor-pointer transition-all duration-300 ${hoveredPlan === '5_YEAR'
-              ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md'
-              : 'bg-transparent text-blue-600 border-2 border-blue-500'
+              ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-md hover:bg-blue-700'
+              : 'bg-transparent text-blue-600 border-2 border-blue-500 hover:bg-blue-50'
               }`}
           >
             Contact to Subscribe
