@@ -7,6 +7,7 @@ from unfold.admin import ModelAdmin
 from unfold.decorators import action, display
 
 from django import forms
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from unfold.forms import BaseDialogForm
 
@@ -15,6 +16,14 @@ from .models import (
     PassingEntry, DeliveryDetails, BrokerageBill, PartyPaymentReceipt, PaymentAllocation,
     UserSubscription, AuditLog
 )
+
+def action_redirect_response(request, fallback_url):
+    referer = request.META.get('HTTP_REFERER') or fallback_url
+    if request.headers.get('HX-Request') or request.META.get('HTTP_HX_REQUEST') == 'true':
+        response = HttpResponse()
+        response['HX-Redirect'] = referer
+        return response
+    return redirect(referer)
 
 class ExtendTrialForm(BaseDialogForm):
     days = forms.IntegerField(
@@ -149,6 +158,7 @@ class CustomUserAdmin(BaseUserAdmin, ModelAdmin):
             f"Successfully generated demo data (parties, deals, passings, deliveries, bills) for {count} user(s) ({total_bargains} bargains created).",
             messages.SUCCESS
         )
+        return action_redirect_response(request, '/admin/api/customuser/')
 
 @admin.register(PartyMaster)
 class PartyMasterAdmin(ModelAdmin):
@@ -223,7 +233,7 @@ class UserSubscriptionAdmin(ModelAdmin):
             sub.is_active = True
             sub.save()
             messages.success(request, f"Successfully renewed {sub.user.username} for 1 year.")
-        return redirect(request.META.get('HTTP_REFERER', '/admin/api/usersubscription/'))
+        return action_redirect_response(request, '/admin/api/usersubscription/')
             
     @action(
         description="Extend Trial",
@@ -247,7 +257,7 @@ class UserSubscriptionAdmin(ModelAdmin):
                 request,
                 f"Successfully extended trial for {sub.user.username} by {days} days (New End Date: {sub.end_date.strftime('%d %b %Y')})."
             )
-        return redirect(request.META.get('HTTP_REFERER', '/admin/api/usersubscription/'))
+        return action_redirect_response(request, '/admin/api/usersubscription/')
             
     @action(description="Suspend Account")
     def suspend_account(self, request, object_id=None):
@@ -256,7 +266,7 @@ class UserSubscriptionAdmin(ModelAdmin):
             sub.is_active = False
             sub.save()
             messages.warning(request, f"Suspended account: {sub.user.username}.")
-        return redirect(request.META.get('HTTP_REFERER', '/admin/api/usersubscription/'))
+        return action_redirect_response(request, '/admin/api/usersubscription/')
 
 @admin.register(AuditLog)
 class AuditLogAdmin(ModelAdmin):
