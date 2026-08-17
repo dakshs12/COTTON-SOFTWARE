@@ -6,11 +6,24 @@ from django.contrib import messages
 from unfold.admin import ModelAdmin
 from unfold.decorators import action, display
 
+from django import forms
+from django.shortcuts import redirect
+from unfold.forms import BaseDialogForm
+
 from .models import (
     Tenant, CustomUser, PartyMaster, FirmMaster, BargainEntry, 
     PassingEntry, DeliveryDetails, BrokerageBill, PartyPaymentReceipt, PaymentAllocation,
     UserSubscription, AuditLog
 )
+
+class ExtendTrialForm(BaseDialogForm):
+    days = forms.IntegerField(
+        label="Number of Days to Extend",
+        initial=7,
+        min_value=1,
+        max_value=365,
+        help_text="Enter the number of trial days to add to this subscription."
+    )
 
 # --- Custom Filters ---
 class ExpiringSubscriptionFilter(admin.SimpleListFilter):
@@ -210,15 +223,31 @@ class UserSubscriptionAdmin(ModelAdmin):
             sub.is_active = True
             sub.save()
             messages.success(request, f"Successfully renewed {sub.user.username} for 1 year.")
+        return redirect(request.META.get('HTTP_REFERER', '/admin/api/usersubscription/'))
             
-    @action(description="Extend Trial (+7 Days)")
-    def extend_trial(self, request, object_id=None):
+    @action(
+        description="Extend Trial",
+        dialog={
+            "title": "Extend Trial Period",
+            "description": "Enter the number of days you would like to extend this user's trial.",
+            "form_class": ExtendTrialForm,
+            "form_submit_text": "Extend Trial",
+        }
+    )
+    def extend_trial(self, request, form, object_id=None):
+        days = form.cleaned_data.get("days", 7)
         if object_id:
             sub = UserSubscription.objects.get(pk=object_id)
-            sub.end_date = sub.end_date + timedelta(days=7)
+            now = timezone.now()
+            base_date = max(sub.end_date, now) if sub.end_date else now
+            sub.end_date = base_date + timedelta(days=days)
             sub.is_active = True
             sub.save()
-            messages.success(request, f"Extended trial for {sub.user.username} by 7 days.")
+            messages.success(
+                request,
+                f"Successfully extended trial for {sub.user.username} by {days} days (New End Date: {sub.end_date.strftime('%d %b %Y')})."
+            )
+        return redirect(request.META.get('HTTP_REFERER', '/admin/api/usersubscription/'))
             
     @action(description="Suspend Account")
     def suspend_account(self, request, object_id=None):
@@ -227,6 +256,7 @@ class UserSubscriptionAdmin(ModelAdmin):
             sub.is_active = False
             sub.save()
             messages.warning(request, f"Suspended account: {sub.user.username}.")
+        return redirect(request.META.get('HTTP_REFERER', '/admin/api/usersubscription/'))
 
 @admin.register(AuditLog)
 class AuditLogAdmin(ModelAdmin):
