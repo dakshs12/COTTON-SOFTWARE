@@ -104,7 +104,7 @@ export default function SubscriptionPage() {
           onMouseEnter={() => setHoveredPlan('1_YEAR')}
         >
           <div className="mb-6">
-            <h3 className="text-2xl font-bold text-gray-800 mb-2 font-playfair">1-Year Plan</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">1-Year Plan</h3>
             <p className="text-gray-500 text-sm">Standard core access for growing brokerages.</p>
           </div>
           <div className="mb-8">
@@ -142,10 +142,10 @@ export default function SubscriptionPage() {
           onMouseEnter={() => setHoveredPlan('3_YEAR')}
         >
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-cb-primary text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md flex items-center gap-1.5 whitespace-nowrap">
-            <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300" /> BEST VALUE - SAVE 17%
+            <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300" /> SAVE 17%
           </div>
           <div className="mb-6 mt-2">
-            <h3 className="text-2xl font-bold text-gray-800 mb-2 font-playfair">3-Year Plan</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">3-Year Plan</h3>
             <p className="text-gray-500 text-sm">Long-term commitment with locked-in rates.</p>
           </div>
           <div className="mb-8">
