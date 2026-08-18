@@ -30,7 +30,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const hasChecked = useRef(false);
 
-  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register") || pathname.startsWith("/forgot-password");
+  const isPublicPage =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/terms") ||
+    pathname.startsWith("/privacy");
 
   const checkAuth = async (): Promise<boolean> => {
     try {
@@ -68,8 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     hasChecked.current = true;
 
     const initAuth = async () => {
-      if (isAuthPage) {
-        // On login/register, just stop loading and show the form
+      if (isPublicPage) {
+        // Attempt silent auth if cookie exists, but do not block or redirect
+        await checkAuth();
         setLoading(false);
         return;
       }
@@ -124,8 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return <LoadingScreen />;
   }
 
-  // Guard: block protected content if not authenticated (but allow auth pages)
-  if (!isAuthenticated && !isAuthPage) {
+  // Guard: block protected content if not authenticated (but allow public pages)
+  if (!isAuthenticated && !isPublicPage) {
     return null;
   }
 
