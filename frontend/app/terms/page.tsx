@@ -159,7 +159,7 @@ export default function TermsPage() {
                   <strong className="text-gray-900">Service Plans:</strong> Platform access is governed by paid subscription tiers:
                   <ul className="list-circle pl-5 mt-1 space-y-1 text-gray-600">
                     <li><strong className="text-gray-800">1-Year Plan:</strong> ₹ TBA per year (full brokerage management suite access, unlimited deal records, PDF generation, standard support).</li>
-                    <li><strong className="text-gray-800">3-Year Plan:</strong> ₹ TBA upfront commitment (locked-in pricing equivalent to ₹25,000/year, priority support, complimentary onboarding).</li>
+                    <li><strong className="text-gray-800">3-Year Plan:</strong> ₹ TBA upfront commitment (locked-in pricing equivalent to ₹TBA/year, priority support, complimentary onboarding).</li>
                   </ul>
                 </li>
                 <li>
