@@ -123,7 +123,11 @@ def generate_demo_data_for_user(user):
         d.save()
     
     bills_created = []
-    for bargain in approved_bargains:
+    # Leave some approved bargains without passings so user can demo "Select Deal" dropdown
+    num_passings = max(1, int(len(approved_bargains) * 0.7)) if approved_bargains else 0
+    bargains_with_passings = approved_bargains[:num_passings]
+
+    for i, bargain in enumerate(bargains_with_passings):
         approval_days = random.randint(1, 3)
         app_date = bargain.bargain_date + timedelta(days=approval_days)
         if app_date > today:
@@ -170,8 +174,8 @@ def generate_demo_data_for_user(user):
             buyer_billed=False
         )
 
-        # Generate Brokerage Bill (~40% of deliveries are billed, leaving ~60% unbilled for demo)
-        if random.random() < 0.4:
+        # Generate Brokerage Bill (Ensure exactly half of the deliveries are left unbilled)
+        if i < len(bargains_with_passings) // 2:
             b_rate = Decimal(random.choice([50, 60, 70]))
             gross = Decimal(bargain.bales) * b_rate
             cgst = (gross * Decimal('0.09')).quantize(Decimal('0.01'))
