@@ -154,7 +154,7 @@ export default function SubscriptionPage() {
             </div>
             <div className="mt-3">
               <span className="text-xs font-bold text-green-700 bg-green-100/90 border border-green-300 px-3 py-1.5 rounded-full inline-flex items-center gap-1">
-                Only ₹25,000 / year equivalent
+                Only ₹TBA / year equivalent
               </span>
             </div>
           </div>
