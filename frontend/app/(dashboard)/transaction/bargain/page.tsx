@@ -857,7 +857,7 @@ export default function BargainEntryPage() {
                   <td className="font-mono">{deal.bales}</td>
                   <td className="font-mono">{deal.rate}</td>
                   <td className="text-right">
-                    <span className="neu-chip" style={{ 
+                    <span className="neu-chip whitespace-nowrap" style={{ 
                       color: deal.status === "Approved" ? "var(--cb-success)" : deal.status === "Rejected" ? "#ef4444" : "var(--cb-warning)", 
                       fontSize: "0.7rem",
                       border: `1px solid ${deal.status === "Approved" ? "var(--cb-success)" : deal.status === "Rejected" ? "#ef4444" : "var(--cb-warning)"}`

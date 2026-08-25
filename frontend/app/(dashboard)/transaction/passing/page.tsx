@@ -504,7 +504,7 @@ export default function PassingEntryPage() {
                   <td className="font-mono">{pass.lot_no}</td>
                   <td className="font-bold" style={{ color: "var(--cb-secondary)" }}>{pass.pr_no || "-"}</td>
                   <td className="text-right">
-                    <span className="neu-chip" style={{ 
+                    <span className="neu-chip whitespace-nowrap" style={{ 
                       color: pass.status === "Dispatched" ? "var(--cb-success)" : "var(--cb-warning)", 
                       fontSize: "0.7rem",
                       border: `1px solid ${pass.status === "Dispatched" ? "var(--cb-success)" : "var(--cb-warning)"}`
