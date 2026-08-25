@@ -15,7 +15,7 @@ export default function SubscriptionPage() {
   const status = subscription?.status || 'ACTIVE';
   const currentPlanType = subscription?.plan_type || 'TRIAL';
   const daysRemaining = subscription?.days_remaining || 0;
-  
+
   const endDate = subscription?.end_date ? new Date(subscription.end_date) : new Date();
   const endDateStr = endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -109,7 +109,7 @@ export default function SubscriptionPage() {
           </div>
           <div className="mb-8">
             <div className="text-4xl font-black text-cb-primary flex items-end">
-              ₹30,000 <span className="text-lg font-bold text-gray-400 mb-1 ml-1.5">/ year</span>
+              ₹TBA <span className="text-lg font-bold text-gray-400 mb-1 ml-1.5">/ year</span>
             </div>
           </div>
           <ul className="space-y-4 mb-8 flex-1">
@@ -150,7 +150,7 @@ export default function SubscriptionPage() {
           </div>
           <div className="mb-8">
             <div className="text-4xl font-black text-cb-primary flex items-end">
-              ₹75,000 <span className="text-lg font-bold text-gray-400 mb-1 ml-1.5">total</span>
+              ₹TBA <span className="text-lg font-bold text-gray-400 mb-1 ml-1.5">total</span>
             </div>
             <div className="mt-3">
               <span className="text-xs font-bold text-green-700 bg-green-100/90 border border-green-300 px-3 py-1.5 rounded-full inline-flex items-center gap-1">
@@ -191,7 +191,7 @@ export default function SubscriptionPage() {
           <div className="bg-cb-bg rounded-[30px] shadow-neu p-8 max-w-md w-full animate-in zoom-in-95 duration-200">
             <h3 className="text-2xl font-bold font-playfair text-gray-800 mb-2">Subscribe via Direct Payment</h3>
             <p className="text-gray-600 mb-6 text-sm">Please contact us via WhatsApp or Email to process your UPI payment and activate your subscription.</p>
-            
+
             <div className="bg-cb-bg rounded-2xl shadow-neu-inset p-6 mb-6">
               <div className="flex flex-col items-center justify-center mb-6">
                 <img src="/whatsapp_qr.png" alt="WhatsApp QR Code" className="w-48 h-48 rounded-lg shadow-sm mb-2 object-cover bg-white" />
@@ -204,7 +204,7 @@ export default function SubscriptionPage() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => setContactModalOpen(false)}
               className="w-full py-3 bg-cb-bg rounded-xl shadow-neu text-gray-700 font-bold hover:shadow-neu-pressed transition-all duration-200"
             >

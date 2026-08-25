@@ -6,7 +6,7 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-cb-bg py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
       <div className="max-w-4xl w-full">
-        
+
         {/* Navigation Link */}
         <div className="mb-6">
           <Link
@@ -19,7 +19,7 @@ export default function TermsPage() {
 
         {/* Main Document Card */}
         <div className="neu-card p-8 sm:p-12" style={{ borderRadius: "24px" }}>
-          
+
           {/* Header */}
           <div className="border-b border-gray-200 pb-8 mb-8">
             <div className="flex items-center gap-3 mb-3">
@@ -35,7 +35,7 @@ export default function TermsPage() {
                 </p>
               </div>
             </div>
-            
+
             <p className="text-gray-600 text-sm leading-relaxed mt-4">
               These Terms of Service (&quot;Terms&quot;, &quot;Agreement&quot;) constitute a legally binding agreement between CottBook (&quot;CottBook&quot;, &quot;Platform&quot;, &quot;We&quot;, &quot;Us&quot;, or &quot;Our&quot;) and the business entity, cotton brokerage firm, commission agent, or individual (&quot;User&quot;, &quot;Subscriber&quot;, &quot;Broker&quot;, &quot;You&quot;, or &quot;Your&quot;) accessing or using our cloud-based brokerage management platform, mobile interfaces, APIs, and associated services.
             </p>
@@ -43,7 +43,7 @@ export default function TermsPage() {
 
           {/* Document Content */}
           <div className="space-y-8 text-sm text-gray-700 leading-relaxed">
-            
+
             {/* Section 1 */}
             <section className="space-y-3">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -158,8 +158,8 @@ export default function TermsPage() {
                 <li>
                   <strong className="text-gray-900">Service Plans:</strong> Platform access is governed by paid subscription tiers:
                   <ul className="list-circle pl-5 mt-1 space-y-1 text-gray-600">
-                    <li><strong className="text-gray-800">1-Year Plan:</strong> ₹30,000 per year (full brokerage management suite access, unlimited deal records, PDF generation, standard support).</li>
-                    <li><strong className="text-gray-800">3-Year Plan:</strong> ₹75,000 upfront commitment (locked-in pricing equivalent to ₹25,000/year, priority support, complimentary onboarding).</li>
+                    <li><strong className="text-gray-800">1-Year Plan:</strong> ₹ TBA per year (full brokerage management suite access, unlimited deal records, PDF generation, standard support).</li>
+                    <li><strong className="text-gray-800">3-Year Plan:</strong> ₹ TBA upfront commitment (locked-in pricing equivalent to ₹25,000/year, priority support, complimentary onboarding).</li>
                   </ul>
                 </li>
                 <li>
