@@ -458,18 +458,16 @@ export default function FirmMasterPage() {
                     </span>
                   </td>
                   <td>{firm.mobile}</td>
-                  <td className="text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ opacity: 1 }}>
-                      <button onClick={() => handleEdit(firm)} className="neu-btn neu-btn-action p-2" style={{ padding: "0.35rem" }}>
-                        <Edit2 size={16} />
-                      </button>
-                      <button 
-                        onClick={() => triggerDelete(firm.id, firm.firm_name)}
-                        className="neu-btn neu-btn-danger-action p-2 ml-1" style={{ padding: "0.35rem" }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                  <td className="text-right whitespace-nowrap">
+                    <button onClick={() => handleEdit(firm)} className="neu-btn neu-btn-action p-2" style={{ padding: "0.35rem" }}>
+                      <Edit2 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => triggerDelete(firm.id, firm.firm_name)}
+                      className="neu-btn neu-btn-danger-action p-2 ml-1" style={{ padding: "0.35rem" }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}

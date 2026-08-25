@@ -469,15 +469,13 @@ export default function PartyMasterPage() {
                       </span>
                     </td>
                     <td className="font-mono font-medium" style={{ color: "var(--cb-text-label)" }}>{party.mobile}</td>
-                    <td className="text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ opacity: 1 }}>
-                        <button onClick={() => handleEdit(party)} className="neu-btn neu-btn-action p-2" style={{ padding: "0.4rem" }}>
-                          <Edit2 size={16} strokeWidth={2.5}/>
-                        </button>
-                        <button className="neu-btn neu-btn-danger-action p-2" style={{ padding: "0.4rem" }}>
-                          <Trash2 size={16} strokeWidth={2.5}/>
-                        </button>
-                      </div>
+                    <td className="text-right whitespace-nowrap">
+                      <button onClick={() => handleEdit(party)} className="neu-btn neu-btn-action p-2" style={{ padding: "0.4rem" }}>
+                        <Edit2 size={16} strokeWidth={2.5}/>
+                      </button>
+                      <button className="neu-btn neu-btn-danger-action p-2 ml-1" style={{ padding: "0.4rem" }}>
+                        <Trash2 size={16} strokeWidth={2.5}/>
+                      </button>
                     </td>
                   </tr>
                 ))}

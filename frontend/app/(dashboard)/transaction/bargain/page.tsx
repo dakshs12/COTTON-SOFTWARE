@@ -865,7 +865,7 @@ export default function BargainEntryPage() {
                       {deal.status}
                     </span>
                   </td>
-                  <td className="text-right">
+                  <td className="text-right whitespace-nowrap">
                     <button 
                       onClick={() => handleEditClick(deal)}
                       className="neu-btn neu-btn-action" style={{ padding: "0.35rem" }}

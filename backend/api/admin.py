@@ -25,6 +25,9 @@ def action_redirect_response(request, fallback_url):
         return response
     return redirect(referer)
 
+class ConfirmDemoDataForm(BaseDialogForm):
+    pass
+
 class ExtendTrialForm(BaseDialogForm):
     days = forms.IntegerField(
         label="Number of Days to Extend",
@@ -137,8 +140,16 @@ class CustomUserAdmin(BaseUserAdmin, ModelAdmin):
     actions = ['populate_demo_data']
     actions_row = ('populate_demo_data',)
 
-    @action(description="Populate with Demo Data")
-    def populate_demo_data(self, request, queryset=None, object_id=None):
+    @action(
+        description="Populate with Demo Data",
+        dialog={
+            "title": "Confirm Demo Data Generation",
+            "description": "Are you sure you want to populate demo data for the selected user(s)? This will generate dummy parties, deals, passings, deliveries, and bills.",
+            "form_class": ConfirmDemoDataForm,
+            "form_submit_text": "Generate Demo Data",
+        }
+    )
+    def populate_demo_data(self, request, form, queryset=None, object_id=None):
         if object_id:
             users = CustomUser.objects.filter(pk=object_id)
         elif queryset is not None:

@@ -512,23 +512,21 @@ export default function PassingEntryPage() {
                       {pass.status || "Pending Dispatch"}
                     </span>
                   </td>
-                  <td className="text-right">
-                    <div className="flex justify-end items-center gap-3">
-                      <button 
-                        onClick={() => handleEditClick(pass)}
-                        className="neu-btn neu-btn-action" style={{ padding: "0.35rem" }}
-                        title="Edit Passing"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button 
-                        onClick={() => triggerDelete(pass.id, pass.pr_no || pass.deal_no || String(pass.id))}
-                        className="neu-btn neu-btn-danger-action ml-1" style={{ padding: "0.35rem" }}
-                        title="Delete Passing"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                  <td className="text-right whitespace-nowrap">
+                    <button 
+                      onClick={() => handleEditClick(pass)}
+                      className="neu-btn neu-btn-action" style={{ padding: "0.35rem" }}
+                      title="Edit Passing"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => triggerDelete(pass.id, pass.pr_no || pass.deal_no || String(pass.id))}
+                      className="neu-btn neu-btn-danger-action ml-1" style={{ padding: "0.35rem" }}
+                      title="Delete Passing"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}
