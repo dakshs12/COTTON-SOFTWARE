@@ -165,7 +165,7 @@ export default function SubscriptionPage() {
             </li>
             <li className="flex items-start gap-3 text-gray-700 font-medium text-sm">
               <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-              <span>Save ₹15,000 &amp; Lock-in current rate against future price hikes</span>
+              <span>Save ₹ &amp; Lock-in current rate against future price hikes</span>
             </li>
             <li className="flex items-start gap-3 text-gray-700 font-medium text-sm">
               <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
