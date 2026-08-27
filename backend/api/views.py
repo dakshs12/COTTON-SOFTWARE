@@ -2,8 +2,9 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import * 
 from .serializers import *
-from django.db.models import Q
+from django.db.models import Q, Sum, OuterRef, Exists
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from .models import PartyMaster, FirmMaster, BargainEntry, PassingEntry, DeliveryDetails
 from .serializers import (
     PartyMasterSerializer, FirmMasterSerializer, 
@@ -16,6 +17,11 @@ class PartyMasterViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return PartyMaster.objects.filter(tenant=self.request.user.tenant)
 
+    @action(detail=False, methods=['get'])
+    def lite(self, request):
+        qs = self.get_queryset().values('id', 'company_name', 'station', 'party_type')
+        return Response(list(qs))
+
     def perform_create(self, serializer):
         serializer.save(tenant=self.request.user.tenant)
 
@@ -25,6 +31,11 @@ class FirmMasterViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return FirmMaster.objects.filter(tenant=self.request.user.tenant)
 
+    @action(detail=False, methods=['get'])
+    def lite(self, request):
+        qs = self.get_queryset().values('id', 'firm_name', 'city')
+        return Response(list(qs))
+
     def perform_create(self, serializer):
         serializer.save(tenant=self.request.user.tenant)
 
@@ -32,25 +43,62 @@ class BargainEntryViewSet(viewsets.ModelViewSet):
     serializer_class = BargainEntrySerializer
 
     def get_queryset(self):
-        return BargainEntry.objects.filter(tenant=self.request.user.tenant)
+        return BargainEntry.objects.filter(tenant=self.request.user.tenant) \
+            .select_related('seller', 'buyer') \
+            .prefetch_related('splits') \
+            .annotate(delivered_bales=Sum('deliverydetails__quantity_bales'))
 
     def perform_create(self, serializer):
         serializer.save(tenant=self.request.user.tenant)
+
+    @action(detail=False, methods=['get'])
+    def lite(self, request):
+        qs = self.get_queryset()
+        if 'status' in request.query_params:
+            qs = qs.filter(status=request.query_params['status'])
+        data = list(qs.values(
+            'deal_no', 'bargain_date', 'smart_deal_id', 'bales', 'rate', 'status', 'payment_condition',
+            'seller__company_name', 'buyer__company_name'
+        ))
+        for d in data:
+            d['id'] = d['deal_no']
+            d['seller_name'] = d.pop('seller__company_name', None)
+            d['buyer_name'] = d.pop('buyer__company_name', None)
+            d['splits'] = [] 
+            d['remaining_bales'] = d['bales']
+        return Response(data)
 
 class PassingEntryViewSet(viewsets.ModelViewSet):
     serializer_class = PassingEntrySerializer
 
     def get_queryset(self):
-        return PassingEntry.objects.filter(tenant=self.request.user.tenant)
+        return PassingEntry.objects.filter(tenant=self.request.user.tenant) \
+            .select_related('bargain__seller', 'bargain__buyer') \
+            .annotate(has_deliveries=Exists(DeliveryDetails.objects.filter(passing=OuterRef('pk'))))
 
     def perform_create(self, serializer):
         serializer.save(tenant=self.request.user.tenant)
+
+    @action(detail=False, methods=['get'])
+    def lite(self, request):
+        qs = self.get_queryset()
+        data = list(qs.values(
+            'id', 'lot_no', 'pr_no', 'bales', 'has_deliveries',
+            'bargain__smart_deal_id', 'bargain__seller__company_name', 'bargain__buyer__company_name'
+        ))
+        for d in data:
+            d['deal_no'] = d.pop('bargain__smart_deal_id', None)
+            d['seller_name'] = d.pop('bargain__seller__company_name', None)
+            d['buyer_name'] = d.pop('bargain__buyer__company_name', None)
+            d['status'] = "Dispatched" if d.pop('has_deliveries', False) else "Pending Dispatch"
+        return Response(data)
 
 class DeliveryDetailsViewSet(viewsets.ModelViewSet):
     serializer_class = DeliveryDetailsSerializer
 
     def get_queryset(self):
-        return DeliveryDetails.objects.filter(tenant=self.request.user.tenant)
+        return DeliveryDetails.objects.filter(tenant=self.request.user.tenant) \
+            .select_related('bargain__seller', 'bargain__buyer', 'passing')
 
     def perform_create(self, serializer):
         serializer.save(tenant=self.request.user.tenant)
@@ -194,23 +242,22 @@ def get_dashboard_analytics(request):
 
         # Unbilled Deliveries Logic (Older than 6 months or oldest)
         from datetime import date, timedelta
+        from django.db.models import Min
         six_months_ago = date.today() - timedelta(days=180)
         
         unbilled_deliveries_qs = DeliveryDetails.objects.filter(
             tenant=request.user.tenant, 
             seller_billed=False, 
             buyer_billed=False
-        ).order_by('bill_date')
+        )
         
         oldest_unbilled_count = unbilled_deliveries_qs.filter(bill_date__lt=six_months_ago).count()
-        oldest_unbilled_date = None
-        if oldest_unbilled_count > 0:
-            oldest_unbilled_date = unbilled_deliveries_qs.filter(bill_date__lt=six_months_ago).first().bill_date.strftime('%d-%m-%Y')
-        elif unbilled_deliveries_qs.exists():
-            oldest_unbilled_date = unbilled_deliveries_qs.first().bill_date.strftime('%d-%m-%Y')
+        
+        oldest_unbilled_date_agg = unbilled_deliveries_qs.aggregate(oldest=Min('bill_date'))['oldest']
+        oldest_unbilled_date = oldest_unbilled_date_agg.strftime('%d-%m-%Y') if oldest_unbilled_date_agg else None
             
         unbilled_info = {
-            "count": oldest_unbilled_count if oldest_unbilled_count > 0 else 1 if unbilled_deliveries_qs.exists() else 0,
+            "count": oldest_unbilled_count if oldest_unbilled_count > 0 else (1 if oldest_unbilled_date else 0),
             "oldest_date": oldest_unbilled_date,
             "is_6_months_plus": oldest_unbilled_count > 0
         }

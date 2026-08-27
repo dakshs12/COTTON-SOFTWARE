@@ -71,8 +71,8 @@ export default function DeliveryEntryPage() {
     try {
       const [delRes, passRes, barRes] = await Promise.all([
         api.get('deliveries/'),
-        api.get('passings/'),
-        api.get('bargains/')
+        api.get('passings/lite/'),
+        api.get('bargains/lite/')
       ]);
       setDeliveries(delRes.data.reverse());
       setPassings(passRes.data.reverse());

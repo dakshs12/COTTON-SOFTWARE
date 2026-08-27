@@ -181,7 +181,7 @@ export default function BargainEntryPage() {
     try {
       const [bargainRes, partyRes] = await Promise.all([
         api.get('bargains/'),
-        api.get('parties/')
+        api.get('parties/lite/')
       ]);
       setBargains(bargainRes.data.reverse());
       setParties(partyRes.data);

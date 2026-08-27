@@ -78,7 +78,7 @@ export default function PassingEntryPage() {
     try {
       const [passingRes, bargainRes] = await Promise.all([
         api.get('passings/'),
-        api.get('bargains/')
+        api.get('bargains/lite/')
       ]);
       setPassings(passingRes.data.reverse());
       setBargains(bargainRes.data.reverse());

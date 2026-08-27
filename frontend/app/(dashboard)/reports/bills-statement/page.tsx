@@ -54,7 +54,7 @@ export default function BillsStatementPage() {
 
   const fetchFirms = async () => {
     try {
-      const res = await api.get('firms/');
+      const res = await api.get('firms/lite/');
       setFirms(res.data);
       if (res.data.length > 0) {
         setSelectedFirmId(res.data[0].id.toString());
@@ -66,7 +66,7 @@ export default function BillsStatementPage() {
 
   const fetchParties = async () => {
     try {
-      const res = await api.get('parties/');
+      const res = await api.get('parties/lite/');
       setParties(res.data);
       setLoading(false);
     } catch (error) {

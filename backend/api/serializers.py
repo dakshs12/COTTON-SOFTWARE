@@ -39,7 +39,9 @@ class BargainEntrySerializer(serializers.ModelSerializer):
         read_only_fields = ('tenant',)
 
     def get_remaining_bales(self, obj):
-        delivered = obj.deliverydetails_set.aggregate(total=models.Sum('quantity_bales'))['total'] or 0
+        delivered = getattr(obj, 'delivered_bales', None)
+        if delivered is None:
+            delivered = obj.deliverydetails_set.aggregate(total=models.Sum('quantity_bales'))['total'] or 0
         return obj.bales - delivered
 
     def create(self, validated_data):
@@ -72,7 +74,10 @@ class PassingEntrySerializer(serializers.ModelSerializer):
         read_only_fields = ('tenant',)
 
     def get_status(self, obj):
-        return "Dispatched" if obj.deliverydetails_set.exists() else "Pending Dispatch"
+        has_deliveries = getattr(obj, 'has_deliveries', None)
+        if has_deliveries is None:
+            has_deliveries = obj.deliverydetails_set.exists()
+        return "Dispatched" if has_deliveries else "Pending Dispatch"
 
 class DeliveryDetailsSerializer(serializers.ModelSerializer):
     deal_display = serializers.CharField(source='bargain.smart_deal_id', read_only=True)

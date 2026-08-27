@@ -90,8 +90,8 @@ export default function BillGenerationPage() {
   const fetchMasters = async () => {
     try {
       const [pRes, fRes] = await Promise.all([
-        api.get('parties/'),
-        api.get('firms/')
+        api.get('parties/lite/'),
+        api.get('firms/lite/')
       ]);
       setParties(pRes.data);
       setFirms(fRes.data);
