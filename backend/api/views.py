@@ -53,14 +53,18 @@ class BargainEntryViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def lite(self, request):
-        qs = self.get_queryset()
+        qs = BargainEntry.objects.filter(tenant=request.user.tenant)
         if 'status' in request.query_params:
             qs = qs.filter(status=request.query_params['status'])
         data = list(qs.values(
-            'deal_no', 'bargain_date', 'smart_deal_id', 'bales', 'rate', 'status', 'payment_condition',
+            'deal_no', 'bargain_date', 'bales', 'rate', 'status', 'payment_condition',
             'seller__company_name', 'buyer__company_name'
         ))
         for d in data:
+            date = d['bargain_date']
+            fy = f"{date.year % 100}-{(date.year + 1) % 100}" if date.month >= 4 else f"{(date.year - 1) % 100}-{date.year % 100}"
+            d['smart_deal_id'] = f"{fy}/{d['deal_no']}"
+            
             d['id'] = d['deal_no']
             d['seller_name'] = d.pop('seller__company_name', None)
             d['buyer_name'] = d.pop('buyer__company_name', None)
@@ -81,13 +85,21 @@ class PassingEntryViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def lite(self, request):
-        qs = self.get_queryset()
+        qs = PassingEntry.objects.filter(tenant=request.user.tenant).annotate(
+            has_deliveries=Exists(DeliveryDetails.objects.filter(passing=OuterRef('pk')))
+        )
         data = list(qs.values(
             'id', 'lot_no', 'pr_no', 'bales', 'has_deliveries',
-            'bargain__smart_deal_id', 'bargain__seller__company_name', 'bargain__buyer__company_name'
+            'bargain__deal_no', 'bargain__bargain_date', 'bargain__seller__company_name', 'bargain__buyer__company_name'
         ))
         for d in data:
-            d['deal_no'] = d.pop('bargain__smart_deal_id', None)
+            date = d.pop('bargain__bargain_date', None)
+            if date:
+                fy = f"{date.year % 100}-{(date.year + 1) % 100}" if date.month >= 4 else f"{(date.year - 1) % 100}-{date.year % 100}"
+                d['deal_no'] = f"{fy}/{d.pop('bargain__deal_no')}"
+            else:
+                d['deal_no'] = d.pop('bargain__deal_no', None)
+                
             d['seller_name'] = d.pop('bargain__seller__company_name', None)
             d['buyer_name'] = d.pop('bargain__buyer__company_name', None)
             d['status'] = "Dispatched" if d.pop('has_deliveries', False) else "Pending Dispatch"
