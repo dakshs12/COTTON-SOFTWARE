@@ -89,7 +89,7 @@ class PassingEntryViewSet(viewsets.ModelViewSet):
             has_deliveries=Exists(DeliveryDetails.objects.filter(passing=OuterRef('pk')))
         )
         data = list(qs.values(
-            'id', 'lot_no', 'pr_no', 'bales', 'has_deliveries',
+            'id', 'lot_no', 'pr_no', 'bales', 'has_deliveries', 'bargain',
             'bargain__deal_no', 'bargain__bargain_date', 'bargain__seller__company_name', 'bargain__buyer__company_name'
         ))
         for d in data:

@@ -241,6 +241,7 @@ class UserSubscriptionAdmin(ModelAdmin):
         if object_id:
             sub = UserSubscription.objects.get(pk=object_id)
             sub.end_date = timezone.now() + timedelta(days=365)
+            sub.plan_type = '1_YEAR'
             sub.is_active = True
             sub.save()
             messages.success(request, f"Successfully renewed {sub.user.username} for 1 year.")
