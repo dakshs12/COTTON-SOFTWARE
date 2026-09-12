@@ -74,21 +74,52 @@ body {
 
 @media print {
   @page {
-    margin: 0;
+    margin: 12mm 10mm;
     size: A4 portrait;
   }
-  body {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-    background: white;
+  html, body {
+    background: #ffffff !important;
+    color: #111827 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
   }
-  body > * {
+  /* Remove layout sidebar offset */
+  div[style*="--cb-sidebar-width"],
+  div[style*="margin-left"] {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  /* Ensure print utilities work reliably */
+  .print\:hidden {
     display: none !important;
   }
-  body > main {
+  .print\:block {
     display: block !important;
-    margin-left: 0 !important;
-    padding: 0 !important;
+  }
+  /* Clean styling for cards and tables during print */
+  .neu-card {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+    background: #ffffff !important;
+    break-inside: avoid;
+  }
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  tr {
+    break-inside: avoid;
   }
 }
 

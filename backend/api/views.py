@@ -2,7 +2,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import * 
 from .serializers import *
-from django.db.models import Q, Sum, OuterRef, Exists
+from django.db.models import Q, Sum, OuterRef, Exists, Count, F
+from django.db.models.functions import Coalesce
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from .models import PartyMaster, FirmMaster, BargainEntry, PassingEntry, DeliveryDetails
@@ -20,6 +21,19 @@ class PartyMasterViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def lite(self, request):
         qs = self.get_queryset().values('id', 'company_name', 'station', 'party_type')
+        return Response(list(qs))
+
+    @action(detail=False, methods=['get'])
+    def directory(self, request):
+        tenant = request.user.tenant
+        qs = PartyMaster.objects.filter(tenant=tenant).annotate(
+            total_sales=Count('sales', filter=Q(sales__tenant=tenant), distinct=True),
+            total_purchases=Count('purchases', filter=Q(purchases__tenant=tenant), distinct=True),
+            total_deals=Count('sales', filter=Q(sales__tenant=tenant), distinct=True) + Count('purchases', filter=Q(purchases__tenant=tenant), distinct=True)
+        ).values(
+            'id', 'party_code', 'company_name', 'station', 'state', 'party_type',
+            'contact_person', 'mobile', 'gst_no', 'total_deals'
+        ).order_by('company_name')
         return Response(list(qs))
 
     def perform_create(self, serializer):
@@ -71,6 +85,122 @@ class BargainEntryViewSet(viewsets.ModelViewSet):
             d['splits'] = [] 
             d['remaining_bales'] = d['bales']
         return Response(data)
+
+    @action(detail=False, methods=['get'])
+    def party_ledger(self, request):
+        party_id = request.query_params.get('party_id')
+        if not party_id:
+            return Response({"error": "party_id query parameter is required."}, status=400)
+
+        tenant = request.user.tenant
+        try:
+            selected_party = PartyMaster.objects.get(id=party_id, tenant=tenant)
+        except PartyMaster.DoesNotExist:
+            return Response({"error": "Party not found."}, status=404)
+
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        role = request.query_params.get('role', 'all').lower()  # 'all', 'buyer', 'seller'
+
+        deals_qs = BargainEntry.objects.filter(tenant=tenant)
+
+        if role == 'buyer':
+            deals_qs = deals_qs.filter(buyer=selected_party)
+        elif role == 'seller':
+            deals_qs = deals_qs.filter(seller=selected_party)
+        else:
+            deals_qs = deals_qs.filter(Q(buyer=selected_party) | Q(seller=selected_party))
+
+        if start_date:
+            deals_qs = deals_qs.filter(bargain_date__gte=start_date)
+        if end_date:
+            deals_qs = deals_qs.filter(bargain_date__lte=end_date)
+
+        # Single query with select_related, prefetch_related and annotations to avoid N+1 queries
+        deals_qs = deals_qs.select_related('buyer', 'seller').prefetch_related('passingentry_set').annotate(
+            dispatched_bales=Coalesce(Sum('deliverydetails__quantity_bales'), 0),
+            has_passing=Exists(PassingEntry.objects.filter(bargain=OuterRef('pk')))
+        ).order_by('-bargain_date', '-deal_no')
+
+        deals_list = []
+        total_booked_bales = 0
+        total_dispatched_bales = 0
+
+        for b in deals_qs:
+            is_buyer = (b.buyer_id == selected_party.id)
+            counterparty = b.seller if is_buyer else b.buyer
+            role_label = "Bought From" if is_buyer else "Sold To"
+            role_type = "Buyer" if is_buyer else "Seller"
+
+            dispatched = b.dispatched_bales or 0
+            pending = max(0, b.bales - dispatched)
+            total_booked_bales += b.bales
+            total_dispatched_bales += dispatched
+
+            # Status derivation: Pending / In-Passing / Dispatched
+            if dispatched >= b.bales and b.bales > 0:
+                deal_status = "Dispatched"
+            elif dispatched > 0 or b.has_passing or b.status == 'Approved':
+                deal_status = "In-Passing"
+            else:
+                deal_status = "Pending"
+
+            passings = list(b.passingentry_set.all())
+            lot_nos = [p.lot_no for p in passings if p.lot_no]
+            lot_no_str = ", ".join(lot_nos) if lot_nos else "-"
+            book_bargain_nos = [p.book_bargain_no for p in passings if p.book_bargain_no]
+            book_bargain_no_str = ", ".join(book_bargain_nos) if book_bargain_nos else ""
+
+            deals_list.append({
+                "deal_no": b.deal_no,
+                "smart_deal_id": b.smart_deal_id,
+                "bargain_date": b.bargain_date.strftime('%Y-%m-%d'),
+                "formatted_date": b.bargain_date.strftime('%d-%m-%Y'),
+                "role": role_type,
+                "role_label": role_label,
+                "counterparty_name": counterparty.company_name if counterparty else "-",
+                "counterparty_station": counterparty.station if counterparty else "-",
+                "seller_name": b.seller.company_name if b.seller else "-",
+                "buyer_name": b.buyer.company_name if b.buyer else "-",
+                "station": b.station,
+                "variety": b.quality_condition or "Shankar-6",
+                "rate": float(b.rate),
+                "unit": b.unit or "Candy",
+                "booked_bales": b.bales,
+                "dispatched_bales": dispatched,
+                "pending_bales": pending,
+                "status": deal_status,
+                "original_status": b.status,
+                "lot_no": lot_no_str,
+                "book_bargain_no": book_bargain_no_str
+            })
+
+        total_pending_bales = max(0, total_booked_bales - total_dispatched_bales)
+
+        summary = {
+            "total_deals": len(deals_list),
+            "total_booked_bales": total_booked_bales,
+            "total_dispatched_bales": total_dispatched_bales,
+            "total_pending_bales": total_pending_bales,
+        }
+
+        party_info = {
+            "id": selected_party.id,
+            "party_code": selected_party.party_code,
+            "company_name": selected_party.company_name,
+            "station": selected_party.station,
+            "state": selected_party.state,
+            "party_type": selected_party.party_type,
+            "contact_person": selected_party.contact_person,
+            "mobile": selected_party.mobile,
+            "gst_no": selected_party.gst_no,
+        }
+
+        return Response({
+            "party": party_info,
+            "summary": summary,
+            "deals": deals_list
+        })
 
 class PassingEntryViewSet(viewsets.ModelViewSet):
     serializer_class = PassingEntrySerializer

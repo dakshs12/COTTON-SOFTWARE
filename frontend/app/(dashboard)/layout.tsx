@@ -46,11 +46,11 @@ export default function DashboardLayout({
 
       {/* Main content area — offset by sidebar width */}
       <div 
-        className="flex-1 min-h-screen flex flex-col"
+        className="flex-1 min-h-screen flex flex-col print:m-0 print:p-0 print:w-full print:!ml-0"
         style={{ marginLeft: "var(--cb-sidebar-width)" }}
       >
         {status === 'READ_ONLY_GRACE' && (
-          <div className="bg-amber-100 border-b border-amber-200 px-4 py-2.5 flex items-center justify-center gap-2 text-amber-800 text-sm shadow-sm w-full">
+          <div className="bg-amber-100 border-b border-amber-200 px-4 py-2.5 flex items-center justify-center gap-2 text-amber-800 text-sm shadow-sm w-full print:hidden">
             <AlertCircle className="w-4 h-4" />
             <span className="font-medium">
               Your subscription has ended. CottBook is in read-only mode for {7 + daysRemaining} more days before total lockout.
@@ -60,7 +60,7 @@ export default function DashboardLayout({
         )}
         
         {status === 'ACTIVE' && planType === 'TRIAL' && (
-          <div className="bg-blue-50 border-b border-blue-100 px-4 py-2 flex items-center justify-center gap-2 text-blue-800 text-sm w-full">
+          <div className="bg-blue-50 border-b border-blue-100 px-4 py-2 flex items-center justify-center gap-2 text-blue-800 text-sm w-full print:hidden">
             <span className="font-medium">
               You are currently on a free trial with {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} remaining. Upgrade your plan to unlock full access.
             </span>
@@ -71,7 +71,7 @@ export default function DashboardLayout({
         )}
         
         {status === 'EXPIRING_WARNING' && (
-          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-center gap-2 text-amber-900 text-sm w-full">
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-center gap-2 text-amber-900 text-sm w-full print:hidden">
             <AlertCircle className="w-4 h-4 text-amber-600" />
             <span className="font-medium">
               {planType === 'TRIAL'
@@ -84,7 +84,7 @@ export default function DashboardLayout({
           </div>
         )}
 
-        <main className="flex-1 p-8 print:m-0 print:p-0">
+        <main className="flex-1 p-8 print:m-0 print:p-0 print:w-full">
           {children}
         </main>
       </div>

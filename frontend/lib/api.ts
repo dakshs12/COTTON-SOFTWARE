@@ -2,15 +2,19 @@ import axios from 'axios';
 
 // Safely resolve the base URL without risking unsecure HTTP fallbacks on production
 const getBaseURL = () => {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')}/api/`;
-  }
-
   if (typeof window !== 'undefined') {
-    // Only use port 8000 if explicitly testing on local machine
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    // Only use port 8000 if explicitly testing on local machine or local network
+    if (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname.startsWith('192.168.')
+    ) {
       return `http://${window.location.hostname}:8000/api/`;
     }
+  }
+
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')}/api/`;
   }
 
   // Production fallback if NEXT_PUBLIC_API_URL is undefined

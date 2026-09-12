@@ -14,7 +14,8 @@ import {
   Clock,
   ClipboardList,
   User,
-  CreditCard
+  CreditCard,
+  BookOpen
 } from 'lucide-react';
 
 const menuItems = [
@@ -45,6 +46,7 @@ const menuItems = [
     items: [
       { name: 'Bills Statement', path: '/reports/bills-statement', icon: ClipboardList },
       { name: "Due List", path: "/reports/due-list", icon: Clock },
+      { name: "Party Report", path: "/reports/party-report", icon: BookOpen },
       // { name: 'Analytics', path: '/reports/analytics', icon: BarChart3 },
     ]
   }
