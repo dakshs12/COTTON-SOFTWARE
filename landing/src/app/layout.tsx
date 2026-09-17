@@ -75,7 +75,7 @@ export const metadata: Metadata = {
   },
 };
 
-import { Agentation } from "agentation";
+import DevAgentation from "@/components/DevAgentation";
 
 export default function RootLayout({
   children,
@@ -86,9 +86,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className={`${dmSans.variable} ${plusJakartaSans.variable} antialiased bg-[#F8FAF7] text-slate-900`}>
         {children}
-        <div className="print:hidden">
-          <Agentation />
-        </div>
+        <DevAgentation />
       </body>
     </html>
   );

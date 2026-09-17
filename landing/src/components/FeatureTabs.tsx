@@ -44,13 +44,13 @@ export default function FeatureTabs() {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14">
           <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-[#F0FDF4] text-[#2D5A27] border border-[#DCFCE7] uppercase tracking-wider">
-            Built For Cotton Trading
+            Built specifically for Cotton Brokers
           </span>
           <h2 className="text-3xl sm:text-4xl font-black text-[#04294E] tracking-tight mt-3">
             Every Step of Your Cotton Deal, Completely Automated
           </h2>
           <p className="mt-4 text-base sm:text-lg text-slate-600">
-            Click through our 5 core workflows to see how CottBook replaces scattered WhatsApp chats with an end-to-end digital audit trail.
+            Click through our 5 core workflows to see how CottBook replaces unmanaged business operations with an end-to-end digital audit trail.
           </p>
         </div>
 
@@ -62,11 +62,10 @@ export default function FeatureTabs() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTabId(tab.id)}
-                className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                  isActive
-                    ? "bg-[#2D5A27] text-white shadow-lg shadow-[#2D5A27]/25 scale-[1.02]"
-                    : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-50"
-                }`}
+                className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${isActive
+                  ? "bg-[#2D5A27] text-white shadow-lg shadow-[#2D5A27]/25 scale-[1.02]"
+                  : "bg-white text-slate-600 hover:text-slate-900 border border-slate-200/80 hover:bg-slate-50"
+                  }`}
               >
                 <span className={isActive ? "text-emerald-200" : "text-slate-400"}>
                   {getTabIcon(tab.id)}
@@ -83,15 +82,6 @@ export default function FeatureTabs() {
             {/* Left Column: Descriptions & Bullet Points */}
             <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
               <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#F0FDF4] text-[#2D5A27] border border-[#DCFCE7]">
-                    {activeFeature.badge}
-                  </span>
-                  <span className="text-xs text-slate-400 font-mono">
-                    Workflow #{FEATURE_TABS.findIndex((t) => t.id === activeTabId) + 1}
-                  </span>
-                </div>
-
                 <h3 className="text-2xl sm:text-3xl font-black text-[#04294E] tracking-tight">
                   {activeFeature.title}
                 </h3>
