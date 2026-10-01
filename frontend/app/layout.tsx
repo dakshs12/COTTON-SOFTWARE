@@ -25,6 +25,7 @@ export const metadata: Metadata = {
 import { Agentation } from "agentation";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from "./components/AuthProvider";
+import { PHProvider } from "./providers";
 
 export default function RootLayout({
   children,
@@ -39,16 +40,18 @@ export default function RootLayout({
         className={`${playfairDisplay.variable} ${dmSans.variable} ${quicksand.variable} min-h-screen flex text-gray-800 bg-cb-bg`}
         suppressHydrationWarning
       >
-        <GoogleOAuthProvider clientId={googleClientId}>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </GoogleOAuthProvider>
+        <PHProvider>
+          <GoogleOAuthProvider clientId={googleClientId}>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </GoogleOAuthProvider>
 
-        {/* Agentation visual feedback tool (development only) */}
-        <div className="print:hidden">
-          {process.env.NODE_ENV === "development" && <Agentation />}
-        </div>
+          {/* Agentation visual feedback tool (development only) */}
+          <div className="print:hidden">
+            {process.env.NODE_ENV === "development" && <Agentation />}
+          </div>
+        </PHProvider>
       </body>
     </html>
   );
