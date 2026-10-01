@@ -18,7 +18,7 @@ const quicksand = Quicksand({
 });
 
 export const metadata: Metadata = {
-  title: "CottBook — Brokerage Management",
+  title: "CottBook - Brokerage Management",
   description: "Cotton brokerage platform for managing bargains, passings, deliveries, and invoicing.",
 };
 
@@ -32,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
-  
+
   return (
     <html lang="en">
       <body

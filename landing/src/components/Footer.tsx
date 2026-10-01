@@ -12,7 +12,7 @@ export default function Footer() {
             <Link href="/" className="inline-block group">
               <img
                 src="/full-logo-main.svg"
-                alt="CottBook — Software for Cotton Brokers"
+                alt="CottBook - Software for Cotton Brokers"
                 className="h-14 sm:h-16 w-auto object-contain transition-transform duration-200 group-hover:scale-102"
               />
             </Link>

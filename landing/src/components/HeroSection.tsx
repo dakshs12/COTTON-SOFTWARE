@@ -24,7 +24,7 @@ export default function HeroSection() {
   return (
     <section className="relative pt-32 pb-20 lg:pt-36 lg:pb-32 overflow-hidden">
       {/* Cotton Landscape Background Image */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-top sm:bg-center bg-no-repeat pointer-events-none"
         style={{
           backgroundImage: "url('/login-screen-bg.png')",
@@ -51,7 +51,7 @@ export default function HeroSection() {
 
           {/* Sub-Headline */}
           <p className="mt-6 text-lg sm:text-xl text-slate-700 max-w-3xl mx-auto font-normal leading-relaxed">
-            The complete digital operating system for modern cotton brokers. Seamlessly manage all your business operations — <strong className="font-semibold text-slate-900">Bargain Entry</strong>, <strong className="font-semibold text-slate-900">Quality Passing</strong>, <strong className="font-semibold text-slate-900">Delivery Tracking</strong>, <strong className="font-semibold text-slate-900">Invoice Generation</strong>, and <strong className="font-semibold text-slate-900">Pending Due Lists</strong> — while generating official branded WhatsApp contract notes in seconds.
+            The complete digital operating system for modern cotton brokers. Seamlessly manage all your business operations - <strong className="font-semibold text-slate-900">Bargain Entry</strong>, <strong className="font-semibold text-slate-900">Quality Passing</strong>, <strong className="font-semibold text-slate-900">Delivery Tracking</strong>, <strong className="font-semibold text-slate-900">Invoice Generation</strong>, and <strong className="font-semibold text-slate-900">Pending Due Lists</strong> - while generating official branded WhatsApp contract notes in seconds.
           </p>
 
           {/* Primary Call to Actions */}
@@ -104,21 +104,19 @@ export default function HeroSection() {
               <div className="flex items-center gap-1 bg-slate-800 p-0.5 rounded-lg text-xs">
                 <button
                   onClick={() => setActiveMockupTab("dashboard")}
-                  className={`px-3 py-1 rounded-md transition-all font-medium ${
-                    activeMockupTab === "dashboard"
+                  className={`px-3 py-1 rounded-md transition-all font-medium ${activeMockupTab === "dashboard"
                       ? "bg-[#2D5A27] text-white shadow-sm"
                       : "text-slate-400 hover:text-white"
-                  }`}
+                    }`}
                 >
                   Master Audit Dashboard
                 </button>
                 <button
                   onClick={() => setActiveMockupTab("bargain")}
-                  className={`px-3 py-1 rounded-md transition-all font-medium ${
-                    activeMockupTab === "bargain"
+                  className={`px-3 py-1 rounded-md transition-all font-medium ${activeMockupTab === "bargain"
                       ? "bg-[#2D5A27] text-white shadow-sm"
                       : "text-slate-400 hover:text-white"
-                  }`}
+                    }`}
                 >
                   Live Contract Note
                 </button>

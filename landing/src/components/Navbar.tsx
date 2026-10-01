@@ -20,11 +20,10 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
           ? "glass-nav py-3 border-b border-slate-200/80 shadow-sm"
           : "bg-transparent py-4"
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
@@ -33,7 +32,7 @@ export default function Navbar() {
             <Link href="/" className="flex items-center group py-0.5">
               <img
                 src="/full-logo-main.svg"
-                alt="CottBook — Software for Cotton Brokers"
+                alt="CottBook - Software for Cotton Brokers"
                 className="h-14 sm:h-16 lg:h-16 w-auto object-contain transition-transform duration-200 group-hover:scale-102"
               />
             </Link>

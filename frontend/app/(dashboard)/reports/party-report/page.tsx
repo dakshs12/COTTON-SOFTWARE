@@ -475,7 +475,7 @@ export default function PartyReportPage() {
     // Footer Watermark row strictly at the bottom border
     aoa.push([]);
     aoa.push([
-      `Generated via CottBook — Software for Cotton Brokers • Exported on ${new Date().toLocaleString("en-IN")}`
+      `Generated via CottBook - Software for Cotton Brokers • Exported on ${new Date().toLocaleString("en-IN")}`
     ]);
 
     const worksheet = XLSX.utils.aoa_to_sheet(aoa);
@@ -580,7 +580,7 @@ export default function PartyReportPage() {
     // Footer Watermark strictly at the bottom
     aoa.push([]);
     aoa.push([
-      `Generated via CottBook — Software for Cotton Brokers • Exported on ${new Date().toLocaleString("en-IN")}`
+      `Generated via CottBook - Software for Cotton Brokers • Exported on ${new Date().toLocaleString("en-IN")}`
     ]);
 
     const worksheet = XLSX.utils.aoa_to_sheet(aoa);
@@ -959,8 +959,8 @@ export default function PartyReportPage() {
                     {roleFilter === "all"
                       ? "All Trades (Buyer & Seller)"
                       : roleFilter === "buyer"
-                      ? "As Buyer"
-                      : "As Seller"}
+                        ? "As Buyer"
+                        : "As Seller"}
                   </p>
                   <p>
                     <strong className="text-gray-900">Contact:</strong>{" "}
@@ -1129,9 +1129,9 @@ export default function PartyReportPage() {
                               ₹ {deal.rate % 1 === 0
                                 ? deal.rate.toLocaleString("en-IN")
                                 : deal.rate.toLocaleString("en-IN", {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                  })}
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2
+                                })}
                               <span className="text-[10px] text-gray-400 block">
                                 /{deal.unit || "Candy"}
                               </span>
@@ -1245,9 +1245,9 @@ export default function PartyReportPage() {
                               {deal.rate % 1 === 0
                                 ? deal.rate.toLocaleString("en-IN")
                                 : deal.rate.toLocaleString("en-IN", {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                  })}
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2
+                                })}
                             </td>
 
                             {/* LOT NO */}
@@ -1654,7 +1654,7 @@ export default function PartyReportPage() {
       <div className="hidden print:block mt-12 pt-4 border-t border-gray-400 text-center text-xs text-gray-600">
         <div className="flex justify-between items-center px-2">
           <span>
-            Generated via <strong>CottBook</strong> — Software for Cotton Brokers
+            Generated via <strong>CottBook</strong> - Software for Cotton Brokers
           </span>
           <span>
             {new Date().toLocaleString("en-IN")}

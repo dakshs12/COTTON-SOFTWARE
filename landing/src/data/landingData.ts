@@ -251,7 +251,7 @@ export const SECURITY_PILLARS = [
   {
     title: "Zero Commercial Data Sharing",
     description:
-      "CottBook is an independent technology software company—not a commodity trader, ginner, or cotton merchant. We do not sell, aggregate, or monetize your trade intelligence.",
+      "CottBook is an independent technology software company - not a commodity trader, ginner, or cotton merchant. We do not sell, aggregate, or monetize your trade intelligence.",
     iconName: "Lock",
   },
   {

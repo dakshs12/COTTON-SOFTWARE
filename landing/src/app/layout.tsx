@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     locale: "en_IN",
     url: "https://cottbook.com",
     siteName: "CottBook",
-    title: "CottBook — Software for Cotton Brokers & Commission Agents",
+    title: "CottBook - Software for Cotton Brokers & Commission Agents",
     description:
       "Stop managing cotton trades on traditional excel sheets. Turn verbal saudas into branded WhatsApp contract slips, track lot passings, audit bale balances, and automate brokerage GST billing.",
     images: [
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "CottBook — Software for Cotton Brokers",
+    title: "CottBook - Software for Cotton Brokers",
     description:
       "Turn verbal saudas into branded PDF contract notes and automate your cotton brokerage in seconds.",
     images: ["/full-logo-main.svg"],

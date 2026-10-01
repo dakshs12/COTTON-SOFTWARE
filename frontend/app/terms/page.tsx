@@ -129,7 +129,7 @@ export default function TermsPage() {
                   <strong className="text-gray-900">Informational Calculation Tools:</strong> All automated mathematical utilities (brokerage per candy/quintal, tare percentage deductions, moisture/trash allowances, passing split adjustments, GST amounts) are provided for operational convenience.
                 </li>
                 <li>
-                  <strong className="text-gray-900">Broker Compliance:</strong> The Broker bears sole and exclusive responsibility for complying with applicable Goods and Services Tax (GST) provisions—including Reverse Charge Mechanism (RCM) applicability on cotton brokerage services, TDS deductions, e-invoicing mandates, and APMC agricultural mandi fee compliance under Indian tax laws.
+                  <strong className="text-gray-900">Broker Compliance:</strong> The Broker bears sole and exclusive responsibility for complying with applicable Goods and Services Tax (GST) provision - including Reverse Charge Mechanism (RCM) applicability on cotton brokerage services, TDS deductions, e-invoicing mandates, and APMC agricultural mandi fee compliance under Indian tax laws.
                 </li>
               </ul>
             </section>
