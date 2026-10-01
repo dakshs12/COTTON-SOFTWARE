@@ -89,7 +89,9 @@ export default function LoginPage() {
         localStorage.setItem('last_username', res.data.email || 'google_user');
         const success = await checkAuth();
         if (success) {
-          posthog.identify(res.data.email || 'google_user');
+          if (res.data.email) {
+            posthog.identify(res.data.email);
+          }
           posthog.capture("user_logged_in_google", { method: "google" });
           window.location.href = "/";
         }

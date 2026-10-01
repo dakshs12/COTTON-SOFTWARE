@@ -1,20 +1,12 @@
-import posthog from "posthog-js";
+import posthog from 'posthog-js'
 
-const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
+const token = (process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN || process.env.NEXT_PUBLIC_POSTHOG_KEY)?.trim()
+const host = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || 'https://us.i.posthog.com'
 
-if (!token) {
-  if (process.env.NODE_ENV !== "production") {
-    console.error(
-      "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN variable required by PostHog is missing or un-configured, " +
-        "this causes events to be silently missed. This error stops appearing once NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN is configured"
-    );
-  }
-} else {
+if (typeof window !== 'undefined' && token) {
   posthog.init(token, {
-    api_host: "/ingest",
-    ui_host: "https://eu.posthog.com",
-    defaults: "2026-01-30",
-    capture_exceptions: true,
-    debug: process.env.NODE_ENV === "development",
-  });
+    api_host: host,
+    defaults: '2026-05-30',
+  })
 }
+
