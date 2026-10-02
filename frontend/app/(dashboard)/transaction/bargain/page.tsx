@@ -1,14 +1,114 @@
 "use client";
 import { Toast } from '@/app/components/Toast';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import api from '@/lib/api';
-import { Save, Plus, FileText, X, Search, ChevronDown, Check, Edit2, Trash2 } from 'lucide-react';
+import { Save, Plus, FileText, X, Search, ChevronDown, Check, Edit2, Trash2, Loader2 } from 'lucide-react';
 // Import the new Calendar from your existing folder
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
 import posthog from "posthog-js";
 
-const SmartDropdown = ({ label, name, options, placeholder = "Select...", formData, setFormData, activeDropdown, setActiveDropdown }: any) => {
+// Human-readable labels for all fields
+const FIELD_LABELS: Record<string, string> = {
+  bargain_date: "Deal Date",
+  seller: "Seller",
+  buyer: "Buyer",
+  station: "Station",
+  state: "State",
+  bales: "Bales",
+  rate: "Rate",
+  unit: "Delivery to (Unit)",
+  payment_condition: "Payment Condition (Days)",
+  payment_by: "Payment By",
+  cash_disc: "Cash Discount",
+  weight_terms: "Weight Terms",
+  delivery_terms: "Delivery Terms",
+  delivery_type: "Delivery Type",
+  deal_type: "Deal Type",
+  cotton_certificate: "Cotton Certificate",
+  delivery_from: "Delivery From",
+  quality_condition: "Quality Condition",
+  advised_by: "Advised By",
+  remarks: "Remarks",
+  status: "Overall Status",
+  splits: "Bales Split",
+};
+
+// Formats backend / DRF error responses into clean human-readable text and per-field errors
+const parseBackendErrors = (data: any): { formattedMessage: string; errorsByField: Record<string, string> } => {
+  const errorsByField: Record<string, string> = {};
+  const errorMessages: string[] = [];
+
+  if (!data) {
+    return { formattedMessage: "Error saving deal. Please check all fields.", errorsByField };
+  }
+
+  if (typeof data === "string") {
+    return { formattedMessage: data, errorsByField };
+  }
+
+  if (Array.isArray(data)) {
+    return { formattedMessage: data.join(", "), errorsByField };
+  }
+
+  if (typeof data === "object") {
+    if (data.detail && typeof data.detail === "string") {
+      return { formattedMessage: data.detail, errorsByField };
+    }
+    if (data.error && typeof data.error === "string") {
+      return { formattedMessage: data.error, errorsByField };
+    }
+
+    for (const [field, rawErrors] of Object.entries(data)) {
+      const fieldName = FIELD_LABELS[field] || field.replace(/_/g, " ");
+      let msg = "";
+      if (Array.isArray(rawErrors)) {
+        msg = rawErrors.map((e: any) => (typeof e === "string" ? e : JSON.stringify(e))).join(" ");
+      } else if (typeof rawErrors === "string") {
+        msg = rawErrors;
+      } else if (typeof rawErrors === "object" && rawErrors !== null) {
+        msg = JSON.stringify(rawErrors);
+      }
+
+      let friendlyMsg = msg;
+      if (
+        /may not be blank/i.test(msg) ||
+        /is required/i.test(msg) ||
+        /may not be null/i.test(msg) ||
+        /cannot be blank/i.test(msg)
+      ) {
+        friendlyMsg = `${fieldName} cannot be left blank.`;
+      } else {
+        friendlyMsg = `${fieldName}: ${msg}`;
+      }
+
+      errorsByField[field] = friendlyMsg;
+      errorMessages.push(friendlyMsg);
+    }
+
+    if (errorMessages.length > 0) {
+      return {
+        formattedMessage: errorMessages.join(" | "),
+        errorsByField,
+      };
+    }
+  }
+
+  return { formattedMessage: "Error saving deal. Please check all fields.", errorsByField };
+};
+
+const SmartDropdown = ({ 
+  label, 
+  name, 
+  options, 
+  placeholder = "Select...", 
+  formData, 
+  setFormData, 
+  activeDropdown, 
+  setActiveDropdown,
+  error = "",
+  clearError
+}: any) => {
   const currentValue = (formData as any)[name] || '';
   const isMatched = options.includes(currentValue);
   const filtered = isMatched 
@@ -26,6 +126,7 @@ const SmartDropdown = ({ label, name, options, placeholder = "Select...", formDa
 
   const handleSelect = (opt: string) => {
     setFormData({ ...formData, [name]: opt });
+    if (clearError) clearError(name);
     setActiveDropdown(null);
   };
 
@@ -33,16 +134,21 @@ const SmartDropdown = ({ label, name, options, placeholder = "Select...", formDa
 
   return (
       <div className="relative">
-        <label className="neu-label">{label}</label>
+        <label className="neu-label">
+          {label}
+        </label>
         <div className="relative">
            <input 
              name={name}
              value={(formData as any)[name]}
-             onChange={(e) => setFormData({ ...formData, [name]: e.target.value })}
+             onChange={(e) => {
+               setFormData({ ...formData, [name]: e.target.value });
+               if (clearError) clearError(name);
+             }}
              onFocus={() => setIsOpen(true)}
              onBlur={() => setTimeout(() => setIsOpen(false), 200)}
              onKeyDown={handleKeyDown}
-             className="neu-input cursor-pointer pr-10"
+             className={`neu-input cursor-pointer pr-10 ${error ? '!border-red-500 !ring-1 !ring-red-400' : ''}`}
              placeholder={placeholder}
              autoComplete="off"
            />
@@ -72,6 +178,7 @@ const SmartDropdown = ({ label, name, options, placeholder = "Select...", formDa
              </ul>
            )}
         </div>
+        {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
       </div>
   );
 };
@@ -107,10 +214,14 @@ export default function BargainEntryPage() {
   const [isSellerDropdownOpen, setIsSellerDropdownOpen] = useState(false);
   const [isBuyerDropdownOpen, setIsBuyerDropdownOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+  const showToast = (msg: string, type: 'success' | 'error' = 'success', duration?: number) => {
     setToastMessage({ text: msg, type });
-    setTimeout(() => setToastMessage(null), 3000);
+    const timer = duration || (type === 'error' ? 5000 : 3000);
+    setTimeout(() => setToastMessage(null), timer);
   };
 
   // Smart Dropdown State
@@ -162,10 +273,10 @@ export default function BargainEntryPage() {
     bargain_date: new Date().toISOString().split('T')[0],
     seller: '', buyer: '', state: '', station: '',
     bales: '', rate: '', unit: '',
-    payment_condition: '', payment_by: 'Dispatch Date',
-    cash_disc: '', weight_terms: 'Mill Weight', delivery_terms: '',
-    delivery_type: 'Spot', delivery_from: '',
-    deal_type: 'Pakka Sauda', cotton_certificate: 'N.A.',
+    payment_condition: '', payment_by: '',
+    cash_disc: '', weight_terms: '', delivery_terms: '',
+    delivery_type: '', delivery_from: '',
+    deal_type: '', cotton_certificate: 'N.A.',
     quality_condition: '',
     advised_by: '',
     remarks: '', status: 'Pending Passing'
@@ -193,6 +304,13 @@ export default function BargainEntryPage() {
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
     setFormData(prev => {
       const newData = { ...prev, [name]: value };
       if (name === 'station') {
@@ -204,6 +322,13 @@ export default function BargainEntryPage() {
 
   // Helper for the Custom Calendar
   const handleDateChange = (val: string) => {
+    if (fieldErrors.bargain_date) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next.bargain_date;
+        return next;
+      });
+    }
     setFormData({ ...formData, bargain_date: val });
   };
 
@@ -213,7 +338,21 @@ export default function BargainEntryPage() {
   };
 
   const handlePartySelect = (type: 'seller' | 'buyer', partyId: string, partyName: string, partyStation: string, partyState: string) => {
+    if (fieldErrors[type]) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next[type];
+        return next;
+      });
+    }
     if (type === 'seller') {
+      if (fieldErrors.station && partyStation) {
+        setFieldErrors(prev => {
+          const next = { ...prev };
+          delete next.station;
+          return next;
+        });
+      }
       setFormData(prev => ({ ...prev, seller: partyId, station: partyStation, state: partyState, delivery_from: partyStation })); 
       setSellerSearch(partyName);
       setIsSellerDropdownOpen(false);
@@ -241,6 +380,7 @@ export default function BargainEntryPage() {
       rate: sanitizedDeal.rate?.toString() || '',
       payment_condition: sanitizedDeal.payment_condition?.toString() || '',
     });
+    setFieldErrors({});
     setSellerSearch(deal.seller_name || '');
     setBuyerSearch(deal.buyer_name || '');
     setEditingId(deal.deal_no);
@@ -252,6 +392,7 @@ export default function BargainEntryPage() {
     setIsFormOpen(false);
     setEditingId(null);
     setFormData(initialFormState);
+    setFieldErrors({});
     setSellerSearch("");
     setBuyerSearch("");
     setSplits([]);
@@ -260,18 +401,48 @@ export default function BargainEntryPage() {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
-    // 1. Validation: Ensure Seller and Buyer are selected
-    if (!formData.seller || !formData.buyer) {
-      showToast("Please select both a Seller and a Buyer.", 'error');
+    // Prevent duplicate submission if request is already in flight
+    if (isSubmittingRef.current) return;
+
+    // Client-side validation: Check compulsory fields
+    const clientErrors: Record<string, string> = {};
+
+    if (!formData.bargain_date) {
+      clientErrors.bargain_date = "Bargain Date cannot be left blank.";
+    }
+    if (!formData.seller) {
+      clientErrors.seller = "Seller cannot be left blank.";
+    }
+    if (!formData.buyer) {
+      clientErrors.buyer = "Buyer cannot be left blank.";
+    }
+    if (!formData.station || !formData.station.trim()) {
+      clientErrors.station = "Station cannot be left blank.";
+    }
+    if (!formData.bales || parseInt(formData.bales) <= 0) {
+      clientErrors.bales = "Bales must be greater than 0.";
+    }
+    if (!formData.rate || parseFloat(formData.rate) <= 0) {
+      clientErrors.rate = "Rate must be greater than 0.";
+    }
+
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      const errorsList = Object.values(clientErrors);
+      if (errorsList.length === 1) {
+        showToast(errorsList[0], 'error');
+      } else {
+        showToast(`Compulsory fields missing: ${errorsList.join(" | ")}`, 'error');
+      }
       return;
     }
 
-    // 2. Data Cleaning: Convert strings to numbers
+    // Data Cleaning: Convert strings to numbers
     const payload: any = {
       ...formData,
       bales: formData.bales ? parseInt(formData.bales) : 0,
       rate: formData.rate ? parseFloat(formData.rate) : 0,
-      payment_condition: formData.payment_condition ? parseInt(formData.payment_condition) : 0,
+      payment_condition: formData.payment_condition ? parseInt(formData.payment_condition) : null,
     };
     
     if (splits.length > 0) {
@@ -288,6 +459,10 @@ export default function BargainEntryPage() {
     delete payload.created_at;
     delete payload.updated_at;
     delete payload.deleted_at;
+
+    // Synchronously lock submission so rapid 2nd/3rd clicks do nothing
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
 
     try {
       if (editingId) {
@@ -317,17 +492,18 @@ export default function BargainEntryPage() {
       fetchData();
       // Reset form
       setFormData(initialFormState);
+      setFieldErrors({});
       setSellerSearch("");
       setBuyerSearch("");
       setSplits([]);
     } catch (error: any) {
       console.error("Error saving deal:", error);
-      // Show the specific error message from the backend if available
-      if (error.response && error.response.data) {
-        showToast(`Error: ${JSON.stringify(error.response.data)}`, 'error');
-      } else {
-        showToast('Error saving deal. Please check all fields.', 'error');
-      }
+      const { formattedMessage, errorsByField } = parseBackendErrors(error.response?.data);
+      setFieldErrors(errorsByField);
+      showToast(formattedMessage, 'error');
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -352,7 +528,26 @@ export default function BargainEntryPage() {
   };
 
   const renderSmartDropdown = (label: string, name: string, options: string[], placeholder: string = "Select...") => {
-    return <SmartDropdown label={label} name={name} options={options} placeholder={placeholder} formData={formData} setFormData={setFormData} activeDropdown={activeDropdown} setActiveDropdown={setActiveDropdown} />;
+    return (
+      <SmartDropdown 
+        label={label} 
+        name={name} 
+        options={options} 
+        placeholder={placeholder} 
+        formData={formData} 
+        setFormData={setFormData} 
+        activeDropdown={activeDropdown} 
+        setActiveDropdown={setActiveDropdown}
+        error={fieldErrors[name]}
+        clearError={(f: string) => {
+          setFieldErrors(prev => {
+            const next = { ...prev };
+            delete next[f];
+            return next;
+          });
+        }}
+      />
+    );
   };
 
   const allowedSellerTypes = ["Seller", "Ginner", "Trader"];
@@ -436,8 +631,9 @@ export default function BargainEntryPage() {
       {isFormOpen && (
         <div className="neu-card p-8 mb-8 relative">
           <button
-            onClick={() => setIsFormOpen(false)}
-            className="neu-btn neu-btn-cancel-action absolute top-5 right-5 p-2 rounded-full cursor-pointer"
+            onClick={handleCancel}
+            disabled={isSubmitting}
+            className="neu-btn neu-btn-cancel-action absolute top-5 right-5 p-2 rounded-full cursor-pointer disabled:opacity-50"
             style={{ padding: "0.5rem" }}
           >
             <X size={20} />
@@ -472,13 +668,18 @@ export default function BargainEntryPage() {
                     <input
                       type="text"
                       value={sellerSearch}
-                      onChange={(e) => { setSellerSearch(e.target.value); setIsSellerDropdownOpen(true); }}
+                      onChange={(e) => { 
+                        setSellerSearch(e.target.value); 
+                        setIsSellerDropdownOpen(true); 
+                        if (fieldErrors.seller) {
+                          setFieldErrors(prev => { const n = { ...prev }; delete n.seller; return n; });
+                        }
+                      }}
                       onFocus={() => setIsSellerDropdownOpen(true)}
                       onBlur={() => setTimeout(() => setIsSellerDropdownOpen(false), 200)}
                       onKeyDown={handleSellerKeyDown}
                       placeholder="Search..."
-                      className="neu-input cursor-pointer"
-                      required
+                      className={`neu-input cursor-pointer ${fieldErrors.seller ? '!border-red-500 !ring-1 !ring-red-400' : ''}`}
                     />
                     {isSellerDropdownOpen && (
                       <ul className="neu-dropdown" ref={sellerListRef as React.RefObject<HTMLUListElement>}>
@@ -493,6 +694,7 @@ export default function BargainEntryPage() {
                         ))}
                       </ul>
                     )}
+                    {fieldErrors.seller && <p className="text-xs text-red-500 mt-1">{fieldErrors.seller}</p>}
                 </div>
                 
                 <div className="col-span-1 relative">
@@ -500,13 +702,18 @@ export default function BargainEntryPage() {
                     <input
                       type="text"
                       value={buyerSearch}
-                      onChange={(e) => { setBuyerSearch(e.target.value); setIsBuyerDropdownOpen(true); }}
+                      onChange={(e) => { 
+                        setBuyerSearch(e.target.value); 
+                        setIsBuyerDropdownOpen(true); 
+                        if (fieldErrors.buyer) {
+                          setFieldErrors(prev => { const n = { ...prev }; delete n.buyer; return n; });
+                        }
+                      }}
                       onFocus={() => setIsBuyerDropdownOpen(true)}
                       onBlur={() => setTimeout(() => setIsBuyerDropdownOpen(false), 200)}
                       onKeyDown={handleBuyerKeyDown}
                       placeholder="Search..."
-                      className="neu-input cursor-pointer"
-                      required
+                      className={`neu-input cursor-pointer ${fieldErrors.buyer ? '!border-red-500 !ring-1 !ring-red-400' : ''}`}
                     />
                     {isBuyerDropdownOpen && (
                       <ul className="neu-dropdown" ref={buyerListRef as React.RefObject<HTMLUListElement>}>
@@ -521,11 +728,18 @@ export default function BargainEntryPage() {
                         ))}
                       </ul>
                     )}
+                    {fieldErrors.buyer && <p className="text-xs text-red-500 mt-1">{fieldErrors.buyer}</p>}
                 </div>
                 
                 <div className="col-span-1">
                    <label className="neu-label">Station</label>
-                   <input name="station" value={formData.station} onChange={handleChange} className="neu-input" />
+                   <input 
+                     name="station" 
+                     value={formData.station} 
+                     onChange={handleChange} 
+                     className={`neu-input ${fieldErrors.station ? '!border-red-500 !ring-1 !ring-red-400' : ''}`} 
+                   />
+                   {fieldErrors.station && <p className="text-xs text-red-500 mt-1">{fieldErrors.station}</p>}
                 </div>
 
                 {/* Row 2 */}
@@ -541,9 +755,9 @@ export default function BargainEntryPage() {
                      onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                      value={formData.bales} 
                      onChange={handleChange} 
-                     className="neu-input font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
-                     required 
+                     className={`neu-input font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${fieldErrors.bales ? '!border-red-500 !ring-1 !ring-red-400' : ''}`} 
                    />
+                   {fieldErrors.bales && <p className="text-xs text-red-500 mt-1">{fieldErrors.bales}</p>}
                 </div>
                 <div className="col-span-1">
                    <label className="neu-label">Rate</label>
@@ -554,9 +768,9 @@ export default function BargainEntryPage() {
                      onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                      value={formData.rate} 
                      onChange={handleChange} 
-                     className="neu-input font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
-                     required 
+                     className={`neu-input font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${fieldErrors.rate ? '!border-red-500 !ring-1 !ring-red-400' : ''}`} 
                    />
+                   {fieldErrors.rate && <p className="text-xs text-red-500 mt-1">{fieldErrors.rate}</p>}
                 </div>
                 <div className="col-span-1">
                    <label className="neu-label">Payment Condition (Days)</label>
@@ -567,8 +781,9 @@ export default function BargainEntryPage() {
                      onKeyDown={(e) => { if (e.key === '-') e.preventDefault(); }}
                      value={formData.payment_condition} 
                      onChange={handleChange} 
-                     className="neu-input [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                     className={`neu-input [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${fieldErrors.payment_condition ? '!border-red-500 !ring-1 !ring-red-400' : ''}`} 
                    />
+                   {fieldErrors.payment_condition && <p className="text-xs text-red-500 mt-1">{fieldErrors.payment_condition}</p>}
                 </div>
 
                 {/* Row 3 */}
@@ -580,7 +795,9 @@ export default function BargainEntryPage() {
                 </div>
                 {/* Weight Terms */}
                 <div className="col-span-2 flex items-center gap-8 pt-6 pl-2">
-                   <label className="neu-label mr-2" style={{ marginBottom: 0, fontSize: "0.8rem" }}>Weight Terms:</label>
+                   <label className="neu-label mr-2" style={{ marginBottom: 0, fontSize: "0.8rem" }}>
+                     Weight Terms:
+                   </label>
                    <label
                      className="flex items-center gap-3 cursor-pointer p-2 rounded-lg transition-all duration-150"
                      style={{
@@ -589,7 +806,19 @@ export default function BargainEntryPage() {
                        borderRadius: "var(--cb-radius-sm)",
                      }}
                    >
-                      <input type="radio" name="weight_terms" value="Mill Weight" checked={formData.weight_terms === 'Mill Weight'} onChange={handleChange} className="w-4 h-4 cursor-pointer accent-[#4a7fc4]"/>
+                      <input 
+                        type="radio" 
+                        name="weight_terms" 
+                        value="Mill Weight" 
+                        checked={formData.weight_terms === 'Mill Weight'} 
+                        onChange={handleChange}
+                        onClick={() => {
+                          if (formData.weight_terms === 'Mill Weight') {
+                            setFormData(prev => ({ ...prev, weight_terms: '' }));
+                          }
+                        }}
+                        className="w-4 h-4 cursor-pointer accent-[#4a7fc4]"
+                      />
                       <span className="text-sm font-medium" style={{ color: "var(--cb-text-body)" }}>Mill Weight</span>
                    </label>
                    <label
@@ -600,7 +829,19 @@ export default function BargainEntryPage() {
                        borderRadius: "var(--cb-radius-sm)",
                      }}
                    >
-                      <input type="radio" name="weight_terms" value="Spot Weight" checked={formData.weight_terms === 'Spot Weight'} onChange={handleChange} className="w-4 h-4 cursor-pointer accent-[#4a7fc4]"/>
+                      <input 
+                        type="radio" 
+                        name="weight_terms" 
+                        value="Spot Weight" 
+                        checked={formData.weight_terms === 'Spot Weight'} 
+                        onChange={handleChange}
+                        onClick={() => {
+                          if (formData.weight_terms === 'Spot Weight') {
+                            setFormData(prev => ({ ...prev, weight_terms: '' }));
+                          }
+                        }}
+                        className="w-4 h-4 cursor-pointer accent-[#4a7fc4]"
+                      />
                       <span className="text-sm font-medium" style={{ color: "var(--cb-text-body)" }}>Spot Weight</span>
                    </label>
                 </div>
@@ -622,15 +863,33 @@ export default function BargainEntryPage() {
                 {/* Row 5 */}
                 <div className="col-span-1">
                    <label className="neu-label">Delivery From</label>
-                   <input name="delivery_from" value={formData.delivery_from} onChange={handleChange} className="neu-input" />
+                   <input 
+                     name="delivery_from" 
+                     value={formData.delivery_from} 
+                     onChange={handleChange} 
+                     className={`neu-input ${fieldErrors.delivery_from ? '!border-red-500 !ring-1 !ring-red-400' : ''}`} 
+                   />
+                   {fieldErrors.delivery_from && <p className="text-xs text-red-500 mt-1">{fieldErrors.delivery_from}</p>}
                 </div>
                 <div className="col-span-1">
                    <label className="neu-label">Delivery to (Unit)</label>
-                   <input name="unit" value={formData.unit} onChange={handleChange} className="neu-input" />
+                   <input 
+                     name="unit" 
+                     value={formData.unit} 
+                     onChange={handleChange} 
+                     className={`neu-input ${fieldErrors.unit ? '!border-red-500 !ring-1 !ring-red-400' : ''}`} 
+                   />
+                   {fieldErrors.unit && <p className="text-xs text-red-500 mt-1">{fieldErrors.unit}</p>}
                 </div>
                 <div className="col-span-1">
                    <label className="neu-label">Advised By</label>
-                   <input name="advised_by" value={formData.advised_by} onChange={handleChange} className="neu-input" />
+                   <input 
+                     name="advised_by" 
+                     value={formData.advised_by} 
+                     onChange={handleChange} 
+                     className={`neu-input ${fieldErrors.advised_by ? '!border-red-500 !ring-1 !ring-red-400' : ''}`} 
+                   />
+                   {fieldErrors.advised_by && <p className="text-xs text-red-500 mt-1">{fieldErrors.advised_by}</p>}
                 </div>
                 
             </div>
@@ -643,7 +902,14 @@ export default function BargainEntryPage() {
                </div>
                <div className="mt-4">
                   <label className="neu-label">Remarks</label>
-                  <textarea name="remarks" value={formData.remarks} onChange={handleChange} className="neu-input" style={{ height: "64px", resize: "none" }} />
+                  <textarea 
+                    name="remarks" 
+                    value={formData.remarks} 
+                    onChange={handleChange} 
+                    className={`neu-input ${fieldErrors.remarks ? '!border-red-500 !ring-1 !ring-red-400' : ''}`} 
+                    style={{ height: "64px", resize: "none" }} 
+                  />
+                  {fieldErrors.remarks && <p className="text-xs text-red-500 mt-1">{fieldErrors.remarks}</p>}
                </div>
                
                {splits.length === 0 && (
@@ -769,11 +1035,30 @@ export default function BargainEntryPage() {
             </div>
 
             <div className="flex justify-end gap-4 pt-6" style={{ borderTop: "1px solid var(--cb-divider)" }}>
-              <button type="button" onClick={handleCancel} className="neu-btn neu-btn-cancel-action">
+              <button 
+                type="button" 
+                onClick={handleCancel} 
+                disabled={isSubmitting}
+                className="neu-btn neu-btn-cancel-action disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Cancel
               </button>
-              <button type="submit" className="neu-btn neu-btn-action">
-                <Save size={18} /> {editingId ? "Update Deal" : "Save Deal"}
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="neu-btn neu-btn-action disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>{editingId ? "Updating Deal..." : "Saving Deal..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    <span>{editingId ? "Update Deal" : "Save Deal"}</span>
+                  </>
+                )}
               </button>
             </div>
           </form>
