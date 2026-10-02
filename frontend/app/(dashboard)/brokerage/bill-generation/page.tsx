@@ -36,6 +36,16 @@ const formatDate = (dateStr: string) => {
   return dateStr;
 };
 
+// Helper to resolve letterhead image URL safely
+const getLetterheadUrl = (url?: string) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const base = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:8000'
+    : (process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, '').replace(/\/$/, '') || 'https://api.cottbook.com');
+  return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export default function BillGenerationPage() {
   const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
   const showToast = (msg: string, type: 'success' | 'error') => {
@@ -91,7 +101,7 @@ export default function BillGenerationPage() {
     try {
       const [pRes, fRes] = await Promise.all([
         api.get('parties/lite/'),
-        api.get('firms/lite/')
+        api.get('firms/')
       ]);
       setParties(pRes.data);
       setFirms(fRes.data);
@@ -473,16 +483,16 @@ export default function BillGenerationPage() {
                           <div>
                               <h1 className="text-2xl font-bold uppercase tracking-wide">{selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</h1>
                               {selectedFirmObj?.tagline && <p className="font-bold text-sm">{selectedFirmObj.tagline}</p>}
-                              <p className="text-sm">{selectedFirmObj?.address}</p>
-                              <p className="text-sm">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}, {selectedFirmObj?.state}</p>
+                              {selectedFirmObj?.address && <p className="text-sm">{selectedFirmObj.address}</p>}
+                              <p className="text-sm">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}{selectedFirmObj?.state ? `, ${selectedFirmObj.state}` : ''}</p>
                               <p className="text-sm">Email: {selectedFirmObj?.email || "-"}</p>
                               <p className="text-sm">Ph: {[selectedFirmObj?.tele_o, selectedFirmObj?.mobile].filter(Boolean).join(" / ") || "-"}</p>
                               <p className="text-sm font-bold mt-1">CIN: {selectedFirmObj?.cin_no || "-"}</p>
-                              <p className="text-sm font-bold">GST: {selectedFirmObj?.gst_no}</p>
-                              <p className="text-sm font-bold">PAN: {selectedFirmObj?.pan_no}</p>
+                              <p className="text-sm font-bold">GST: {selectedFirmObj?.gst_no || "-"}</p>
+                              <p className="text-sm font-bold">PAN: {selectedFirmObj?.pan_no || "-"}</p>
                           </div>
                           <div>
-                              <img src={selectedFirmObj.letterhead} alt="Letterhead" className="w-48 h-auto object-contain object-top" />
+                              <img src={getLetterheadUrl(selectedFirmObj.letterhead)} alt="Letterhead" className="w-48 h-auto object-contain object-top" />
                           </div>
                       </div>
                   ) : useLetterhead && !selectedFirmObj?.letterhead ? (
@@ -491,13 +501,13 @@ export default function BillGenerationPage() {
                           <div>
                               <h1 className="text-2xl font-bold uppercase tracking-wide">{selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</h1>
                               {selectedFirmObj?.tagline && <p className="font-bold text-sm">{selectedFirmObj.tagline}</p>}
-                              <p className="text-sm">{selectedFirmObj?.address}</p>
-                              <p className="text-sm">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}, {selectedFirmObj?.state}</p>
+                              {selectedFirmObj?.address && <p className="text-sm">{selectedFirmObj.address}</p>}
+                              <p className="text-sm">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}{selectedFirmObj?.state ? `, ${selectedFirmObj.state}` : ''}</p>
                               <p className="text-sm">Email: {selectedFirmObj?.email || "-"}</p>
                               <p className="text-sm">Ph: {[selectedFirmObj?.tele_o, selectedFirmObj?.mobile].filter(Boolean).join(" / ") || "-"}</p>
                               <p className="text-sm font-bold mt-1">CIN: {selectedFirmObj?.cin_no || "-"}</p>
-                              <p className="text-sm font-bold">GST: {selectedFirmObj?.gst_no}</p>
-                              <p className="text-sm font-bold">PAN: {selectedFirmObj?.pan_no}</p>
+                              <p className="text-sm font-bold">GST: {selectedFirmObj?.gst_no || "-"}</p>
+                              <p className="text-sm font-bold">PAN: {selectedFirmObj?.pan_no || "-"}</p>
                           </div>
                       </div>
                   ) : (
@@ -605,10 +615,10 @@ export default function BillGenerationPage() {
               <div className="mt-auto flex justify-between items-start text-sm pt-4 relative z-10 bg-white" style={{ borderTop: "1px solid black" }}>
                   <div>
                       <p className="font-bold underline mb-1">Bank Details:</p>
-                      <p className="font-bold">Bank: {selectedFirmObj?.bank_name}</p>
-                      <p className="font-bold">Branch: {selectedFirmObj?.branch}</p>
-                      <p className="font-bold">A/c No: {selectedFirmObj?.bank_ac_no}</p>
-                      <p className="font-bold">IFSC: {selectedFirmObj?.ifsc_code}</p>
+                      <p className="font-bold">Bank: {selectedFirmObj?.bank_name || "-"}</p>
+                      <p className="font-bold">Branch: {selectedFirmObj?.branch || "-"}</p>
+                      <p className="font-bold">A/c No: {selectedFirmObj?.bank_ac_no || "-"}</p>
+                      <p className="font-bold">IFSC: {selectedFirmObj?.ifsc_code || "-"}</p>
                       
                       <p className="mt-6">E & O.E (Subject to {selectedFirmObj?.jurisdiction ? selectedFirmObj.jurisdiction + " " : '\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0'}Jurisdiction)</p>
                   </div>

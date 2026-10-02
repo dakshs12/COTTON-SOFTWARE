@@ -21,7 +21,7 @@ class PartyMasterViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def lite(self, request):
-        qs = self.get_queryset().values('id', 'company_name', 'station', 'party_type')
+        qs = self.get_queryset().values('id', 'company_name', 'station', 'party_type', 'gst_no')
         return Response(list(qs))
 
     @action(detail=False, methods=['get'])
@@ -48,7 +48,13 @@ class FirmMasterViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def lite(self, request):
-        qs = self.get_queryset().values('id', 'firm_name', 'city')
+        qs = self.get_queryset().values(
+            'id', 'firm_name', 'title', 'firm_no', 'tagline', 'jurisdiction',
+            'address', 'branch_address', 'city', 'pincode', 'state',
+            'tele_o', 'mobile', 'email', 'website', 'contact_person',
+            'cin_no', 'pan_no', 'gst_no', 'tan_no',
+            'bank_name', 'branch', 'bank_ac_no', 'ifsc_code', 'letterhead'
+        )
         return Response(list(qs))
 
     def perform_create(self, serializer):

@@ -54,7 +54,7 @@ export default function BillsStatementPage() {
 
   const fetchFirms = async () => {
     try {
-      const res = await api.get('firms/lite/');
+      const res = await api.get('firms/');
       setFirms(res.data);
       if (res.data.length > 0) {
         setSelectedFirmId(res.data[0].id.toString());
