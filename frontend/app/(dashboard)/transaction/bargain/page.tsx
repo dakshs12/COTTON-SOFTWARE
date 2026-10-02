@@ -215,6 +215,7 @@ export default function BargainEntryPage() {
   const [isBuyerDropdownOpen, setIsBuyerDropdownOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success', duration?: number) => {
@@ -461,6 +462,7 @@ export default function BargainEntryPage() {
 
     // Synchronously lock submission so rapid 2nd/3rd clicks do nothing
     isSubmittingRef.current = true;
+    setIsSubmitting(true);
 
     try {
       if (editingId) {
@@ -513,6 +515,7 @@ export default function BargainEntryPage() {
       }
     } finally {
       isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -641,7 +644,8 @@ export default function BargainEntryPage() {
         <div className="neu-card p-8 mb-8 relative">
           <button
             onClick={handleCancel}
-            className="neu-btn neu-btn-cancel-action absolute top-5 right-5 p-2 rounded-full cursor-pointer"
+            disabled={isSubmitting}
+            className="neu-btn neu-btn-cancel-action absolute top-5 right-5 p-2 rounded-full cursor-pointer disabled:opacity-50"
             style={{ padding: "0.5rem" }}
           >
             <X size={20} />
@@ -1046,16 +1050,27 @@ export default function BargainEntryPage() {
               <button 
                 type="button" 
                 onClick={handleCancel} 
-                className="neu-btn neu-btn-cancel-action"
+                disabled={isSubmitting}
+                className="neu-btn neu-btn-cancel-action disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button 
                 type="submit" 
-                className="neu-btn neu-btn-action flex items-center gap-2"
+                disabled={isSubmitting}
+                className="neu-btn neu-btn-action disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center min-w-[130px] gap-2 transition-all"
               >
-                <Save size={18} />
-                <span>{editingId ? "Update Deal" : "Save Deal"}</span>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>{editingId ? "Updating..." : "Saving..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    <span>{editingId ? "Update Deal" : "Save Deal"}</span>
+                  </>
+                )}
               </button>
             </div>
           </form>
