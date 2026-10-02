@@ -1,6 +1,6 @@
 "use client";
 import { Toast } from '@/app/components/Toast';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
 import { Save, Plus, Edit2, X, Trash2, CheckCircle, ChevronDown, Check, FileCheck, Search } from 'lucide-react';
 import posthog from "posthog-js";
@@ -80,8 +80,8 @@ export default function PassingEntryPage() {
         api.get('passings/'),
         api.get('bargains/lite/')
       ]);
-      setPassings(passingRes.data.reverse());
-      setBargains(bargainRes.data.reverse());
+      setPassings(passingRes.data);
+      setBargains(bargainRes.data);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -191,20 +191,26 @@ export default function PassingEntryPage() {
       delete payload.updated_at;
       delete payload.deleted_at;
       if (editingId) {
-        await api.put(`passings/${editingId}/`, payload);
+        const res = await api.put(`passings/${editingId}/`, payload);
         posthog.capture("passing_updated", {
           passing_id: editingId,
           bales: payload.bales,
           lot_no: payload.lot_no,
         });
         showToast('Passing Updated Successfully!');
+        if (res.data) {
+          setPassings(prev => prev.map(p => p.id === editingId ? res.data : p));
+        }
       } else {
-        await api.post('passings/', payload);
+        const res = await api.post('passings/', payload);
         posthog.capture("passing_created", {
           bales: payload.bales,
           lot_no: payload.lot_no,
         });
         showToast('Passing Saved Successfully!');
+        if (res.data) {
+          setPassings(prev => [res.data, ...prev.filter(p => p.id !== res.data.id)]);
+        }
       }
       setIsFormOpen(false);
       setEditingId(null);
@@ -259,13 +265,18 @@ export default function PassingEntryPage() {
     return isApprovedOrEditing && matchesSearch;
   });
 
-  const filteredPassings = passings.filter(pass => 
-    (pass.passing_no && pass.passing_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (pass.deal_no && pass.deal_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (pass.lot_no && pass.lot_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (pass.buyer_name && pass.buyer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (pass.seller_name && pass.seller_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredPassings = useMemo(() => {
+    return passings
+      .slice()
+      .sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0))
+      .filter(pass => 
+        (pass.passing_no && pass.passing_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (pass.deal_no && pass.deal_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (pass.lot_no && pass.lot_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (pass.buyer_name && pass.buyer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (pass.seller_name && pass.seller_name.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+  }, [passings, searchTerm]);
 
   const totalPages = Math.ceil(filteredPassings.length / itemsPerPage);
   const currentPassings = filteredPassings.slice(

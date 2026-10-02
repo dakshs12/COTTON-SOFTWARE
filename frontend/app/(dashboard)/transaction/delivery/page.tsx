@@ -1,6 +1,6 @@
 "use client";
 import { Toast } from '@/app/components/Toast';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import api from '@/lib/api';
 import { Save, Plus, X, Search, CheckCircle, Edit2, Trash2, ChevronDown, FileText, Truck, RefreshCw } from 'lucide-react';
 import posthog from "posthog-js";
@@ -74,9 +74,9 @@ export default function DeliveryEntryPage() {
         api.get('passings/lite/'),
         api.get('bargains/lite/')
       ]);
-      setDeliveries(delRes.data.reverse());
-      setPassings(passRes.data.reverse());
-      setBargains(barRes.data.reverse());
+      setDeliveries(delRes.data);
+      setPassings(passRes.data);
+      setBargains(barRes.data);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -217,7 +217,7 @@ export default function DeliveryEntryPage() {
       if (!payload.passing) delete payload.passing; 
 
       if (editingId) {
-        await api.put(`deliveries/${editingId}/`, payload);
+        const res = await api.put(`deliveries/${editingId}/`, payload);
         posthog.capture("delivery_updated", {
           delivery_id: editingId,
           quantity_bales: payload.quantity_bales,
@@ -225,14 +225,20 @@ export default function DeliveryEntryPage() {
           is_direct_delivery: isDirectDelivery,
         });
         showToast('Delivery Updated Successfully!');
+        if (res.data) {
+          setDeliveries(prev => prev.map(d => d.id === editingId ? res.data : d));
+        }
       } else {
-        await api.post('deliveries/', payload);
+        const res = await api.post('deliveries/', payload);
         posthog.capture("delivery_created", {
           quantity_bales: payload.quantity_bales,
           total_bill_amount: payload.total_bill_amount,
           is_direct_delivery: isDirectDelivery,
         });
         showToast('Delivery Saved Successfully!');
+        if (res.data) {
+          setDeliveries(prev => [res.data, ...prev.filter(d => d.id !== res.data.id)]);
+        }
       }
       setIsFormOpen(false);
       setEditingId(null);
@@ -295,12 +301,17 @@ export default function DeliveryEntryPage() {
   };
 
   // --- Filter & Pagination Logic ---
-  const filteredDeliveries = deliveries.filter(del => 
-    (del.bill_no && del.bill_no.toLowerCase().includes(tableSearchTerm.toLowerCase())) ||
-    (del.truck_no && del.truck_no.toLowerCase().includes(tableSearchTerm.toLowerCase())) ||
-    (del.deal_display && del.deal_display.toLowerCase().includes(tableSearchTerm.toLowerCase())) ||
-    (del.passing_ref && del.passing_ref.toLowerCase().includes(tableSearchTerm.toLowerCase()))
-  );
+  const filteredDeliveries = useMemo(() => {
+    return deliveries
+      .slice()
+      .sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0))
+      .filter(del => 
+        (del.bill_no && del.bill_no.toLowerCase().includes(tableSearchTerm.toLowerCase())) ||
+        (del.truck_no && del.truck_no.toLowerCase().includes(tableSearchTerm.toLowerCase())) ||
+        (del.deal_display && del.deal_display.toLowerCase().includes(tableSearchTerm.toLowerCase())) ||
+        (del.passing_ref && del.passing_ref.toLowerCase().includes(tableSearchTerm.toLowerCase()))
+      );
+  }, [deliveries, tableSearchTerm]);
 
   const totalPages = Math.ceil(filteredDeliveries.length / itemsPerPage);
   const currentDeliveries = filteredDeliveries.slice(

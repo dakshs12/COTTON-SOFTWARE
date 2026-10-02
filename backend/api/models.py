@@ -224,6 +224,7 @@ class BargainEntry(BaseModel):
     class Meta:
         verbose_name = "Bargain"
         verbose_name_plural = "Bargains"
+        ordering = ['-deal_no']
 
     def __str__(self):
         return self.smart_deal_id
@@ -243,6 +244,7 @@ class PassingEntry(BaseModel):
     class Meta:
         verbose_name = "Passing"
         verbose_name_plural = "Passings"
+        ordering = ['-id']
 
 class BargainSplit(BaseModel):
     tenant = models.ForeignKey(Tenant, on_delete=models.PROTECT)
@@ -279,6 +281,7 @@ class DeliveryDetails(BaseModel):
     class Meta:
         verbose_name = "Delivery"
         verbose_name_plural = "Deliveries"
+        ordering = ['-id']
 
     def __str__(self):
         return f"Bill #{self.bill_no}"

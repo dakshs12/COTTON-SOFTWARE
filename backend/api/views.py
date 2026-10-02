@@ -61,7 +61,8 @@ class BargainEntryViewSet(viewsets.ModelViewSet):
         return BargainEntry.objects.filter(tenant=self.request.user.tenant) \
             .select_related('seller', 'buyer') \
             .prefetch_related('splits') \
-            .annotate(delivered_bales=Sum('deliverydetails__quantity_bales'))
+            .annotate(delivered_bales=Sum('deliverydetails__quantity_bales')) \
+            .order_by('-deal_no')
 
     def perform_create(self, serializer):
         serializer.save(tenant=self.request.user.tenant)
@@ -71,7 +72,7 @@ class BargainEntryViewSet(viewsets.ModelViewSet):
         qs = BargainEntry.objects.filter(tenant=request.user.tenant)
         if 'status' in request.query_params:
             qs = qs.filter(status=request.query_params['status'])
-        data = list(qs.values(
+        data = list(qs.order_by('-deal_no').values(
             'deal_no', 'bargain_date', 'bales', 'rate', 'status', 'payment_condition',
             'seller__company_name', 'buyer__company_name'
         ))
@@ -209,7 +210,8 @@ class PassingEntryViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return PassingEntry.objects.filter(tenant=self.request.user.tenant) \
             .select_related('bargain__seller', 'bargain__buyer') \
-            .annotate(has_deliveries=Exists(DeliveryDetails.objects.filter(passing=OuterRef('pk'))))
+            .annotate(has_deliveries=Exists(DeliveryDetails.objects.filter(passing=OuterRef('pk')))) \
+            .order_by('-id')
 
     def perform_create(self, serializer):
         serializer.save(tenant=self.request.user.tenant)
@@ -218,7 +220,7 @@ class PassingEntryViewSet(viewsets.ModelViewSet):
     def lite(self, request):
         qs = PassingEntry.objects.filter(tenant=request.user.tenant).annotate(
             has_deliveries=Exists(DeliveryDetails.objects.filter(passing=OuterRef('pk')))
-        )
+        ).order_by('-id')
         data = list(qs.values(
             'id', 'lot_no', 'pr_no', 'bales', 'has_deliveries', 'bargain', 'book_bargain_no',
             'bargain__deal_no', 'bargain__bargain_date', 'bargain__seller__company_name', 'bargain__buyer__company_name'
@@ -241,7 +243,8 @@ class DeliveryDetailsViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return DeliveryDetails.objects.filter(tenant=self.request.user.tenant) \
-            .select_related('bargain__seller', 'bargain__buyer', 'passing')
+            .select_related('bargain__seller', 'bargain__buyer', 'passing') \
+            .order_by('-id')
 
     def perform_create(self, serializer):
         serializer.save(tenant=self.request.user.tenant)

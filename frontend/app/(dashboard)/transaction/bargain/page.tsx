@@ -294,7 +294,7 @@ export default function BargainEntryPage() {
         api.get('bargains/'),
         api.get('parties/lite/')
       ]);
-      setBargains(bargainRes.data.reverse());
+      setBargains(bargainRes.data);
       setParties(partyRes.data);
       setLoading(false);
     } catch (error) {
@@ -490,7 +490,7 @@ export default function BargainEntryPage() {
         });
         showToast('Deal Saved Successfully!');
         if (res.data) {
-          setBargains(prev => [res.data, ...prev]);
+          setBargains(prev => [res.data, ...prev.filter(b => b.deal_no !== res.data.deal_no && b.id !== res.data.id)]);
         }
       }
       setIsFormOpen(false);
@@ -502,8 +502,8 @@ export default function BargainEntryPage() {
       setBuyerSearch("");
       setSplits([]);
 
-      // Non-blocking background sync for full consistency
-      api.get('bargains/').then(r => setBargains(r.data.reverse())).catch(console.error);
+      // Non-blocking background sync for full consistency (backend already sends latest first)
+      api.get('bargains/').then(r => setBargains(r.data)).catch(console.error);
     } catch (error: any) {
       console.error("Error saving deal:", error);
       if (error.code === 'ECONNABORTED' || error.message === 'Network Error' || !error.response) {
@@ -580,16 +580,21 @@ export default function BargainEntryPage() {
   );
 
   // --- Filter & Pagination Logic ---
-  const filteredBargains = bargains.filter(deal => {
-    const matchesSearch = 
-      (deal.smart_deal_id && deal.smart_deal_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (deal.buyer_name && deal.buyer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (deal.seller_name && deal.seller_name.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesStatus = statusFilter === 'All' || deal.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const filteredBargains = useMemo(() => {
+    return bargains
+      .slice()
+      .sort((a, b) => (Number(b.deal_no || b.id) || 0) - (Number(a.deal_no || a.id) || 0))
+      .filter(deal => {
+        const matchesSearch = 
+          (deal.smart_deal_id && deal.smart_deal_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (deal.buyer_name && deal.buyer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (deal.seller_name && deal.seller_name.toLowerCase().includes(searchTerm.toLowerCase()));
+        
+        const matchesStatus = statusFilter === 'All' || deal.status === statusFilter;
+        
+        return matchesSearch && matchesStatus;
+      });
+  }, [bargains, searchTerm, statusFilter]);
 
   const flattenedBargains = useMemo(() => {
     const flat: any[] = [];
