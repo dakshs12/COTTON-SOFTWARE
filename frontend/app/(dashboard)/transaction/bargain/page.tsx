@@ -466,7 +466,7 @@ export default function BargainEntryPage() {
 
     try {
       if (editingId) {
-        await api.put(`bargains/${editingId}/`, payload);
+        const res = await api.put(`bargains/${editingId}/`, payload);
         posthog.capture("bargain_deal_updated", {
           deal_id: editingId,
           bales: payload.bales,
@@ -476,8 +476,11 @@ export default function BargainEntryPage() {
           status: payload.status,
         });
         showToast('Deal Updated Successfully!');
+        if (res.data) {
+          setBargains(prev => prev.map(b => (b.deal_no === editingId || b.id === editingId) ? res.data : b));
+        }
       } else {
-        await api.post('bargains/', payload);
+        const res = await api.post('bargains/', payload);
         posthog.capture("bargain_deal_created", {
           bales: payload.bales,
           rate: payload.rate,
@@ -486,21 +489,30 @@ export default function BargainEntryPage() {
           status: payload.status,
         });
         showToast('Deal Saved Successfully!');
+        if (res.data) {
+          setBargains(prev => [res.data, ...prev]);
+        }
       }
       setIsFormOpen(false);
       setEditingId(null);
-      fetchData();
       // Reset form
       setFormData(initialFormState);
       setFieldErrors({});
       setSellerSearch("");
       setBuyerSearch("");
       setSplits([]);
+
+      // Non-blocking background sync for full consistency
+      api.get('bargains/').then(r => setBargains(r.data.reverse())).catch(console.error);
     } catch (error: any) {
       console.error("Error saving deal:", error);
-      const { formattedMessage, errorsByField } = parseBackendErrors(error.response?.data);
-      setFieldErrors(errorsByField);
-      showToast(formattedMessage, 'error');
+      if (error.code === 'ECONNABORTED' || error.message === 'Network Error' || !error.response) {
+        showToast('Network error: Unable to connect to server. Please check connection.', 'error');
+      } else {
+        const { formattedMessage, errorsByField } = parseBackendErrors(error.response?.data);
+        setFieldErrors(errorsByField);
+        showToast(formattedMessage, 'error');
+      }
     } finally {
       isSubmittingRef.current = false;
       setIsSubmitting(false);
