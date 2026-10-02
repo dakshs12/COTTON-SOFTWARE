@@ -28,6 +28,9 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// Login, refresh and logout must never trigger a refresh, to avoid loops
+const NO_REFRESH_URLS = ['token/', 'token/refresh/', 'auth/logout/'];
+
 // Response Interceptor for handling 401s and refreshing tokens
 api.interceptors.response.use(
   (response) => {
@@ -36,8 +39,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Skip interception for auth endpoints to avoid loops
-    if (originalRequest.url?.includes('token/') || originalRequest.url?.includes('auth/')) {
+    if (NO_REFRESH_URLS.includes(originalRequest.url)) {
       return Promise.reject(error);
     }
 
@@ -55,7 +57,9 @@ api.interceptors.response.use(
 
       } catch (refreshError) {
         // Refresh failed. Dispatch event to gracefully pause session.
+        // AuthProvider handles a failed auth/me/ check itself by redirecting to /login.
         if (typeof window !== 'undefined' &&
+          originalRequest.url !== 'auth/me/' &&
           !window.location.pathname.startsWith('/login') &&
           !window.location.pathname.startsWith('/register')) {
           window.dispatchEvent(new Event('session-expired'));
