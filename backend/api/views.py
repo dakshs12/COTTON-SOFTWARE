@@ -1,5 +1,7 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from django.http import JsonResponse
 from .models import * 
 from .serializers import *
 from django.db.models import Q, Sum, OuterRef, Exists, Count, F
@@ -739,3 +741,8 @@ class ChecklistItemViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    return JsonResponse({"status": "ok", "message": "CottBook API is healthy"})

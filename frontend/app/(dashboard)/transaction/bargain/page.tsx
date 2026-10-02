@@ -385,6 +385,7 @@ export default function BargainEntryPage() {
     setBuyerSearch(deal.buyer_name || '');
     setEditingId(deal.deal_no);
     setSplits(deal.splits || []);
+    api.get('health/').catch(() => {});
     setIsFormOpen(true);
   };
 
@@ -635,7 +636,13 @@ export default function BargainEntryPage() {
           <h1 className="neu-page-title text-3xl">Bargain Entry</h1>
           <p className="mt-1 font-medium" style={{ color: "var(--cb-text-label)" }}>Log new deals.</p>
         </div>
-        <button onClick={() => setIsFormOpen(true)} className="neu-btn neu-btn-action">
+        <button 
+          onClick={() => {
+            api.get('health/').catch(() => {});
+            setIsFormOpen(true);
+          }} 
+          className="neu-btn neu-btn-action"
+        >
           <Plus size={18} /> New Deal
         </button>
       </div>
@@ -1058,12 +1065,12 @@ export default function BargainEntryPage() {
               <button 
                 type="submit" 
                 disabled={isSubmitting}
-                className="neu-btn neu-btn-action disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="neu-btn neu-btn-action disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center min-w-[130px] gap-2 transition-all"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" />
-                    <span>{editingId ? "Updating Deal..." : "Saving Deal..."}</span>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>{editingId ? "Updating..." : "Saving..."}</span>
                   </>
                 ) : (
                   <>

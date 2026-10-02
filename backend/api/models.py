@@ -185,25 +185,25 @@ class BargainEntry(BaseModel):
     
     bales = models.IntegerField()
     rate = models.DecimalField(max_digits=10, decimal_places=2)
-    unit = models.CharField(max_length=50, default="Candy") # Added Unit
+    unit = models.CharField(max_length=50, blank=True, null=True, default="") # Delivery to Unit (Optional)
     
-    payment_condition = models.IntegerField(help_text="Days")
+    payment_condition = models.IntegerField(blank=True, null=True, help_text="Days")
     # Updated Payment By to match your screenshot (Dispatch Date, etc.)
-    payment_by = models.CharField(max_length=100) 
+    payment_by = models.CharField(max_length=100, blank=True, null=True, default="") 
     
     # Auto-Dropdowns
     cash_disc = models.CharField(max_length=100, blank=True, null=True)
     cotton_certificate = models.CharField(max_length=100, blank=True, null=True)
     
     # Dropdowns from screenshot
-    delivery_terms = models.CharField(max_length=255)
-    delivery_type = models.CharField(max_length=100) # Spot, MD-FOR...
-    deal_type = models.CharField(max_length=100) # Pakka Sauda, Sub to Passing...
+    delivery_terms = models.CharField(max_length=255, blank=True, null=True, default="")
+    delivery_type = models.CharField(max_length=100, blank=True, null=True, default="") # Spot, MD-FOR...
+    deal_type = models.CharField(max_length=100, blank=True, null=True, default="") # Pakka Sauda, Sub to Passing...
     
     delivery_from = models.CharField(max_length=100, blank=True, null=True)
     
     # Weight Terms (Radio Button)
-    weight_terms = models.CharField(max_length=50, default="Mill Weight")
+    weight_terms = models.CharField(max_length=50, blank=True, null=True, default="")
     
     # Bottom Section (Quality & Manual Fields)
     quality_condition = models.CharField(max_length=100, blank=True, null=True)

@@ -27,6 +27,13 @@ class BargainSplitSerializer(serializers.ModelSerializer):
 class BargainEntrySerializer(serializers.ModelSerializer):
     seller_name = serializers.CharField(source='seller.company_name', read_only=True)
     buyer_name = serializers.CharField(source='buyer.company_name', read_only=True)
+    unit = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True, default="")
+    payment_condition = serializers.IntegerField(required=False, allow_null=True)
+    payment_by = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True, default="")
+    weight_terms = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True, default="")
+    delivery_terms = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True, default="")
+    delivery_type = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True, default="")
+    deal_type = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True, default="")
     
     # This sends the smart ID (24-25/1) instead of just "1"
     smart_deal_id = serializers.ReadOnlyField()
@@ -37,6 +44,16 @@ class BargainEntrySerializer(serializers.ModelSerializer):
         model = BargainEntry
         fields = '__all__'
         read_only_fields = ('tenant',)
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            data = data.copy()
+            if data.get('payment_condition') == '' or data.get('payment_condition') is None:
+                data['payment_condition'] = None
+            for key in ['unit', 'payment_by', 'weight_terms', 'delivery_terms', 'delivery_type', 'deal_type']:
+                if data.get(key) is None:
+                    data[key] = ""
+        return super().to_internal_value(data)
 
     def get_remaining_bales(self, obj):
         delivered = getattr(obj, 'delivered_bales', None)
