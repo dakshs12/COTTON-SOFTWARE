@@ -7,7 +7,7 @@ import { useEffect } from 'react'
 export function PHProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const posthogKey = (process.env.NEXT_PUBLIC_POSTHOG_KEY || process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN)?.trim()
-    const host = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || 'https://app.cottbook.com'
+    const host = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || 'https://eu.i.posthog.com'
 
     if (posthogKey) {
       posthog.init(posthogKey, {
