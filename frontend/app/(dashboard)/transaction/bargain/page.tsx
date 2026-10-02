@@ -215,7 +215,6 @@ export default function BargainEntryPage() {
   const [isBuyerDropdownOpen, setIsBuyerDropdownOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success', duration?: number) => {
@@ -385,7 +384,6 @@ export default function BargainEntryPage() {
     setBuyerSearch(deal.buyer_name || '');
     setEditingId(deal.deal_no);
     setSplits(deal.splits || []);
-    api.get('health/').catch(() => {});
     setIsFormOpen(true);
   };
 
@@ -463,7 +461,6 @@ export default function BargainEntryPage() {
 
     // Synchronously lock submission so rapid 2nd/3rd clicks do nothing
     isSubmittingRef.current = true;
-    setIsSubmitting(true);
 
     try {
       if (editingId) {
@@ -516,7 +513,6 @@ export default function BargainEntryPage() {
       }
     } finally {
       isSubmittingRef.current = false;
-      setIsSubmitting(false);
     }
   };
 
@@ -636,13 +632,7 @@ export default function BargainEntryPage() {
           <h1 className="neu-page-title text-3xl">Bargain Entry</h1>
           <p className="mt-1 font-medium" style={{ color: "var(--cb-text-label)" }}>Log new deals.</p>
         </div>
-        <button 
-          onClick={() => {
-            api.get('health/').catch(() => {});
-            setIsFormOpen(true);
-          }} 
-          className="neu-btn neu-btn-action"
-        >
+        <button onClick={() => setIsFormOpen(true)} className="neu-btn neu-btn-action">
           <Plus size={18} /> New Deal
         </button>
       </div>
@@ -651,8 +641,7 @@ export default function BargainEntryPage() {
         <div className="neu-card p-8 mb-8 relative">
           <button
             onClick={handleCancel}
-            disabled={isSubmitting}
-            className="neu-btn neu-btn-cancel-action absolute top-5 right-5 p-2 rounded-full cursor-pointer disabled:opacity-50"
+            className="neu-btn neu-btn-cancel-action absolute top-5 right-5 p-2 rounded-full cursor-pointer"
             style={{ padding: "0.5rem" }}
           >
             <X size={20} />
@@ -1057,27 +1046,16 @@ export default function BargainEntryPage() {
               <button 
                 type="button" 
                 onClick={handleCancel} 
-                disabled={isSubmitting}
-                className="neu-btn neu-btn-cancel-action disabled:opacity-50 disabled:cursor-not-allowed"
+                className="neu-btn neu-btn-cancel-action"
               >
                 Cancel
               </button>
               <button 
                 type="submit" 
-                disabled={isSubmitting}
-                className="neu-btn neu-btn-action disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center min-w-[130px] gap-2 transition-all"
+                className="neu-btn neu-btn-action flex items-center gap-2"
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    <span>{editingId ? "Updating..." : "Saving..."}</span>
-                  </>
-                ) : (
-                  <>
-                    <Save size={18} />
-                    <span>{editingId ? "Update Deal" : "Save Deal"}</span>
-                  </>
-                )}
+                <Save size={18} />
+                <span>{editingId ? "Update Deal" : "Save Deal"}</span>
               </button>
             </div>
           </form>

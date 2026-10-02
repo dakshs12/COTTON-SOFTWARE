@@ -741,8 +741,3 @@ class ChecklistItemViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def health_check(request):
-    return JsonResponse({"status": "ok", "message": "CottBook API is healthy"})

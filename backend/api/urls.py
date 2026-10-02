@@ -13,7 +13,6 @@ router.register(r'deliveries', views.DeliveryDetailsViewSet, basename='deliveryd
 router.register(r'checklist', views.ChecklistItemViewSet, basename='checklistitem')
 
 urlpatterns = [
-    path('health/', views.health_check),
     path('', include(router.urls)),
     path('brokerage/notepad/', views.BrokerNoteView.as_view()),
     

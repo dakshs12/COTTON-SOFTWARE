@@ -16,30 +16,6 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
         defaults: '2026-05-30',
       })
     }
-
-    // Keep Render backend awake & pre-warmed so user requests are instantaneous
-    const pingBackend = () => {
-      fetch('https://api.cottbook.com/api/health/', { 
-        method: 'GET',
-        cache: 'no-store',
-        keepalive: true
-      }).catch(() => {});
-    };
-
-    pingBackend();
-    const interval = setInterval(pingBackend, 9 * 60 * 1000);
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        pingBackend();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
   }, [])
 
   return <PostHogProvider client={posthog}>{children}</PostHogProvider>
