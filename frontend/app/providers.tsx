@@ -12,6 +12,7 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
     if (posthogKey) {
       posthog.init(posthogKey, {
         api_host: host,
+        ui_host: 'https://eu.posthog.com',
         defaults: '2026-05-30',
       })
     }
