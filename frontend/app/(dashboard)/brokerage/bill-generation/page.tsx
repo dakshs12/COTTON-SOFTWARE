@@ -46,6 +46,37 @@ const getLetterheadUrl = (url?: string) => {
   return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
+// Helper to format firm address into 1 line (preferred) or 2 lines if long
+const getFormattedAddress = (firm: any) => {
+  if (!firm) return { line1: '', line2: null };
+  const cleanAddr = (firm.address || '').trim().replace(/,\s*$/, '');
+  const city = (firm.city || '').trim();
+  const pincode = (firm.pincode || '').trim();
+  const state = (firm.state || '').trim();
+
+  const locationParts = [];
+  if (city) {
+    locationParts.push(pincode ? `${city} - ${pincode}` : city);
+  } else if (pincode) {
+    locationParts.push(pincode);
+  }
+  if (state) {
+    locationParts.push(state);
+  }
+  const locationString = locationParts.join(', ');
+
+  if (!cleanAddr) return { line1: locationString, line2: null };
+  if (!locationString) return { line1: cleanAddr, line2: null };
+
+  const combined = `${cleanAddr}, ${locationString}`;
+  // If combined address is within 65 characters, prefer one single line:
+  if (combined.length <= 65) {
+    return { line1: combined, line2: null };
+  }
+  // Otherwise, split across two lines, keeping comma at end of line 1:
+  return { line1: `${cleanAddr},`, line2: locationString };
+};
+
 export default function BillGenerationPage() {
   const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
   const showToast = (msg: string, type: 'success' | 'error') => {
@@ -483,15 +514,43 @@ export default function BillGenerationPage() {
                       <div className="leading-snug">
                           <h1 className="text-2xl font-bold uppercase tracking-wide">{selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</h1>
                           {selectedFirmObj?.tagline && <p className="font-bold text-sm text-gray-800">{selectedFirmObj.tagline}</p>}
-                          {selectedFirmObj?.address && <p className="text-sm text-gray-800">{selectedFirmObj.address}</p>}
-                          <p className="text-sm text-gray-800">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}{selectedFirmObj?.state ? `, ${selectedFirmObj.state}` : ''}</p>
-                          <p className="text-sm text-gray-800">
-                              <span>Ph: {[selectedFirmObj?.tele_o, selectedFirmObj?.mobile].filter(Boolean).join(" / ") || "-"}</span>
-                              <span className="inline-block w-8"></span>
-                              <span>Email: {selectedFirmObj?.email || "-"}</span>
+                          
+                          {/* Address: 1 line preferred with comma, 2 lines if long */}
+                          {(() => {
+                            const addr = getFormattedAddress(selectedFirmObj);
+                            return (
+                              <>
+                                {addr.line1 && <p className="text-sm text-gray-800">{addr.line1}</p>}
+                                {addr.line2 && <p className="text-sm text-gray-800">{addr.line2}</p>}
+                              </>
+                            );
+                          })()}
+
+                          {/* Phone & Email: Single line (Ph first, then Email) */}
+                          {(() => {
+                            const phone = [selectedFirmObj?.tele_o, selectedFirmObj?.mobile].filter(Boolean).join(" / ");
+                            const email = selectedFirmObj?.email;
+                            if (!phone && !email) return null;
+                            return (
+                              <p className="text-sm text-gray-800">
+                                {phone && <span>Ph: {phone}</span>}
+                                {phone && email && <span className="inline-block w-8">&nbsp;</span>}
+                                {email && <span>Email: {email}</span>}
+                              </p>
+                            );
+                          })()}
+
+                          {/* CIN */}
+                          {selectedFirmObj?.cin_no && (
+                            <p className="text-sm font-bold mt-1">CIN: {selectedFirmObj.cin_no}</p>
+                          )}
+
+                          {/* GST and PAN: Single line, GST first then PAN */}
+                          <p className={`text-sm font-bold ${!selectedFirmObj?.cin_no ? 'mt-1' : ''}`}>
+                            <span>GST: {selectedFirmObj?.gst_no || "-"}</span>
+                            <span className="inline-block w-8">&nbsp;</span>
+                            <span>PAN: {selectedFirmObj?.pan_no || "-"}</span>
                           </p>
-                          <p className="text-sm font-bold mt-1">CIN: {selectedFirmObj?.cin_no || "-"}</p>
-                          <p className="text-sm font-bold">GST: {selectedFirmObj?.gst_no || "-"}</p>
                       </div>
                       <div className="flex-shrink-0 ml-4">
                           {(() => {
