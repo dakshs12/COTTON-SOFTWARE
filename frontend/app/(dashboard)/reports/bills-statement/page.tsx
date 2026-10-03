@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import { Search, Printer, Download, ChevronDown, Check, FileText } from 'lucide-react';
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 import * as XLSX from 'xlsx';
+import { usePrint, PRINT_BLOCKED_MESSAGE } from '@/lib/usePrint';
 
 export default function BillsStatementPage() {
   const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
@@ -12,6 +13,7 @@ export default function BillsStatementPage() {
     setToastMessage({text: msg, type});
     setTimeout(() => setToastMessage(null), 3000);
   };
+  const { isPrinting, print } = usePrint('bills_statement');
 
   const [parties, setParties] = useState<any[]>([]);
   const [firms, setFirms] = useState<any[]>([]);
@@ -121,7 +123,7 @@ export default function BillsStatementPage() {
 
   // --- Printing Logic ---
   const handlePrint = () => {
-    window.print();
+    print(() => showToast(PRINT_BLOCKED_MESSAGE, 'error'));
   };
 
   // --- Excel Export Logic ---
@@ -222,8 +224,8 @@ export default function BillsStatementPage() {
             <button className="neu-btn neu-btn-action" onClick={handleExportExcel}>
               <Download size={18} /> Export Excel
             </button>
-            <button className="neu-btn neu-btn-action" onClick={handlePrint}>
-              <Printer size={18} /> Print PDF
+            <button className="neu-btn neu-btn-action" onClick={handlePrint} disabled={isPrinting}>
+              <Printer size={18} /> {isPrinting ? 'Opening print...' : 'Print PDF'}
             </button>
           </div>
         )}

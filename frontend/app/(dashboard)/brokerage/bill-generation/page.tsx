@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import { Save, Printer, FileText, Check, ChevronDown, AlertCircle } from 'lucide-react';
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 import posthog from "posthog-js";
+import { usePrint, PRINT_BLOCKED_MESSAGE } from '@/lib/usePrint';
 
 // Helper to convert number to words (Indian Format)
 const numberToWords = (num: number): string => {
@@ -124,6 +125,7 @@ export default function BillGenerationPage() {
 
   const [useLetterhead, setUseLetterhead] = useState(true);
   const [logoError, setLogoError] = useState(false);
+  const { isPrinting, print } = usePrint('brokerage_bill');
 
   useEffect(() => {
     setLogoError(false);
@@ -272,6 +274,19 @@ export default function BillGenerationPage() {
     }
   };
 
+  const handlePrint = () => {
+    if (!formData.firm_id) return showToast("Select your firm.", 'error');
+    if (!formData.party_id) return showToast("Select a party.", 'error');
+    if (selectedIds.length === 0) return showToast("Please select deliveries.", 'error');
+    if (!formData.bill_no) return showToast("Enter Bill No.", 'error');
+
+    print(() => showToast(PRINT_BLOCKED_MESSAGE, 'error'), {
+      delivery_count: selectedIds.length,
+      net_amount: totals.net_amount,
+      use_letterhead: useLetterhead,
+    });
+  };
+
   const selectedPartyObj = parties.find(p => p.id == formData.party_id);
   const selectedFirmObj = firms.find(f => f.id == formData.firm_id);
   const selectedDeliveryItems = pendingDeliveries.filter(d => selectedIds.includes(d.id));
@@ -292,8 +307,8 @@ export default function BillGenerationPage() {
               <h1 className="neu-page-title text-3xl">Brokerage Bill</h1>
               <p className="mt-1 font-medium" style={{ color: "var(--cb-text-label)" }}>Generate commission invoices.</p>
             </div>
-            <button onClick={() => window.print()} className="neu-btn text-[#04294E] !border !border-[#65a34e] hover:!bg-[#65a34e] hover:!text-white transition-all duration-300 flex items-center gap-2">
-              <Printer size={18} /> Print Bill
+            <button onClick={handlePrint} disabled={isPrinting} className="neu-btn text-[#04294E] !border !border-[#65a34e] enabled:hover:!bg-[#65a34e] enabled:hover:!text-white transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-70 flex items-center gap-2">
+              <Printer size={18} /> {isPrinting ? 'Opening print...' : 'Print Bill'}
             </button>
           </div>
 

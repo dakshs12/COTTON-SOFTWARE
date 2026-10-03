@@ -5,6 +5,7 @@ import api from "@/lib/api";
 import { Toast } from "@/app/components/Toast";
 import CustomDatePicker from "@/app/components/CustomDatePicker";
 import * as XLSX from "xlsx";
+import { usePrint, PRINT_BLOCKED_MESSAGE } from "@/lib/usePrint";
 import {
   Search,
   Printer,
@@ -114,6 +115,7 @@ export default function PartyReportPage() {
     setToastMessage({ text: msg, type });
     setTimeout(() => setToastMessage(null), 3000);
   };
+  const { isPrinting, print } = usePrint("party_report");
 
   // -------------------------------------------------------------
   // TAB 1: Party Ledger State
@@ -615,7 +617,7 @@ export default function PartyReportPage() {
   // Print / PDF Handler
   // -------------------------------------------------------------
   const handlePrint = () => {
-    window.print();
+    print(() => showToast(PRINT_BLOCKED_MESSAGE, "error"), { tab: activeTab });
   };
 
   return (
@@ -730,12 +732,12 @@ export default function PartyReportPage() {
                 </button>
                 <button
                   onClick={handlePrint}
-                  disabled={!selectedPartyId || ledgerDeals.length === 0}
+                  disabled={!selectedPartyId || ledgerDeals.length === 0 || isPrinting}
                   className="neu-btn neu-btn-action flex-1 md:flex-initial text-xs py-2 px-3"
                   title="Print or save as clean PDF"
                 >
                   <Printer size={15} />
-                  <span>Print PDF</span>
+                  <span>{isPrinting ? "Opening print..." : "Print PDF"}</span>
                 </button>
               </div>
             </div>
@@ -1341,12 +1343,12 @@ export default function PartyReportPage() {
                 </button>
                 <button
                   onClick={handlePrint}
-                  disabled={filteredDirectory.length === 0}
+                  disabled={filteredDirectory.length === 0 || isPrinting}
                   className="neu-btn neu-btn-action flex-1 md:flex-initial text-xs py-2 px-3"
                   title="Print party directory register"
                 >
                   <Printer size={15} />
-                  <span>Print PDF</span>
+                  <span>{isPrinting ? "Opening print..." : "Print PDF"}</span>
                 </button>
               </div>
             </div>
