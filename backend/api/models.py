@@ -160,6 +160,21 @@ class FirmMaster(BaseModel):
     ifsc_code = models.CharField(max_length=20, blank=True, null=True)
     
     letterhead = models.ImageField(upload_to='letterheads/', blank=True, null=True)
+    letterhead_data = models.TextField(blank=True, null=True, help_text="Base64 encoded image data for permanent storage across deployments")
+
+    def save(self, *args, **kwargs):
+        if self.letterhead and not self.letterhead_data:
+            try:
+                import base64
+                self.letterhead.open('rb')
+                encoded = base64.b64encode(self.letterhead.read()).decode('utf-8')
+                self.letterhead.close()
+                ext = self.letterhead.name.split('.')[-1].lower()
+                mime = 'jpeg' if ext in ['jpg', 'jpeg'] else ('png' if ext == 'png' else 'svg+xml' if ext == 'svg' else 'jpeg')
+                self.letterhead_data = f"data:image/{mime};base64,{encoded}"
+            except Exception:
+                pass
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.firm_name

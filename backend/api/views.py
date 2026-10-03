@@ -53,7 +53,7 @@ class FirmMasterViewSet(viewsets.ModelViewSet):
             'address', 'branch_address', 'city', 'pincode', 'state',
             'tele_o', 'mobile', 'email', 'website', 'contact_person',
             'cin_no', 'pan_no', 'gst_no', 'tan_no',
-            'bank_name', 'branch', 'bank_ac_no', 'ifsc_code', 'letterhead'
+            'bank_name', 'branch', 'bank_ac_no', 'ifsc_code', 'letterhead', 'letterhead_data'
         )
         return Response(list(qs))
 

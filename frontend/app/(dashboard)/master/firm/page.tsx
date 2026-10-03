@@ -85,6 +85,12 @@ export default function FirmMasterPage() {
       });
       if (letterheadFile) {
         data.append('letterhead', letterheadFile);
+        const base64Data = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(letterheadFile);
+        });
+        data.append('letterhead_data', base64Data);
       }
 
       if (editId) {

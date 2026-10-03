@@ -2,7 +2,7 @@
 import { Toast } from '@/app/components/Toast';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Save, Printer, FileText, Check, ChevronDown } from 'lucide-react';
+import { Save, Printer, FileText, Check, ChevronDown, AlertCircle } from 'lucide-react';
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 import posthog from "posthog-js";
 
@@ -92,6 +92,11 @@ export default function BillGenerationPage() {
   });
 
   const [useLetterhead, setUseLetterhead] = useState(true);
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    setLogoError(false);
+  }, [formData.firm_id]);
 
   useEffect(() => {
     fetchMasters();
@@ -487,16 +492,34 @@ export default function BillGenerationPage() {
                           <p className="text-sm font-bold">PAN: {selectedFirmObj?.pan_no || "-"}</p>
                       </div>
                       <div className="flex-shrink-0 ml-4">
-                          <img 
-                            src={selectedFirmObj?.letterhead ? getLetterheadUrl(selectedFirmObj.letterhead) : "/favicon-logo.svg"} 
-                            onError={(e) => {
-                              if (e.currentTarget.src !== window.location.origin + '/favicon-logo.svg') {
-                                e.currentTarget.src = '/favicon-logo.svg';
-                              }
-                            }}
-                            alt="" 
-                            className="w-28 h-28 object-contain object-top" 
-                          />
+                          {(() => {
+                            const hasCustomLogo = Boolean(selectedFirmObj?.letterhead_data || selectedFirmObj?.letterhead);
+                            const isCottBookFirm = selectedFirmObj?.firm_name?.toLowerCase().includes('cottbook');
+                            const logoSrc = selectedFirmObj?.letterhead_data || (selectedFirmObj?.letterhead ? getLetterheadUrl(selectedFirmObj.letterhead) : (isCottBookFirm ? '/favicon-logo.svg' : ''));
+
+                            if (!hasCustomLogo && !isCottBookFirm) {
+                              return null;
+                            }
+
+                            if (logoError) {
+                              return (
+                                <div className="w-28 h-28 border border-dashed border-red-400 bg-red-50 text-red-700 rounded flex flex-col items-center justify-center p-2 text-center text-xs">
+                                  <AlertCircle size={22} className="mb-1 text-red-500" />
+                                  <span className="font-bold text-[11px] leading-tight">Logo Error 404</span>
+                                  <span className="text-[9px] text-gray-600 mt-1 leading-tight">Image not found</span>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <img 
+                                src={logoSrc} 
+                                onError={() => setLogoError(true)}
+                                alt="Firm Logo" 
+                                className="w-28 h-28 object-contain object-top" 
+                              />
+                            );
+                          })()}
                       </div>
                   </div>
               ) : (
