@@ -144,7 +144,7 @@ class FirmMaster(BaseModel):
     state = models.CharField(max_length=100)
     
     tele_o = models.CharField(max_length=20, blank=True, null=True)
-    mobile = models.CharField(max_length=15)
+    mobile = models.CharField(max_length=15, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     website = models.CharField(max_length=100, blank=True, null=True)
     contact_person = models.CharField(max_length=100, blank=True, null=True)

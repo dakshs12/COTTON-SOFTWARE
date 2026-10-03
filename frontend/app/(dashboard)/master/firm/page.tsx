@@ -348,7 +348,7 @@ export default function FirmMasterPage() {
                 </div>
                 <div>
                   <label className="neu-label">Mobile</label>
-                  <input name="mobile" placeholder="Mobile" value={formData.mobile} onChange={handleChange} className="neu-input" required />
+                  <input name="mobile" placeholder="Mobile" value={formData.mobile} onChange={handleChange} className="neu-input" />
                 </div>
                 <div>
                   <label className="neu-label">Office Tele</label>
