@@ -485,11 +485,13 @@ export default function BillGenerationPage() {
                           {selectedFirmObj?.tagline && <p className="font-bold text-sm text-gray-800">{selectedFirmObj.tagline}</p>}
                           {selectedFirmObj?.address && <p className="text-sm text-gray-800">{selectedFirmObj.address}</p>}
                           <p className="text-sm text-gray-800">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}{selectedFirmObj?.state ? `, ${selectedFirmObj.state}` : ''}</p>
-                          <p className="text-sm text-gray-800">Email: {selectedFirmObj?.email || "-"}</p>
-                          <p className="text-sm text-gray-800">Ph: {[selectedFirmObj?.tele_o, selectedFirmObj?.mobile].filter(Boolean).join(" / ") || "-"}</p>
+                          <p className="text-sm text-gray-800">
+                              <span>Ph: {[selectedFirmObj?.tele_o, selectedFirmObj?.mobile].filter(Boolean).join(" / ") || "-"}</span>
+                              <span className="inline-block w-8"></span>
+                              <span>Email: {selectedFirmObj?.email || "-"}</span>
+                          </p>
                           <p className="text-sm font-bold mt-1">CIN: {selectedFirmObj?.cin_no || "-"}</p>
                           <p className="text-sm font-bold">GST: {selectedFirmObj?.gst_no || "-"}</p>
-                          <p className="text-sm font-bold">PAN: {selectedFirmObj?.pan_no || "-"}</p>
                       </div>
                       <div className="flex-shrink-0 ml-4">
                           {(() => {
