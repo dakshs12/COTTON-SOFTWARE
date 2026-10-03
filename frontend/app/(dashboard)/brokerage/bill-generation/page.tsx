@@ -465,112 +465,101 @@ export default function BillGenerationPage() {
           </div>
       </div>
 
-      {/* --- REAL PRINT TEMPLATE (Matches Image 2 Exactly) --- */}
+      {/* --- REAL PRINT TEMPLATE (Matches Screenshot 1 Exactly) --- */}
       <div className="hidden print:block font-sans text-black bg-white">
-          
-          {/* Watermark for all pages */}
-          <div className="fixed bottom-0 left-0 right-0 flex justify-center items-center gap-2 text-[10pt] font-bold text-gray-500 z-50" style={{ fontFamily: "var(--font-quicksand)" }}>
-             <FileText size={14} /> CottBook &bull; Software for Cotton Brokers
-          </div>
-
-          <div className="w-full mx-auto min-h-[260mm] px-8 pt-8 pb-12 relative bg-transparent flex flex-col z-10 box-border" style={{ fontFamily: "Arial, sans-serif" }}>
-              
-              <div className="flex-1 pb-8">
-                  {/* Header / Letterhead Area */}
-                  <div className="mb-8">
-                  {useLetterhead && selectedFirmObj?.letterhead ? (
-                      <div className="flex justify-between items-start border-b border-gray-300 pb-4">
-                          <div>
-                              <h1 className="text-2xl font-bold uppercase tracking-wide">{selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</h1>
-                              {selectedFirmObj?.tagline && <p className="font-bold text-sm">{selectedFirmObj.tagline}</p>}
-                              {selectedFirmObj?.address && <p className="text-sm">{selectedFirmObj.address}</p>}
-                              <p className="text-sm">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}{selectedFirmObj?.state ? `, ${selectedFirmObj.state}` : ''}</p>
-                              <p className="text-sm">Email: {selectedFirmObj?.email || "-"}</p>
-                              <p className="text-sm">Ph: {[selectedFirmObj?.tele_o, selectedFirmObj?.mobile].filter(Boolean).join(" / ") || "-"}</p>
-                              <p className="text-sm font-bold mt-1">CIN: {selectedFirmObj?.cin_no || "-"}</p>
-                              <p className="text-sm font-bold">GST: {selectedFirmObj?.gst_no || "-"}</p>
-                              <p className="text-sm font-bold">PAN: {selectedFirmObj?.pan_no || "-"}</p>
-                          </div>
-                          <div>
-                              <img src={getLetterheadUrl(selectedFirmObj.letterhead)} alt="Letterhead" className="w-48 h-auto object-contain object-top" />
-                          </div>
+          <div 
+            className="w-full max-w-[210mm] mx-auto px-6 py-4 relative bg-white flex flex-col box-border print:m-0 print:p-4" 
+            style={{ fontFamily: "Arial, sans-serif", pageBreakInside: "avoid", breakInside: "avoid" }}
+          >
+              {/* Header / Letterhead Area */}
+              <div className="mb-4">
+              {useLetterhead ? (
+                  <div className="flex justify-between items-start border-b border-gray-300 pb-3">
+                      <div className="leading-snug">
+                          <h1 className="text-2xl font-bold uppercase tracking-wide">{selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</h1>
+                          {selectedFirmObj?.tagline && <p className="font-bold text-sm text-gray-800">{selectedFirmObj.tagline}</p>}
+                          {selectedFirmObj?.address && <p className="text-sm text-gray-800">{selectedFirmObj.address}</p>}
+                          <p className="text-sm text-gray-800">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}{selectedFirmObj?.state ? `, ${selectedFirmObj.state}` : ''}</p>
+                          <p className="text-sm text-gray-800">Email: {selectedFirmObj?.email || "-"}</p>
+                          <p className="text-sm text-gray-800">Ph: {[selectedFirmObj?.tele_o, selectedFirmObj?.mobile].filter(Boolean).join(" / ") || "-"}</p>
+                          <p className="text-sm font-bold mt-1">CIN: {selectedFirmObj?.cin_no || "-"}</p>
+                          <p className="text-sm font-bold">GST: {selectedFirmObj?.gst_no || "-"}</p>
+                          <p className="text-sm font-bold">PAN: {selectedFirmObj?.pan_no || "-"}</p>
                       </div>
-                  ) : useLetterhead && !selectedFirmObj?.letterhead ? (
-                      /* Fallback generic letterhead if checked but no image uploaded */
-                      <div className="flex justify-between items-start border-b border-gray-300 pb-4">
-                          <div>
-                              <h1 className="text-2xl font-bold uppercase tracking-wide">{selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</h1>
-                              {selectedFirmObj?.tagline && <p className="font-bold text-sm">{selectedFirmObj.tagline}</p>}
-                              {selectedFirmObj?.address && <p className="text-sm">{selectedFirmObj.address}</p>}
-                              <p className="text-sm">{selectedFirmObj?.city}{selectedFirmObj?.pincode ? ` - ${selectedFirmObj.pincode}` : ''}{selectedFirmObj?.state ? `, ${selectedFirmObj.state}` : ''}</p>
-                              <p className="text-sm">Email: {selectedFirmObj?.email || "-"}</p>
-                              <p className="text-sm">Ph: {[selectedFirmObj?.tele_o, selectedFirmObj?.mobile].filter(Boolean).join(" / ") || "-"}</p>
-                              <p className="text-sm font-bold mt-1">CIN: {selectedFirmObj?.cin_no || "-"}</p>
-                              <p className="text-sm font-bold">GST: {selectedFirmObj?.gst_no || "-"}</p>
-                              <p className="text-sm font-bold">PAN: {selectedFirmObj?.pan_no || "-"}</p>
-                          </div>
+                      <div className="flex-shrink-0 ml-4">
+                          <img 
+                            src={selectedFirmObj?.letterhead ? getLetterheadUrl(selectedFirmObj.letterhead) : "/favicon-logo.svg"} 
+                            onError={(e) => {
+                              if (e.currentTarget.src !== window.location.origin + '/favicon-logo.svg') {
+                                e.currentTarget.src = '/favicon-logo.svg';
+                              }
+                            }}
+                            alt="" 
+                            className="w-28 h-28 object-contain object-top" 
+                          />
                       </div>
-                  ) : (
-                      /* Blank Space for Pre-Printed Letterhead Paper */
-                      <div className="h-40 w-full"></div>
-                  )}
+                  </div>
+              ) : (
+                  /* Blank Space for Pre-Printed Letterhead Paper */
+                  <div className="h-36 w-full"></div>
+              )}
               </div>
 
               {/* Bill Meta Data */}
-              <div className="mb-6 leading-relaxed">
+              <div className="mb-4 leading-normal">
                   <p className="font-bold text-sm">To,</p>
                   <p className="font-bold text-base">M/s. {selectedPartyObj?.company_name || "-"}, {selectedPartyObj?.station || "-"}</p>
                   <p className="font-bold text-sm">(GST No.: {selectedPartyObj?.gst_no || "-"})</p>
                   
-                  <div className="flex justify-between font-bold text-sm mt-1">
+                  <div className="flex justify-between font-bold text-sm mt-2">
                       <p>Bill No.: {formData.bill_no || "-"}</p>
                       <p>Date: {formatDate(formData.bill_date)}</p>
                   </div>
               </div>
 
               {/* Table */}
-              <table className="w-full mb-2" style={{ borderTop: "2px solid black", borderBottom: "1px dashed black", fontFamily: "'Courier New', monospace", fontSize: "11pt", tableLayout: "fixed" }}>
+              <table className="w-full mb-1.5" style={{ borderTop: "2px solid black", borderBottom: "1px dashed black", fontFamily: "'Courier New', monospace", fontSize: "10.5pt", tableLayout: "fixed" }}>
                   <thead>
                       <tr style={{ borderBottom: "1px solid black" }}>
-                          <th className="py-2 text-left font-bold" style={{ width: "42%" }}>Name</th>
-                          <th className="py-2 text-center font-bold" style={{ width: "15%" }}>Station</th>
-                          <th className="py-2 text-center font-bold" style={{ width: "10%" }}>Bales</th>
-                          <th className="py-2 text-center font-bold" style={{ width: "12%" }}>Lot No</th>
-                          <th className="py-2 text-center font-bold" style={{ width: "12%" }}>Bill No</th>
-                          <th className="py-2 text-right font-bold" style={{ width: "9%" }}>Rate</th>
+                          <th className="py-1.5 text-left font-bold" style={{ width: "42%" }}>Name</th>
+                          <th className="py-1.5 text-center font-bold" style={{ width: "15%" }}>Station</th>
+                          <th className="py-1.5 text-center font-bold" style={{ width: "10%" }}>Bales</th>
+                          <th className="py-1.5 text-center font-bold" style={{ width: "12%" }}>Lot No</th>
+                          <th className="py-1.5 text-center font-bold" style={{ width: "12%" }}>Bill No</th>
+                          <th className="py-1.5 text-right font-bold" style={{ width: "9%" }}>Rate</th>
                       </tr>
                   </thead>
                   <tbody>
                       {selectedDeliveryItems.map((item, idx) => (
                           <tr key={item.id}>
-                              <td className="py-2 text-left pr-2">{item.counter_party}</td>
-                              <td className="py-2 text-center">{item.station}</td>
-                              <td className="py-2 text-center">{item.bales}</td>
-                              <td className="py-2 text-center">{item.lot_no || "-"}</td>
-                              <td className="py-2 text-center">{item.party_bill_no || "-"}</td>
-                              <td className="py-2 text-right">{item.deal_rate}</td>
+                              <td className="py-1.5 text-left pr-2">{item.counter_party}</td>
+                              <td className="py-1.5 text-center">{item.station}</td>
+                              <td className="py-1.5 text-center">{item.bales}</td>
+                              <td className="py-1.5 text-center">{item.lot_no || "-"}</td>
+                              <td className="py-1.5 text-center">{item.party_bill_no || "-"}</td>
+                              <td className="py-1.5 text-right">{item.deal_rate}</td>
                           </tr>
                       ))}
                   </tbody>
               </table>
 
               {/* Total Bales */}
-              <table className="w-full mb-6" style={{ fontFamily: "'Courier New', monospace", fontSize: "11pt", borderBottom: "1px dashed #ccc" }}>
+              <table className="w-full mb-4" style={{ fontFamily: "'Courier New', monospace", fontSize: "10.5pt", borderBottom: "1px dashed #999" }}>
                   <tbody>
                       <tr>
-                          <td style={{ width: "50%" }} className="py-2 text-right font-bold">Total Bales :</td>
-                          <td style={{ width: "8%" }} className="py-2 text-center font-bold">{totals.total_bales}</td>
+                          <td style={{ width: "50%" }} className="py-1.5 text-right font-bold">Total Bales :</td>
+                          <td style={{ width: "8%" }} className="py-1.5 text-center font-bold">{totals.total_bales}</td>
                           <td style={{ width: "42%" }}></td>
                       </tr>
                   </tbody>
               </table>
 
               {/* Calculations */}
-              <table style={{ width: "100%", marginBottom: "20px" }}>
+              <table style={{ width: "100%", marginBottom: "16px" }}>
                   <tbody>
                       <tr>
-                          <td style={{ width: "60%", verticalAlign: "top" }}>
-                              <table style={{ width: "100%", fontSize: "11pt", fontFamily: "'Courier New', monospace", lineHeight: "2" }}>
+                          <td style={{ width: "65%", verticalAlign: "top" }}>
+                              <table style={{ width: "100%", fontSize: "10.5pt", fontFamily: "'Courier New', monospace", lineHeight: "1.6" }}>
                                   <tbody>
                                       <tr>
                                           <td>Brokerage @{totals.rate}/- Per Bale</td>
@@ -600,33 +589,37 @@ export default function BillGenerationPage() {
                                       </tr>
                                       <tr><td colSpan={2} style={{ borderTop: "3px double black" }}></td></tr>
                                       <tr>
-                                          <td colSpan={2} className="font-bold pb-8">Total Amount in Words: {totals.amount_in_words}</td>
+                                          <td colSpan={2} className="font-bold pt-2">Total Amount in Words: {totals.amount_in_words}</td>
                                       </tr>
                                   </tbody>
                               </table>
                           </td>
-                          <td style={{ width: "40%" }}></td>
+                          <td style={{ width: "35%" }}></td>
                       </tr>
                   </tbody>
               </table>
-              </div> {/* End flex-1 wrapper */}
 
               {/* Footer */}
-              <div className="mt-auto flex justify-between items-start text-sm pt-4 relative z-10 bg-white" style={{ borderTop: "1px solid black" }}>
-                  <div>
+              <div className="flex justify-between items-start text-sm pt-3 mt-2" style={{ borderTop: "1px solid black" }}>
+                  <div className="leading-snug">
                       <p className="font-bold underline mb-1">Bank Details:</p>
                       <p className="font-bold">Bank: {selectedFirmObj?.bank_name || "-"}</p>
                       <p className="font-bold">Branch: {selectedFirmObj?.branch || "-"}</p>
                       <p className="font-bold">A/c No: {selectedFirmObj?.bank_ac_no || "-"}</p>
                       <p className="font-bold">IFSC: {selectedFirmObj?.ifsc_code || "-"}</p>
                       
-                      <p className="mt-6">E & O.E (Subject to {selectedFirmObj?.jurisdiction ? selectedFirmObj.jurisdiction + " " : '\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0'}Jurisdiction)</p>
+                      <p className="mt-4 text-xs">E & O.E (Subject to {selectedFirmObj?.jurisdiction ? selectedFirmObj.jurisdiction + " " : (selectedFirmObj?.city ? selectedFirmObj.city + " " : '\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0')}Jurisdiction)</p>
                   </div>
-                  <div className="text-right">
-                      <p className="font-bold">For: {selectedFirmObj?.firm_name}</p>
-                      <div className="h-16"></div>
+                  <div className="text-right leading-snug">
+                      <p className="font-bold">For: {selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</p>
+                      <div className="h-12"></div>
                       <p>(Auth. Signatory)</p>
                   </div>
+              </div>
+
+              {/* CottBook Footer Watermark */}
+              <div className="mt-6 pt-2 flex justify-center items-center gap-2 text-[9pt] font-semibold text-gray-500" style={{ fontFamily: "var(--font-quicksand)" }}>
+                 <FileText size={13} /> CottBook &bull; Software for Cotton Brokers
               </div>
           </div>
       </div>

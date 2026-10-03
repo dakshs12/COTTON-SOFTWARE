@@ -18,7 +18,8 @@ from django.contrib import admin
 from django.urls import path, include  # Added 'include'
 from api.auth_views import CookieTokenObtainPairView, CookieTokenRefreshView, LogoutView, GoogleLoginView, CompleteGoogleRegistrationView
 from django.conf import settings
-from django.conf.urls.static import static
+from django.views.static import serve
+from django.urls import re_path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,4 +29,5 @@ urlpatterns = [
     path('api/auth/google/', GoogleLoginView.as_view(), name='google_login'),
     path('api/auth/google/complete/', CompleteGoogleRegistrationView.as_view(), name='google_complete'),
     path('api/', include('api.urls')), # This connects your new API URLs
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+]
