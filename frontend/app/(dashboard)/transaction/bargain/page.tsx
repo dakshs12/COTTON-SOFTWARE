@@ -2,7 +2,7 @@
 import { Toast } from '@/app/components/Toast';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import api from '@/lib/api';
-import { Save, Plus, FileText, X, Search, ChevronDown, Check, Edit2, Trash2, Loader2, MoreVertical, Send, Mail } from 'lucide-react';
+import { Save, Plus, FileText, X, Search, ChevronDown, Check, Edit2, Trash2, Loader2, MoreVertical, Share, Mail } from 'lucide-react';
 // Import the new Calendar from your existing folder
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
@@ -435,8 +435,8 @@ export default function BargainEntryPage() {
     const firmName = firms[0]?.firm_name || "COTTON BROKERAGE";
     const bodyText = generateBargainConfirmationText(selectedDealForConfirmation, firmName, false);
     const subject = "BARGAIN CONFIRMATION";
-    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
-    window.location.href = mailtoUrl;
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+    window.open(gmailUrl, '_blank');
   };
 
   const handleChange = (e: any) => {
@@ -1348,7 +1348,7 @@ export default function BargainEntryPage() {
                                 }}
                                 className="w-full text-left px-3.5 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2.5 transition-colors font-medium cursor-pointer"
                               >
-                                <Send size={15} className="text-emerald-600 shrink-0" />
+                                <Share size={15} className="text-gray-700 shrink-0" />
                                 <span>Send Bargain Confirmation</span>
                               </button>
                               <div className="h-[1px] bg-gray-100 my-1" />
@@ -1433,27 +1433,18 @@ export default function BargainEntryPage() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="bg-cb-bg p-6 sm:p-7 rounded-[28px] shadow-neu max-w-lg w-full mx-auto animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             {/* Header */}
-            <div className="flex justify-between items-start pb-4 border-b border-gray-100">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
-                    <Send size={18} />
-                  </span>
-                  <h3 className="text-lg font-bold text-gray-800">Send Bargain Confirmation</h3>
-                </div>
-                <p className="text-xs text-gray-500 mt-1 pl-8">
-                  Deal <span className="font-semibold text-gray-700">{selectedDealForConfirmation.smart_deal_id || selectedDealForConfirmation.deal_no}</span> • {selectedDealForConfirmation.seller_name} ➔ {selectedDealForConfirmation.buyer_name}
-                </p>
-              </div>
+            <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800">Send: Bargain Confirmation</h3>
               <button 
                 onClick={() => {
                   setConfirmationModalOpen(false);
                   setSelectedDealForConfirmation(null);
                 }}
-                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors cursor-pointer"
+                className="neu-btn neu-btn-cancel-action cursor-pointer"
+                style={{ padding: "0.5rem" }}
                 title="Close"
               >
-                <X size={20} />
+                <X size={18} strokeWidth={2.5} />
               </button>
             </div>
 
@@ -1489,10 +1480,10 @@ export default function BargainEntryPage() {
 
               <button
                 onClick={handleEmailShare}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer text-sm"
+                className="flex-1 bg-[#EA4335] hover:bg-[#d9382a] active:scale-[0.98] text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer text-sm"
               >
                 <Mail size={16} />
-                <span>Share via Email</span>
+                <span>Share via Gmail</span>
               </button>
 
               <button 
