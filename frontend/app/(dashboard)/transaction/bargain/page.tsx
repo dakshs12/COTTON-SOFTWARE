@@ -2,7 +2,7 @@
 import { Toast } from '@/app/components/Toast';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import api from '@/lib/api';
-import { Save, Plus, FileText, X, Search, ChevronDown, Check, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Save, Plus, FileText, X, Search, ChevronDown, Check, Edit2, Trash2, Loader2, MoreVertical, Send, Mail } from 'lucide-react';
 // Import the new Calendar from your existing folder
 import CustomDatePicker from '@/app/components/CustomDatePicker';
 import { useDropdownKeyboardNav } from '@/app/hooks/useDropdownKeyboardNav';
@@ -196,14 +196,132 @@ const formatDate = (dateStr: string) => {
   return dateStr;
 };
 
+// Check if a field value is blank, empty, or N.A.
+const isValueEmptyOrNA = (val: any): boolean => {
+  if (val === null || val === undefined) return true;
+  const str = String(val).trim();
+  if (!str) return true;
+  const lower = str.toLowerCase();
+  return ['na', 'n.a.', 'n/a', 'n.a', 'none', 'nil', '-'].includes(lower);
+};
+
+// Helper to generate formatted Bargain Confirmation message
+const generateBargainConfirmationText = (
+  deal: any,
+  firmName: string = "COTTON BROKERAGE",
+  isWhatsApp: boolean = true
+): string => {
+  if (!deal) return "";
+
+  const lines: string[] = [];
+
+  // 1. FIRM NAME
+  const cleanFirm = (firmName || "COTTON BROKERAGE").trim().toUpperCase();
+  lines.push(isWhatsApp ? `*${cleanFirm}*` : cleanFirm);
+  lines.push("----------------------------------------");
+
+  // 2. Heading: BARGAIN CONFIRMATION (no deal number as per request)
+  lines.push(isWhatsApp ? "*BARGAIN CONFIRMATION*" : "BARGAIN CONFIRMATION");
+  lines.push("----------------------------------------");
+
+  // Helper to add a formatted line if not empty/NA
+  const addField = (label: string, value: any) => {
+    if (!isValueEmptyOrNA(value)) {
+      const valStr = String(value).trim();
+      if (isWhatsApp) {
+        lines.push(`*${label}:* ${valStr}`);
+      } else {
+        lines.push(`${label}: ${valStr}`);
+      }
+    }
+  };
+
+  // Date
+  if (!isValueEmptyOrNA(deal.bargain_date)) {
+    addField("Date", formatDate(deal.bargain_date));
+  }
+
+  // Quantity
+  if (!isValueEmptyOrNA(deal.bales)) {
+    addField("Quantity", `${deal.bales} Bales`);
+  }
+
+  // Quality
+  addField("Quality", deal.quality_condition);
+
+  // Rate
+  if (!isValueEmptyOrNA(deal.rate)) {
+    const num = Number(deal.rate);
+    const formattedRate = isNaN(num) ? `${deal.rate}` : `₹${num.toLocaleString('en-IN')}`;
+    addField("Rate", formattedRate);
+  }
+
+  // Delivery Type
+  addField("Delivery Type", deal.delivery_type);
+
+  // Payment Condition
+  let payCondStr = "";
+  const hasDays = !isValueEmptyOrNA(deal.payment_condition);
+  const hasBy = !isValueEmptyOrNA(deal.payment_by);
+  if (hasDays && hasBy) {
+    payCondStr = `${deal.payment_condition} Days from ${deal.payment_by}`;
+  } else if (hasDays) {
+    payCondStr = `${deal.payment_condition} Days`;
+  } else if (hasBy) {
+    payCondStr = `${deal.payment_by}`;
+  }
+  if (payCondStr) {
+    addField("Payment Condition", payCondStr);
+  }
+
+  // Discount
+  addField("Discount", deal.cash_disc);
+
+  // Delivery Terms
+  addField("Delivery Terms", deal.delivery_terms);
+
+  // Deal Type
+  addField("Deal Type", deal.deal_type);
+
+  // Cotton Certificate
+  addField("Cotton Certificate", deal.cotton_certificate);
+
+  // Station
+  let stationStr = deal.station || "";
+  if (!isValueEmptyOrNA(deal.state) && !stationStr.toLowerCase().includes(deal.state.toLowerCase())) {
+    stationStr = stationStr ? `${stationStr}, ${deal.state}` : deal.state;
+  }
+  addField("Station", stationStr);
+
+  // Seller
+  addField("Seller", deal.seller_name);
+
+  // Buyer
+  addField("Buyer", deal.buyer_name);
+
+  // Remarks
+  addField("Remarks", deal.remarks);
+
+  // Closing separator
+  lines.push("----------------------------------------");
+
+  return lines.join("\n");
+};
+
 export default function BargainEntryPage() {
   const [bargains, setBargains] = useState<any[]>([]);
   const [parties, setParties] = useState<any[]>([]);
+  const [firms, setFirms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [splits, setSplits] = useState<any[]>([]);
   
+  // Three-dot action menu & Bargain Confirmation Modal
+  const [openMenuDealId, setOpenMenuDealId] = useState<number | null>(null);
+  const [confirmationModalOpen, setConfirmationModalOpen] = useState(false);
+  const [selectedDealForConfirmation, setSelectedDealForConfirmation] = useState<any | null>(null);
+
   // Delete Modal States
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<{id: number, displayId: string} | null>(null);
@@ -290,16 +408,35 @@ export default function BargainEntryPage() {
 
   const fetchData = async () => {
     try {
-      const [bargainRes, partyRes] = await Promise.all([
+      const [bargainRes, partyRes, firmRes] = await Promise.all([
         api.get('bargains/'),
-        api.get('parties/lite/')
+        api.get('parties/lite/'),
+        api.get('firms/lite/').catch(() => ({ data: [] }))
       ]);
       setBargains(bargainRes.data);
       setParties(partyRes.data);
+      setFirms(firmRes.data || []);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
+  };
+
+  const handleWhatsAppShare = () => {
+    if (!selectedDealForConfirmation) return;
+    const firmName = firms[0]?.firm_name || "COTTON BROKERAGE";
+    const text = generateBargainConfirmationText(selectedDealForConfirmation, firmName, true);
+    const encoded = encodeURIComponent(text);
+    window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
+  };
+
+  const handleEmailShare = () => {
+    if (!selectedDealForConfirmation) return;
+    const firmName = firms[0]?.firm_name || "COTTON BROKERAGE";
+    const bodyText = generateBargainConfirmationText(selectedDealForConfirmation, firmName, false);
+    const subject = "BARGAIN CONFIRMATION";
+    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+    window.location.href = mailtoUrl;
   };
 
   const handleChange = (e: any) => {
@@ -1150,7 +1287,7 @@ export default function BargainEntryPage() {
                 <tr><td colSpan={8} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>Loading...</td></tr>
               ) : currentBargains.length === 0 ? (
                 <tr><td colSpan={8} className="text-center py-8" style={{ color: "var(--cb-text-label)" }}>No deals found.</td></tr>
-              ) : currentBargains.map((deal) => (
+              ) : currentBargains.map((deal, index) => (
                 <tr key={deal.deal_no}>
                   <td className="font-mono font-bold" style={{ color: "var(--cb-primary)" }}>{deal.smart_deal_id}</td>
                   <td>{formatDate(deal.bargain_date)}</td>
@@ -1168,20 +1305,69 @@ export default function BargainEntryPage() {
                     </span>
                   </td>
                   <td className="text-right whitespace-nowrap">
-                    <button 
-                      onClick={() => handleEditClick(deal)}
-                      className="neu-btn neu-btn-action" style={{ padding: "0.35rem" }}
-                      title="Edit Deal"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button 
-                      onClick={() => triggerDelete(deal.deal_no, deal.smart_deal_id || deal.deal_no)}
-                      className="neu-btn neu-btn-danger-action ml-1" style={{ padding: "0.35rem" }}
-                      title="Delete Deal"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="inline-flex items-center gap-1.5 relative">
+                      <button 
+                        onClick={() => handleEditClick(deal)}
+                        className="neu-btn neu-btn-action" style={{ padding: "0.35rem" }}
+                        title="Edit Deal"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <div className="relative">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuDealId(openMenuDealId === deal.deal_no ? null : deal.deal_no);
+                          }}
+                          className="neu-btn neu-btn-action" style={{ padding: "0.35rem" }}
+                          title="More Actions"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        
+                        {openMenuDealId === deal.deal_no && (
+                          <>
+                            <div 
+                              className="fixed inset-0 z-40" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuDealId(null);
+                              }} 
+                            />
+                            <div 
+                              className={`absolute right-0 w-56 rounded-xl bg-white shadow-xl border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                                index >= Math.max(0, currentBargains.length - 2) ? 'bottom-full mb-1' : 'top-full mt-1'
+                              }`}
+                            >
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenMenuDealId(null);
+                                  setSelectedDealForConfirmation(deal);
+                                  setConfirmationModalOpen(true);
+                                }}
+                                className="w-full text-left px-3.5 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2.5 transition-colors font-medium cursor-pointer"
+                              >
+                                <Send size={15} className="text-emerald-600 shrink-0" />
+                                <span>Send Bargain Confirmation</span>
+                              </button>
+                              <div className="h-[1px] bg-gray-100 my-1" />
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenMenuDealId(null);
+                                  triggerDelete(deal.deal_no, deal.smart_deal_id || deal.deal_no);
+                                }}
+                                className="w-full text-left px-3.5 py-2 text-xs sm:text-sm text-red-600 hover:bg-red-50 flex items-center gap-2.5 transition-colors font-medium cursor-pointer"
+                              >
+                                <Trash2 size={15} className="shrink-0" />
+                                <span>Delete Deal</span>
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -1236,6 +1422,87 @@ export default function BargainEntryPage() {
                 className="neu-btn neu-btn-danger-action px-6 py-2 cursor-pointer"
               >
                 Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Bargain Confirmation Modal */}
+      {confirmationModalOpen && selectedDealForConfirmation && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-cb-bg p-6 sm:p-7 rounded-[28px] shadow-neu max-w-lg w-full mx-auto animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex justify-between items-start pb-4 border-b border-gray-100">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+                    <Send size={18} />
+                  </span>
+                  <h3 className="text-lg font-bold text-gray-800">Send Bargain Confirmation</h3>
+                </div>
+                <p className="text-xs text-gray-500 mt-1 pl-8">
+                  Deal <span className="font-semibold text-gray-700">{selectedDealForConfirmation.smart_deal_id || selectedDealForConfirmation.deal_no}</span> • {selectedDealForConfirmation.seller_name} ➔ {selectedDealForConfirmation.buyer_name}
+                </p>
+              </div>
+              <button 
+                onClick={() => {
+                  setConfirmationModalOpen(false);
+                  setSelectedDealForConfirmation(null);
+                }}
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Message Preview Box */}
+            <div className="my-4 flex-1 overflow-hidden flex flex-col min-h-0">
+              <div className="flex justify-between items-center mb-1.5 px-1">
+                <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Message Preview</span>
+                <span className="text-[11px] text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">
+                  Auto-formatted
+                </span>
+              </div>
+              <div className="bg-slate-900 text-slate-100 p-4 rounded-2xl text-xs font-mono leading-relaxed overflow-y-auto flex-1 border border-slate-800 shadow-inner select-text">
+                <pre className="whitespace-pre-wrap font-mono">
+                  {generateBargainConfirmationText(selectedDealForConfirmation, firms[0]?.firm_name || "COTTON BROKERAGE", true)}
+                </pre>
+              </div>
+              <p className="text-[11px] text-gray-400 mt-2 px-1 italic">
+                * Blank or N.A. fields are excluded automatically.
+              </p>
+            </div>
+
+            {/* Share Actions */}
+            <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+              <button
+                onClick={handleWhatsAppShare}
+                className="flex-1 bg-[#25D366] hover:bg-[#20ba59] active:scale-[0.98] text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer text-sm"
+              >
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                </svg>
+                <span>Share via WhatsApp</span>
+              </button>
+
+              <button
+                onClick={handleEmailShare}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer text-sm"
+              >
+                <Mail size={16} />
+                <span>Share via Email</span>
+              </button>
+
+              <button 
+                onClick={() => {
+                  setConfirmationModalOpen(false);
+                  setSelectedDealForConfirmation(null);
+                }}
+                className="neu-btn neu-btn-cancel-action px-5 py-2.5 text-sm cursor-pointer"
+              >
+                Close
               </button>
             </div>
           </div>
