@@ -1485,16 +1485,6 @@ export default function BargainEntryPage() {
                 <Mail size={16} />
                 <span>Share via Gmail</span>
               </button>
-
-              <button 
-                onClick={() => {
-                  setConfirmationModalOpen(false);
-                  setSelectedDealForConfirmation(null);
-                }}
-                className="neu-btn neu-btn-cancel-action px-5 py-2.5 text-sm cursor-pointer"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>
