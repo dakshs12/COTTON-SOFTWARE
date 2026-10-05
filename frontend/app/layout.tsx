@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display, DM_Sans, Quicksand } from "next/font/google";
 import "./globals.css";
 
@@ -20,6 +20,14 @@ const quicksand = Quicksand({
 export const metadata: Metadata = {
   title: "CottBook - Brokerage Management",
   description: "Cotton brokerage platform for managing bargains, passings, deliveries, and invoicing.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+  themeColor: "#f8f6f4",
 };
 
 import { Agentation } from "agentation";

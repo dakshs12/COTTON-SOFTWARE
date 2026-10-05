@@ -43,6 +43,23 @@
 
   /* Sidebar */
   --cb-sidebar-width: 280px;
+  --cb-sidebar-collapsed-width: 56px;
+}
+
+/* Hide scrollbar for clean mobile icon rail */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Prevent unwanted automatic zoom on iOS Safari when tapping inputs */
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+    font-size: 16px !important;
+  }
 }
 
 @theme inline {

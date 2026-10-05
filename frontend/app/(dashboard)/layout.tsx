@@ -44,47 +44,50 @@ export default function DashboardLayout({
       {/* Sidebar — fixed left, light neumorphic */}
       <Sidebar />
 
-      {/* Main content area — offset by sidebar width */}
+      {/* Main content area — offset dynamically: 56px on mobile, 280px on desktop */}
       <div 
-        className="flex-1 min-h-screen flex flex-col print:m-0 print:p-0 print:w-full print:!ml-0"
-        style={{ marginLeft: "var(--cb-sidebar-width)" }}
+        className="flex-1 min-h-screen flex flex-col print:m-0 print:p-0 print:w-full print:!ml-0 ml-[var(--cb-sidebar-collapsed-width)] md:ml-[var(--cb-sidebar-width)] min-w-0 transition-all duration-200"
       >
         {status === 'READ_ONLY_GRACE' && (
-          <div className="bg-amber-100 border-b border-amber-200 px-4 py-2.5 flex items-center justify-center gap-2 text-amber-800 text-sm shadow-sm w-full print:hidden">
-            <AlertCircle className="w-4 h-4" />
-            <span className="font-medium">
-              Your subscription has ended. CottBook is in read-only mode for {7 + daysRemaining} more days before total lockout.
-            </span>
-            <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline cursor-pointer">Renew Now</button>
+          <div className="bg-amber-100 border-b border-amber-200 px-3 sm:px-4 py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 text-amber-800 text-xs sm:text-sm shadow-sm w-full print:hidden text-center sm:text-left">
+            <div className="flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span className="font-medium">
+                Your subscription has ended. CottBook is in read-only mode for {7 + daysRemaining} more days before total lockout.
+              </span>
+            </div>
+            <button onClick={() => router.push('/subscription')} className="font-bold underline cursor-pointer">Renew Now</button>
           </div>
         )}
         
         {status === 'ACTIVE' && planType === 'TRIAL' && (
-          <div className="bg-blue-50 border-b border-blue-100 px-4 py-2 flex items-center justify-center gap-2 text-blue-800 text-sm w-full print:hidden">
+          <div className="bg-blue-50 border-b border-blue-100 px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 text-blue-800 text-xs sm:text-sm w-full print:hidden text-center sm:text-left">
             <span className="font-medium">
               You are currently on a free trial with {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} remaining. Upgrade your plan to unlock full access.
             </span>
-            <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline cursor-pointer">
+            <button onClick={() => router.push('/subscription')} className="font-bold underline cursor-pointer">
               Upgrade
             </button>
           </div>
         )}
         
         {status === 'EXPIRING_WARNING' && (
-          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-center gap-2 text-amber-900 text-sm w-full print:hidden">
-            <AlertCircle className="w-4 h-4 text-amber-600" />
-            <span className="font-medium">
-              {planType === 'TRIAL'
-                ? `Your free trial ends in ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'}. Upgrade your plan to prevent service interruption.`
-                : `Your subscription expires in ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'}. Renew your license early to secure seamless billing.`}
-            </span>
-            <button onClick={() => router.push('/subscription')} className="ml-4 font-bold underline cursor-pointer">
+          <div className="bg-amber-50 border-b border-amber-200 px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 text-amber-900 text-xs sm:text-sm w-full print:hidden text-center sm:text-left">
+            <div className="flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span className="font-medium">
+                {planType === 'TRIAL'
+                  ? `Your free trial ends in ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'}. Upgrade your plan to prevent service interruption.`
+                  : `Your subscription expires in ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'}. Renew your license early to secure seamless billing.`}
+              </span>
+            </div>
+            <button onClick={() => router.push('/subscription')} className="font-bold underline cursor-pointer">
               {planType === 'TRIAL' ? 'Upgrade' : 'Renew'}
             </button>
           </div>
         )}
 
-        <main className="flex-1 p-8 print:m-0 print:p-0 print:w-full">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 print:m-0 print:p-0 print:w-full min-w-0">
           {children}
         </main>
       </div>

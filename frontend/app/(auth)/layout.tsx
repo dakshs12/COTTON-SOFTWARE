@@ -5,7 +5,7 @@ export default function AuthLayout({
 }) {
   return (
     <div 
-      className="min-h-screen w-full flex items-center justify-center relative p-4"
+      className="min-h-[100dvh] w-full flex items-center justify-center relative p-4"
     >
       <div 
         className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "responsive-craft": {
+      "source": "kylezantos/responsive-craft",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "cd5996664f6003446dcc34ce26ac8bec85a307feb0a89ff96f4bb7b08158e1fd"
+    }
+  }
+}
