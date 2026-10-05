@@ -1431,43 +1431,43 @@ export default function BargainEntryPage() {
       {/* Send Bargain Confirmation Modal */}
       {confirmationModalOpen && selectedDealForConfirmation && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-cb-bg p-6 sm:p-7 rounded-[28px] shadow-neu max-w-lg w-full mx-auto animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+          <div className="bg-cb-bg p-5 rounded-[26px] shadow-neu max-w-[425px] w-full mx-auto animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             {/* Header */}
-            <div className="flex justify-between items-center pb-4 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-800">Send: Bargain Confirmation</h3>
+            <div className="flex justify-between items-center pb-2.5 border-b border-slate-300/70">
+              <h3 className="text-lg font-bold text-gray-800 tracking-tight">Send: Bargain Confirmation</h3>
               <button 
                 onClick={() => {
                   setConfirmationModalOpen(false);
                   setSelectedDealForConfirmation(null);
                 }}
                 className="neu-btn neu-btn-cancel-action cursor-pointer"
-                style={{ padding: "0.5rem" }}
+                style={{ padding: "0.45rem" }}
                 title="Close"
               >
-                <X size={18} strokeWidth={2.5} />
+                <X size={17} strokeWidth={2.5} />
               </button>
             </div>
 
             {/* Message Preview Box */}
-            <div className="my-4 flex-1 overflow-hidden flex flex-col min-h-0">
-              <div className="flex justify-between items-center mb-1.5 px-1">
+            <div className="mt-2.5 mb-3.5 flex-1 overflow-hidden flex flex-col min-h-0">
+              <div className="flex justify-between items-center mb-1 px-1">
                 <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Message Preview</span>
                 <span className="text-[11px] text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">
                   Auto-formatted
                 </span>
               </div>
-              <div className="bg-slate-900 text-slate-100 p-4 rounded-2xl text-xs font-mono leading-relaxed overflow-y-auto flex-1 border border-slate-800 shadow-inner select-text">
+              <div className="bg-slate-900 text-slate-100 p-3.5 rounded-2xl text-xs font-mono leading-relaxed overflow-y-auto flex-1 border border-slate-800 shadow-inner select-text">
                 <pre className="whitespace-pre-wrap font-mono">
                   {generateBargainConfirmationText(selectedDealForConfirmation, firms[0]?.firm_name || "COTTON BROKERAGE", true)}
                 </pre>
               </div>
-              <p className="text-[11px] text-gray-400 mt-2 px-1 italic">
+              <p className="text-[11px] text-gray-400 mt-1.5 px-1 italic">
                 * Blank or N.A. fields are excluded automatically.
               </p>
             </div>
 
             {/* Share Actions */}
-            <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+            <div className="flex gap-2.5">
               <button
                 onClick={handleWhatsAppShare}
                 className="flex-1 bg-[#25D366] hover:bg-[#20ba59] active:scale-[0.98] text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer text-sm"
