@@ -78,6 +78,25 @@ const getFormattedAddress = (firm: any) => {
   return { line1: `${cleanAddr},`, line2: locationString };
 };
 
+type PrintableBill = {
+  firm?: Record<string, string>;
+  party?: Record<string, string>;
+  bill_no: string;
+  bill_date: string;
+  items: Record<string, string | number>[];
+  totals: {
+    total_bales: number;
+    rate: number;
+    gross_amount: number;
+    gst_percent: number;
+    cgst: number;
+    sgst: number;
+    igst: number;
+    net_amount: number;
+    amount_in_words: string;
+  };
+};
+
 export default function BillGenerationPage() {
   const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
   const showToast = (msg: string, type: 'success' | 'error') => {
@@ -125,6 +144,8 @@ export default function BillGenerationPage() {
 
   const [useLetterhead, setUseLetterhead] = useState(true);
   const [logoError, setLogoError] = useState(false);
+  // Generate clears the selection, so keep the saved bill to print it after the save.
+  const [savedBill, setSavedBill] = useState<PrintableBill | null>(null);
   const { isPrinting, print } = usePrint('brokerage_bill');
 
   useEffect(() => {
@@ -172,6 +193,7 @@ export default function BillGenerationPage() {
     setFormData({ ...formData, party_id: party.id });
     setPartySearch(party.company_name);
     setIsPartyDropdownOpen(false);
+    setSavedBill(null);
     fetchPendingDeliveries(party.id);
   };
 
@@ -236,6 +258,21 @@ export default function BillGenerationPage() {
 
   }, [selectedIds, totals.rate, totals.gst_percent, formData.party_id, formData.firm_id]);
 
+  const selectedPartyObj = parties.find(p => p.id == formData.party_id);
+  const selectedFirmObj = firms.find(f => f.id == formData.firm_id);
+  const selectedDeliveryItems = pendingDeliveries.filter(d => selectedIds.includes(d.id));
+
+  const draftBill: PrintableBill = {
+    firm: selectedFirmObj,
+    party: selectedPartyObj,
+    bill_no: formData.bill_no,
+    bill_date: formData.bill_date,
+    items: selectedDeliveryItems,
+    totals,
+  };
+  const isSavedBillPrint = selectedIds.length === 0 && savedBill !== null;
+  const printBill = isSavedBillPrint ? savedBill : draftBill;
+
   const handleGenerate = async () => {
     if (selectedIds.length === 0) return showToast("Please select deliveries.", 'error');
     if (!formData.bill_no) return showToast("Enter Bill No.", 'error');
@@ -264,10 +301,10 @@ export default function BillGenerationPage() {
         gst_percent: totals.gst_percent,
         delivery_count: selectedIds.length,
       });
-      showToast("Bill Generated Successfully!", 'success');
+      setSavedBill(draftBill);
+      showToast(`Bill ${formData.bill_no} saved. Click Print Bill to print it.`, 'success');
       fetchPendingDeliveries(formData.party_id);
       setFormData(prev => ({ ...prev, bill_no: '' }));
-      // Optionally trigger print here automatically
     } catch (error: any) {
       console.error("Generation failed:", error);
       showToast("Error: " + JSON.stringify(error.response?.data || error.message), 'error');
@@ -275,21 +312,20 @@ export default function BillGenerationPage() {
   };
 
   const handlePrint = () => {
-    if (!formData.firm_id) return showToast("Select your firm.", 'error');
-    if (!formData.party_id) return showToast("Select a party.", 'error');
-    if (selectedIds.length === 0) return showToast("Please select deliveries.", 'error');
-    if (!formData.bill_no) return showToast("Enter Bill No.", 'error');
+    if (!isSavedBillPrint) {
+      if (!formData.firm_id) return showToast("Select your firm.", 'error');
+      if (!formData.party_id) return showToast("Select a party.", 'error');
+      if (selectedIds.length === 0) return showToast("Please select deliveries.", 'error');
+      if (!formData.bill_no) return showToast("Enter Bill No.", 'error');
+    }
 
     print(() => showToast(PRINT_BLOCKED_MESSAGE, 'error'), {
-      delivery_count: selectedIds.length,
-      net_amount: totals.net_amount,
+      delivery_count: printBill.items.length,
+      net_amount: printBill.totals.net_amount,
       use_letterhead: useLetterhead,
+      is_saved_bill: isSavedBillPrint,
     });
   };
-
-  const selectedPartyObj = parties.find(p => p.id == formData.party_id);
-  const selectedFirmObj = firms.find(f => f.id == formData.firm_id);
-  const selectedDeliveryItems = pendingDeliveries.filter(d => selectedIds.includes(d.id));
 
   const isFirmMatched = firms.some(f => f.firm_name === firmSearch);
   const filteredFirms = firms.filter(f => isFirmMatched ? true : f.firm_name.toLowerCase().includes(firmSearch.toLowerCase()));
@@ -307,7 +343,7 @@ export default function BillGenerationPage() {
               <h1 className="neu-page-title text-3xl">Brokerage Bill</h1>
               <p className="mt-1 font-medium" style={{ color: "var(--cb-text-label)" }}>Generate commission invoices.</p>
             </div>
-            <button onClick={handlePrint} disabled={isPrinting} className="neu-btn text-[#04294E] !border !border-[#65a34e] enabled:hover:!bg-[#65a34e] enabled:hover:!text-white transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-70 flex items-center gap-2">
+            <button onClick={handlePrint} disabled={isPrinting || (selectedIds.length === 0 && !savedBill)} title={isSavedBillPrint ? `Print saved Bill No. ${printBill.bill_no}` : undefined} className="neu-btn text-[#04294E] !border !border-[#65a34e] enabled:hover:!bg-[#65a34e] enabled:hover:!text-white transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-70 flex items-center gap-2">
               <Printer size={18} /> {isPrinting ? 'Opening print...' : 'Print Bill'}
             </button>
           </div>
@@ -527,12 +563,12 @@ export default function BillGenerationPage() {
               {useLetterhead ? (
                   <div className="flex justify-between items-start border-b border-gray-300 pb-3">
                       <div className="leading-snug">
-                          <h1 className="text-2xl font-bold uppercase tracking-wide">{selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</h1>
-                          {selectedFirmObj?.tagline && <p className="font-bold text-sm text-gray-800">{selectedFirmObj.tagline}</p>}
+                          <h1 className="text-2xl font-bold uppercase tracking-wide">{printBill.firm?.firm_name || "YOUR FIRM NAME"}</h1>
+                          {printBill.firm?.tagline && <p className="font-bold text-sm text-gray-800">{printBill.firm.tagline}</p>}
                           
                           {/* Address: 1 line preferred with comma, 2 lines if long */}
                           {(() => {
-                            const addr = getFormattedAddress(selectedFirmObj);
+                            const addr = getFormattedAddress(printBill.firm);
                             return (
                               <>
                                 {addr.line1 && <p className="text-sm text-gray-800">{addr.line1}</p>}
@@ -543,8 +579,8 @@ export default function BillGenerationPage() {
 
                           {/* Phone & Email: Single line (Ph first, then Email) */}
                           {(() => {
-                            const phone = [selectedFirmObj?.tele_o, selectedFirmObj?.mobile].filter(Boolean).join(" / ");
-                            const email = selectedFirmObj?.email;
+                            const phone = [printBill.firm?.tele_o, printBill.firm?.mobile].filter(Boolean).join(" / ");
+                            const email = printBill.firm?.email;
                             if (!phone && !email) return null;
                             return (
                               <p className="text-sm text-gray-800">
@@ -556,22 +592,22 @@ export default function BillGenerationPage() {
                           })()}
 
                           {/* CIN */}
-                          {selectedFirmObj?.cin_no && (
-                            <p className="text-sm font-bold mt-1">CIN: {selectedFirmObj.cin_no}</p>
+                          {printBill.firm?.cin_no && (
+                            <p className="text-sm font-bold mt-1">CIN: {printBill.firm.cin_no}</p>
                           )}
 
                           {/* GST and PAN: Single line, GST first then PAN */}
-                          <p className={`text-sm font-bold ${!selectedFirmObj?.cin_no ? 'mt-1' : ''}`}>
-                            <span>GST: {selectedFirmObj?.gst_no || "-"}</span>
+                          <p className={`text-sm font-bold ${!printBill.firm?.cin_no ? 'mt-1' : ''}`}>
+                            <span>GST: {printBill.firm?.gst_no || "-"}</span>
                             <span className="inline-block w-8">&nbsp;</span>
-                            <span>PAN: {selectedFirmObj?.pan_no || "-"}</span>
+                            <span>PAN: {printBill.firm?.pan_no || "-"}</span>
                           </p>
                       </div>
                       <div className="flex-shrink-0 ml-4">
                           {(() => {
-                            const hasCustomLogo = Boolean(selectedFirmObj?.letterhead_data || selectedFirmObj?.letterhead);
-                            const isCottBookFirm = selectedFirmObj?.firm_name?.toLowerCase().includes('cottbook');
-                            const logoSrc = selectedFirmObj?.letterhead_data || (selectedFirmObj?.letterhead ? getLetterheadUrl(selectedFirmObj.letterhead) : (isCottBookFirm ? '/favicon-logo.svg' : ''));
+                            const hasCustomLogo = Boolean(printBill.firm?.letterhead_data || printBill.firm?.letterhead);
+                            const isCottBookFirm = printBill.firm?.firm_name?.toLowerCase().includes('cottbook');
+                            const logoSrc = printBill.firm?.letterhead_data || (printBill.firm?.letterhead ? getLetterheadUrl(printBill.firm.letterhead) : (isCottBookFirm ? '/favicon-logo.svg' : ''));
 
                             if (!hasCustomLogo && !isCottBookFirm) {
                               return null;
@@ -607,12 +643,12 @@ export default function BillGenerationPage() {
               {/* Bill Meta Data */}
               <div className="mb-4 leading-normal">
                   <p className="font-bold text-sm">To,</p>
-                  <p className="font-bold text-base">M/s. {selectedPartyObj?.company_name || "-"}, {selectedPartyObj?.station || "-"}</p>
-                  <p className="font-bold text-sm">(GST No.: {selectedPartyObj?.gst_no || "-"})</p>
+                  <p className="font-bold text-base">M/s. {printBill.party?.company_name || "-"}, {printBill.party?.station || "-"}</p>
+                  <p className="font-bold text-sm">(GST No.: {printBill.party?.gst_no || "-"})</p>
                   
                   <div className="flex justify-between font-bold text-sm mt-2">
-                      <p>Bill No.: {formData.bill_no || "-"}</p>
-                      <p>Date: {formatDate(formData.bill_date)}</p>
+                      <p>Bill No.: {printBill.bill_no || "-"}</p>
+                      <p>Date: {formatDate(printBill.bill_date)}</p>
                   </div>
               </div>
 
@@ -629,7 +665,7 @@ export default function BillGenerationPage() {
                       </tr>
                   </thead>
                   <tbody>
-                      {selectedDeliveryItems.map((item, idx) => (
+                      {printBill.items.map((item, idx) => (
                           <tr key={item.id}>
                               <td className="py-1.5 text-left pr-2">{item.counter_party}</td>
                               <td className="py-1.5 text-center">{item.station}</td>
@@ -647,7 +683,7 @@ export default function BillGenerationPage() {
                   <tbody>
                       <tr>
                           <td style={{ width: "50%" }} className="py-1.5 text-right font-bold">Total Bales :</td>
-                          <td style={{ width: "8%" }} className="py-1.5 text-center font-bold">{totals.total_bales}</td>
+                          <td style={{ width: "8%" }} className="py-1.5 text-center font-bold">{printBill.totals.total_bales}</td>
                           <td style={{ width: "42%" }}></td>
                       </tr>
                   </tbody>
@@ -661,34 +697,34 @@ export default function BillGenerationPage() {
                               <table style={{ width: "100%", fontSize: "10.5pt", fontFamily: "'Courier New', monospace", lineHeight: "1.6" }}>
                                   <tbody>
                                       <tr>
-                                          <td>Brokerage @{totals.rate}/- Per Bale</td>
-                                          <td className="text-right">Rs. {totals.gross_amount.toFixed(2)}</td>
+                                          <td>Brokerage @{printBill.totals.rate}/- Per Bale</td>
+                                          <td className="text-right">Rs. {printBill.totals.gross_amount.toFixed(2)}</td>
                                       </tr>
-                                      {totals.igst > 0 ? (
+                                      {printBill.totals.igst > 0 ? (
                                           <tr>
-                                              <td>IGST @{totals.gst_percent}%</td>
-                                              <td className="text-right">Rs. {totals.igst.toFixed(2)}</td>
+                                              <td>IGST @{printBill.totals.gst_percent}%</td>
+                                              <td className="text-right">Rs. {printBill.totals.igst.toFixed(2)}</td>
                                           </tr>
                                       ) : (
                                           <>
                                               <tr>
-                                                  <td>CGST @{totals.gst_percent / 2}%</td>
-                                                  <td className="text-right">Rs. {totals.cgst.toFixed(2)}</td>
+                                                  <td>CGST @{printBill.totals.gst_percent / 2}%</td>
+                                                  <td className="text-right">Rs. {printBill.totals.cgst.toFixed(2)}</td>
                                               </tr>
                                               <tr>
-                                                  <td>SGST @{totals.gst_percent / 2}%</td>
-                                                  <td className="text-right">Rs. {totals.sgst.toFixed(2)}</td>
+                                                  <td>SGST @{printBill.totals.gst_percent / 2}%</td>
+                                                  <td className="text-right">Rs. {printBill.totals.sgst.toFixed(2)}</td>
                                               </tr>
                                           </>
                                       )}
                                       <tr><td colSpan={2} style={{ borderTop: "3px double black" }}></td></tr>
                                       <tr>
                                           <td className="font-bold">Total Amount :</td>
-                                          <td className="text-right font-bold">Rs. {totals.net_amount.toFixed(2)}</td>
+                                          <td className="text-right font-bold">Rs. {printBill.totals.net_amount.toFixed(2)}</td>
                                       </tr>
                                       <tr><td colSpan={2} style={{ borderTop: "3px double black" }}></td></tr>
                                       <tr>
-                                          <td colSpan={2} className="font-bold pt-2">Total Amount in Words: {totals.amount_in_words}</td>
+                                          <td colSpan={2} className="font-bold pt-2">Total Amount in Words: {printBill.totals.amount_in_words}</td>
                                       </tr>
                                   </tbody>
                               </table>
@@ -702,15 +738,15 @@ export default function BillGenerationPage() {
               <div className="flex justify-between items-start text-sm pt-3 mt-2" style={{ borderTop: "1px solid black" }}>
                   <div className="leading-snug">
                       <p className="font-bold underline mb-1">Bank Details:</p>
-                      <p className="font-bold">Bank: {selectedFirmObj?.bank_name || "-"}</p>
-                      <p className="font-bold">Branch: {selectedFirmObj?.branch || "-"}</p>
-                      <p className="font-bold">A/c No: {selectedFirmObj?.bank_ac_no || "-"}</p>
-                      <p className="font-bold">IFSC: {selectedFirmObj?.ifsc_code || "-"}</p>
+                      <p className="font-bold">Bank: {printBill.firm?.bank_name || "-"}</p>
+                      <p className="font-bold">Branch: {printBill.firm?.branch || "-"}</p>
+                      <p className="font-bold">A/c No: {printBill.firm?.bank_ac_no || "-"}</p>
+                      <p className="font-bold">IFSC: {printBill.firm?.ifsc_code || "-"}</p>
                       
-                      <p className="mt-4 text-xs">E & O.E (Subject to {selectedFirmObj?.jurisdiction ? selectedFirmObj.jurisdiction + " " : (selectedFirmObj?.city ? selectedFirmObj.city + " " : '\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0')}Jurisdiction)</p>
+                      <p className="mt-4 text-xs">E & O.E (Subject to {printBill.firm?.jurisdiction ? printBill.firm.jurisdiction + " " : (printBill.firm?.city ? printBill.firm.city + " " : '\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0')}Jurisdiction)</p>
                   </div>
                   <div className="text-right leading-snug">
-                      <p className="font-bold">For: {selectedFirmObj?.firm_name || "YOUR FIRM NAME"}</p>
+                      <p className="font-bold">For: {printBill.firm?.firm_name || "YOUR FIRM NAME"}</p>
                       <div className="h-12"></div>
                       <p>(Auth. Signatory)</p>
                   </div>
